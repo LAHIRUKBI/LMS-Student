@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { auth } from "@/lib/firebase";
-import { Search, Loader2, User, Mail, Phone, BookOpen, GraduationCap, MapPin, Globe, ExternalLink, ShieldCheck } from "lucide-react";
+import { Search, Loader2, User, Mail, GraduationCap, Globe, ExternalLink, ChevronRight } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
 interface Qualification {
@@ -39,6 +39,8 @@ export default function StudentTeacherView() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  
+  const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -58,7 +60,6 @@ export default function StudentTeacherView() {
       const res = await axios.get("http://localhost:5000/api/admin/teachers", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      console.log("Fetched teachers:", res.data);
       setTeachers(res.data);
     } catch (err) {
       console.error("Error fetching teachers:", err);
@@ -88,6 +89,14 @@ export default function StudentTeacherView() {
     );
   });
 
+  const toggleExpand = (id: string) => {
+    if (expandedTeacherId === id) {
+      setExpandedTeacherId(null);
+    } else {
+      setExpandedTeacherId(id);
+    }
+  };
+
   if (!user) return null;
 
   return (
@@ -99,8 +108,7 @@ export default function StudentTeacherView() {
 
       <Navbar user={user} onLogout={handleLogout} />
 
-      {/* පිටුවේ දෙපස හිස් බව නැති කර පුළුල්ව පෙන්වීම සඳහා max-w පුළුල් කර ඇත */}
-      <main className="max-w-[95%] xl:max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-10 pt-28 pb-16 relative z-10">
+      <main className="max-w-[95%] xl:max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-10 pt-28 pb-16 relative z-10">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
@@ -112,7 +120,7 @@ export default function StudentTeacherView() {
               Meet Your <span className="text-blue-600 dark:text-blue-400">Teachers</span>
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mt-3 max-w-2xl text-sm sm:text-base">
-              Discover the experienced professionals guiding your learning journey. Find their subjects, qualifications, and contact details.
+              Discover the experienced professionals guiding your learning journey. Click the arrow button to slide out details horizontally.
             </p>
           </div>
           
@@ -145,21 +153,29 @@ export default function StudentTeacherView() {
             <p className="text-slate-500 dark:text-slate-400 max-w-md">We couldn't find any teacher matching your search criteria.</p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {filteredTeachers.map((t) => (
-              <div 
-                key={t._id} 
-                className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xl shadow-slate-200/50 dark:shadow-none transition-all duration-300 flex flex-col lg:flex-row gap-8 items-stretch"
-              >
-                
-                {/* වම් පස: ගුරුවරයාගේ විශාල රූපය කොටුව පුරාම */}
-                <div className="lg:w-80 xl:w-96 shrink-0 flex flex-col items-center justify-between bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-800/50 rounded-3xl p-5 border border-blue-100/50 dark:border-slate-700/50">
-                  <div className="w-full h-64 sm:h-72 lg:h-full min-h-[280px] rounded-2xl overflow-hidden shadow-md border-2 border-white dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredTeachers.map((t) => {
+              const isExpanded = expandedTeacherId === t._id;
+
+              return (
+                <div 
+                  key={t._id} 
+                  className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200/80 dark:border-slate-800 p-5 shadow-lg shadow-slate-200/40 dark:shadow-none transition-all duration-300 flex flex-col relative overflow-hidden"
+                >
+                  
+                  {/* විෂය නාමය ඉහළින්ම පැහැදිලිව පෙන්වීම */}
+                  <div className="mb-3 text-center bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 py-2 px-3 rounded-2xl">
+                    <span className="text-[11px] uppercase tracking-wider font-bold text-teal-600 dark:text-teal-400 block">Subject</span>
+                    <span className="text-base font-extrabold text-slate-800 dark:text-white truncate block">{t.subject}</span>
+                  </div>
+
+                  {/* ගුරුවරයාගේ ෆොටෝ එක සහ වම් පස රවුමක් ඇතුළත ">" අයිකනය */}
+                  <div className="relative w-full h-60 sm:h-64 rounded-2xl overflow-hidden shadow-inner bg-slate-100 dark:bg-slate-800 flex items-center justify-center group">
                     {t.profilePhoto ? (
                       <img 
                         src={getProfileImageUrl(t.profilePhoto) || ""} 
                         alt={t.name} 
-                        className="w-full h-full object-cover" 
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = 'none';
                         }}
@@ -167,92 +183,90 @@ export default function StudentTeacherView() {
                     ) : (
                       <User size={64} className="text-slate-300 dark:text-slate-600" />
                     )}
+
+                    {/* වම් පස පහළ කෙළවරේ රවුමක් ඇතුළත ">" අයිකනය */}
+                    <button 
+                      onClick={() => toggleExpand(t._id)}
+                      className="absolute left-3 bottom-3 w-10 h-10 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-white hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 transition-all duration-300 z-20"
+                      title={isExpanded ? "Hide Details" : "View Details"}
+                    >
+                      <ChevronRight size={20} className={`transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
-                  
-                  <div className="mt-4 w-full bg-blue-600 text-white py-2 rounded-xl text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20">
-                    <ShieldCheck size={14} /> Verified Teacher
+
+                  {/* ගුරුවරයාගේ නම */}
+                  <div className="mt-4 text-center">
+                    <h3 className="font-extrabold text-lg text-slate-900 dark:text-white truncate">{t.name}</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Educator</p>
                   </div>
-                </div>
 
-                {/* දකුණු පස: අභ්‍යන්තර කාඩ්පත (Inner Card) - සියලුම විස්තර සහිතයි */}
-                <div className="flex-1 bg-slate-50/70 dark:bg-slate-800/40 rounded-3xl p-6 sm:p-8 border border-slate-200/60 dark:border-slate-800 flex flex-col justify-between">
-                  
-                  <div>
-                    {/* නම සහ විෂය */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6 pb-4 border-b border-slate-200/60 dark:border-slate-700/60">
-                      <div>
-                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">{t.name}</h2>
-                        <p className="text-xs font-semibold text-slate-400 mt-1">ID: {t.teacherId}</p>
-                      </div>
-                      <div className="inline-flex items-center gap-2 bg-teal-50 dark:bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-200 dark:border-teal-500/20 px-4 py-2 rounded-2xl font-extrabold text-sm shadow-sm self-start sm:self-auto">
-                        <BookOpen size={18} /> {t.subject}
-                      </div>
-                    </div>
-
-                    {/* සම්බන්ධතා තොරතුරු (Contact Info Grid) */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                      <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
-                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                          <Mail size={18} />
-                        </div>
-                        <div className="overflow-hidden">
-                          <p className="text-[11px] font-bold text-slate-400 uppercase">Email Address</p>
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">{t.email || "Not Provided"}</p>
-                        </div>
+                  {/* හරහට (වමේ සිට දකුණට - Horizontal Slide) එළියට විහිදී එන විස්තර කොටස (අර්ධ විනිවිද පෙනෙන Glassmorphism පසුබිමක් සහිතව රූපය යටපත් නොවන සේ සකසා ඇත) */}
+                  <div 
+                    className={`absolute inset-y-0 left-0 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md z-30 p-5 flex flex-col justify-between transition-transform duration-500 ease-in-out shadow-2xl border-r border-slate-200 dark:border-slate-800 ${
+                      isExpanded ? 'translate-x-0' : '-translate-x-full'
+                    }`}
+                  >
+                    <div>
+                      {/* ඉහළින් Close / Back කිරීමට අයිකනයක් */}
+                      <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
+                        <h4 className="font-extrabold text-sm text-slate-800 dark:text-white truncate">{t.name}</h4>
+                        <button 
+                          onClick={() => toggleExpand(t._id)}
+                          className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-red-50 hover:text-red-600 transition-colors"
+                        >
+                          ✕
+                        </button>
                       </div>
 
-                      <div className="flex items-center gap-3 bg-white dark:bg-slate-900 p-3.5 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
-                        <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400 flex items-center justify-center shrink-0">
-                          <Phone size={18} />
+                      {/* විස්තර ලැයිස්තුව */}
+                      <div className="space-y-3 text-left overflow-y-auto max-h-[280px] pr-1">
+                        
+                        {/* Email */}
+                        <div className="flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl text-xs">
+                          <Mail size={14} className="text-blue-500 shrink-0" />
+                          <span className="text-slate-600 dark:text-slate-300 truncate font-medium">{t.email || "No Email"}</span>
                         </div>
-                        <div className="overflow-hidden">
-                          <p className="text-[11px] font-bold text-slate-400 uppercase">Phone Number</p>
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{t.phone || "Not Provided"}</p>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* අධ්‍යාපන සුදුසුකම් (Qualifications Section) */}
-                    <div className="mb-6">
-                      <h4 className="text-xs font-extrabold text-slate-400 dark:text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <GraduationCap size={16} className="text-blue-600" /> Educational Qualifications
-                      </h4>
-                      {t.qualifications && t.qualifications.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          {t.qualifications.map((q, idx) => (
-                            <div key={idx} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800 shadow-sm">
-                              <p className="font-bold text-slate-800 dark:text-slate-100 text-sm">{q.degree}</p>
-                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">{q.institution} ({q.period})</p>
-                              {q.description && <p className="text-xs text-slate-400 mt-2 italic">{q.description}</p>}
+                        {/* Qualifications */}
+                        <div>
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                            <GraduationCap size={12} className="text-blue-600" /> Qualifications
+                          </p>
+                          {t.qualifications && t.qualifications.length > 0 ? (
+                            <div className="space-y-1.5">
+                              {t.qualifications.map((q, idx) => (
+                                <div key={idx} className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl text-xs">
+                                  <p className="font-bold text-slate-800 dark:text-slate-200 leading-tight">{q.degree}</p>
+                                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">{q.institution}</p>
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          ) : (
+                            <p className="text-[11px] text-slate-400 italic">No qualifications added.</p>
+                          )}
                         </div>
-                      ) : (
-                        <p className="text-xs text-slate-400 italic bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/60 dark:border-slate-800">No qualifications added yet.</p>
-                      )}
+                      </div>
                     </div>
-                  </div>
 
-                  {/* සමාජ මාධ්‍ය සහ වෙබ් අඩවි සබැඳි (Social Links & Website) */}
-                  <div className="pt-4 border-t border-slate-200/60 dark:border-slate-700/60 flex flex-wrap items-center gap-3">
-                    {t.website && (
-                      <a href={t.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-md shadow-blue-600/20 hover:bg-blue-700 transition-colors">
-                        <Globe size={14} /> Visit Website
-                      </a>
-                    )}
-                    {t.socialLinks?.map((s, idx) => (
-                      <a key={idx} href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-800 font-bold text-xs shadow-sm hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                        <ExternalLink size={14} /> {s.platform}
-                      </a>
-                    ))}
-                    {!t.website && (!t.socialLinks || t.socialLinks.length === 0) && (
-                      <span className="text-xs text-slate-400 italic">No external social profiles linked.</span>
-                    )}
+                    {/* Social Links & Website */}
+                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-1.5">
+                      {t.website && (
+                        <a href={t.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-blue-600 text-white font-bold text-[10px] shadow-sm hover:bg-blue-700 transition-colors">
+                          <Globe size={12} /> Website
+                        </a>
+                      )}
+                      {t.socialLinks?.map((s, idx) => (
+                        <a key={idx} href={s.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-[10px] shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+                          <ExternalLink size={12} /> {s.platform}
+                        </a>
+                      ))}
+                    </div>
+
                   </div>
 
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
