@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 
@@ -17,6 +17,25 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   // Dark Mode සඳහා State එක
   const [isDarkMode, setIsDarkMode] = useState(false);
 
+  // Component එක සම්පූර්ණයෙන් Load වූවාද යන්න පරීක්ෂා කිරීම සඳහා State එක
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Component එක Mount වෙද්දී LocalStorage එකෙන් කලින් Save කරපු States කියවාගැනීම
+  useEffect(() => {
+    const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
+    const savedDarkMode = localStorage.getItem("darkMode") === "true";
+    
+    setIsExpanded(savedExpandState);
+    setIsDarkMode(savedDarkMode);
+    
+    if (savedDarkMode) {
+      document.documentElement.classList.add('dark');
+    }
+
+    // දත්ත ලබාගැනීමෙන් පසු Component එක දර්ශනය කිරීමට අවසර දීම
+    setIsMounted(true); 
+  }, []);
+
   // Profile Image URL එක නිවැරදිව සකසා ගැනීම
   const profileImgUrl = user?.profileImage 
     ? (user.profileImage.startsWith("http") 
@@ -26,13 +45,31 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
   // Dark mode එක මාරු කිරීමේ Function එක
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    if (!isDarkMode) {
+    const newDarkModeState = !isDarkMode;
+    setIsDarkMode(newDarkModeState);
+    
+    localStorage.setItem("darkMode", String(newDarkModeState));
+
+    if (newDarkModeState) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
   };
+
+  // Navbar එක Expand/Collapse කිරීමේ Function එක
+  const toggleExpand = () => {
+    const newExpandState = !isExpanded;
+    setIsExpanded(newExpandState);
+    
+    localStorage.setItem("navbarExpanded", String(newExpandState));
+  };
+
+  // පිටුව load වන මොහොතේ ඇතිවන අනවශ්‍ය animation එක වැළැක්වීම සඳහා 
+  // Component එක සම්පූර්ණයෙන් mount වනතුරු කිසිවක් return නොකරයි (Hydration Mismatch එකද මින් වැළකේ)
+  if (!isMounted) {
+    return null; 
+  }
 
   return (
     <nav 
@@ -54,7 +91,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           }
         `}
       >
-        <Link href="/dashboard" className="flex items-center">
+        <Link href="/home" className="flex items-center">
           <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg text-white shadow-sm transition-transform hover:scale-105 shrink-0">
             <BookOpen size={18} className="sm:hidden block" />
             <BookOpen size={20} className="hidden sm:block" />
@@ -137,7 +174,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         {/* Split / Join Arrow Button */}
         <div className={`w-px bg-slate-200 dark:bg-slate-700 hidden sm:block transition-all duration-500 ${isExpanded ? 'h-5 mx-0' : 'h-8 mx-1'}`}></div>
         <button 
-          onClick={() => setIsExpanded(!isExpanded)}
+          onClick={toggleExpand}
           className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
           title={isExpanded ? "Join Navbar" : "Split Navbar"}
         >
