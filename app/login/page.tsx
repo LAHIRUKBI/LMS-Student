@@ -27,7 +27,7 @@ export default function LoginPage() {
       const res = await axios.post("http://localhost:5000/api/auth/student/login", credentials);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      router.push("/");
+      router.push("/home");
     } catch (err: any) {
       setError(err.response?.data?.message || "ලොග් වීමේදී දෝෂයක් මතු විය.");
     } finally {
