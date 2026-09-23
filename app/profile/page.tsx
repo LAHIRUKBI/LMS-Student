@@ -3,14 +3,17 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import Link from "next/link";
-import { ArrowLeft, Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera } from "lucide-react";
+import Navbar from "@/app/components/Navbar"; // ඔබගේ Navbar එක
+import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+
+  // Navbar එක සඳහා User State එක
+  const [currentUser, setCurrentUser] = useState<any>(null);
 
   // පින්තූරය සඳහා State සහ Ref
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -37,6 +40,9 @@ export default function ProfilePage() {
 
     const parsedUser = JSON.parse(userData);
     
+    // Navbar එකට යැවීම සඳහා user ව state එකේ save කිරීම
+    setCurrentUser(parsedUser);
+
     setFormData({
       name: parsedUser.name || "",
       email: parsedUser.email || "",
@@ -102,6 +108,7 @@ export default function ProfilePage() {
 
       // අලුත් දත්ත (පින්තූරයේ URL එකත් එක්කම) Local Storage එකේ යාවත්කාලීන කිරීම
       localStorage.setItem("user", JSON.stringify(res.data));
+      setCurrentUser(res.data); // යාවත්කාලීන කළ දත්ත Navbar එකටත් යැවීම
       
       setMessage({ type: "success", text: "Profile updated successfully!" });
     } catch (err) {
@@ -112,58 +119,66 @@ export default function ProfilePage() {
     }
   };
 
+  // Logout කිරීමේ Function එක (Navbar එකට යැවීම සඳහා)
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    router.push("/login");
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="animate-spin text-blue-600" size={40} />
+      <div className="min-h-screen flex items-center justify-center bg-[#F2F5FA]">
+        <Loader2 className="animate-spin text-blue-600" size={44} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        
-        <Link href="/dashboard" className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 mb-6 transition-colors">
-          <ArrowLeft size={20} />
-          <span className="font-medium">Back to Dashboard</span>
-        </Link>
+    <div className="min-h-screen bg-[#F2F5FA] font-sans pb-12">
+      
+      {/* Navbar එකට අවශ්‍ය props (user, onLogout) ලබා දීම */}
+      <Navbar user={currentUser} onLogout={handleLogout} />
 
-        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div className="bg-blue-600 px-8 py-8 text-white">
-            <h1 className="text-3xl font-bold">Student Profile</h1>
-            <p className="text-blue-100 mt-2">Manage your personal information and contact details.</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-28 mt-4">
+
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-slate-800">Student Profile</h1>
+          <p className="text-sm text-slate-500 mt-1">Manage your personal and academic information</p>
+        </div>
+
+        {/* Message Alert */}
+        {message.text && (
+          <div className={`flex items-center gap-3 p-4 rounded-2xl mb-6 shadow-sm border ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+            {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+            <p className="text-sm font-medium">{message.text}</p>
           </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="p-8">
-            
-            {message.text && (
-              <div className={`p-4 rounded-xl mb-6 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-                {message.text}
-              </div>
-            )}
-
-            {/* Profile Image Section */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="relative group">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white shadow-lg bg-slate-100 flex items-center justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Left Column: Profile Summary */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="bg-white rounded-3xl p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 flex flex-col items-center">
+              
+              <div className="relative group mb-6">
+                <div className="w-32 h-32 rounded-full overflow-hidden border-[6px] border-slate-50 shadow-md bg-blue-50 flex items-center justify-center">
                   {imagePreview ? (
                     <img src={imagePreview} alt="Profile Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={48} className="text-slate-300" />
+                    <User size={48} className="text-blue-300" />
                   )}
                 </div>
                 
-                {/* Camera Icon Button */}
                 <button 
                   type="button" 
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-0 right-0 p-2.5 bg-blue-600 rounded-full text-white shadow-md hover:bg-blue-700 transition-colors"
+                  className="absolute bottom-1 right-1 p-2.5 bg-[#232B55] rounded-full text-white shadow-lg hover:bg-blue-700 transition-colors border-2 border-white"
+                  title="Change Photo"
                 >
-                  <Camera size={18} />
+                  <Camera size={16} />
                 </button>
-
-                {/* Hidden File Input */}
                 <input 
                   type="file" 
                   ref={fileInputRef}
@@ -172,69 +187,160 @@ export default function ProfilePage() {
                   className="hidden"
                 />
               </div>
-              <p className="text-sm text-slate-500 mt-3 font-medium">Click the camera icon to change photo</p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* මෙතැන් සිට පහලට කලින් තිබූ Full Name, Email, Phone, Grade, School, Address input fields සියල්ලම එලෙසම තබාගන්න */}
+              <h2 className="text-xl font-bold text-slate-800 text-center">{formData.name || "Student Name"}</h2>
+              <p className="text-sm text-slate-500 mb-8">{formData.email}</p>
+
+              <div className="w-full space-y-4">
+                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                  <div className="bg-orange-100 p-2.5 rounded-xl text-orange-600">
+                    <GraduationCap size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium">Grade / Class</p>
+                    <p className="text-sm font-semibold text-slate-700">{formData.grade || "Not specified"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                  <div className="bg-blue-100 p-2.5 rounded-xl text-blue-600">
+                    <Building size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium">School</p>
+                    <p className="text-sm font-semibold text-slate-700">{formData.school || "Not specified"}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                  <div className="bg-red-100 p-2.5 rounded-xl text-red-600">
+                    <MapPin size={18} />
+                  </div>
+                  <div>
+                    <p className="text-xs text-slate-400 font-medium">Address</p>
+                    <p className="text-sm font-semibold text-slate-700">{formData.address || "Not specified"}</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          {/* Right Column: Edit Form */}
+          <div className="lg:col-span-8">
+            <div className="bg-white rounded-3xl p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100">
               
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <User size={16} className="text-slate-400" /> Full Name
-                </label>
-                <input type="text" name="name" value={formData.name} onChange={handleChange} required className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none" />
-              </div>
+              <h3 className="text-lg font-bold text-slate-800 mb-6">Edit Information</h3>
+              
+              <form onSubmit={handleSubmit} className="space-y-6">
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Full Name</label>
+                    <div className="relative">
+                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="text" 
+                        name="name" 
+                        value={formData.name} 
+                        onChange={handleChange} 
+                        required 
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#232B55] outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <Mail size={16} className="text-slate-400" /> Email Address
-                </label>
-                <input type="email" name="email" value={formData.email} disabled className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed outline-none" />
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Email Address</label>
+                    <div className="relative">
+                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="email" 
+                        name="email" 
+                        value={formData.email} 
+                        disabled 
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100 text-slate-400 cursor-not-allowed outline-none" 
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <Phone size={16} className="text-slate-400" /> Phone Number
-                </label>
-                <input type="tel" name="phone" value={formData.phone} onChange={handleChange} placeholder="e.g. 0712345678" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none" />
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Phone Number</label>
+                    <div className="relative">
+                      <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="tel" 
+                        name="phone" 
+                        value={formData.phone} 
+                        onChange={handleChange} 
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#232B55] outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <GraduationCap size={16} className="text-slate-400" /> Grade / Class
-                </label>
-                <input type="text" name="grade" value={formData.grade} onChange={handleChange} placeholder="e.g. Grade 12" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none" />
-              </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Grade / Class</label>
+                    <div className="relative">
+                      <GraduationCap size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="text" 
+                        name="grade" 
+                        value={formData.grade} 
+                        onChange={handleChange} 
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#232B55] outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <Building size={16} className="text-slate-400" /> School
-                </label>
-                <input type="text" name="school" value={formData.school} onChange={handleChange} placeholder="Your School Name" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none" />
-              </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">School</label>
+                    <div className="relative">
+                      <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="text" 
+                        name="school" 
+                        value={formData.school} 
+                        onChange={handleChange} 
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#232B55] outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <label className="text-sm font-medium text-slate-700 flex items-center gap-2">
-                  <MapPin size={16} className="text-slate-400" /> Home Address
-                </label>
-                <input type="text" name="address" value={formData.address} onChange={handleChange} placeholder="Enter your full address" className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 outline-none" />
-              </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Home Address</label>
+                    <div className="relative">
+                      <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input 
+                        type="text" 
+                        name="address" 
+                        value={formData.address} 
+                        onChange={handleChange} 
+                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 text-slate-700 focus:bg-white focus:ring-2 focus:ring-[#232B55] outline-none transition-all" 
+                      />
+                    </div>
+                  </div>
+                  
+                </div>
+
+                <div className="pt-6 mt-4 border-t border-slate-100 flex justify-end">
+                  <button 
+                    type="submit"
+                    disabled={saving}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-2xl font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-blue-600/20"
+                  >
+                    {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                    <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                  </button>
+                </div>
+
+              </form>
+
             </div>
+          </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 flex justify-end">
-              <button 
-                type="submit"
-                disabled={saving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                <span>{saving ? 'Saving Changes...' : 'Save Changes'}</span>
-              </button>
-            </div>
-          </form>
-          
         </div>
-      </div>
+      </main>
     </div>
   );
 }
