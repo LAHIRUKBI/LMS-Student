@@ -114,6 +114,17 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           >
             <Users size={16} /> Teachers
           </Link>
+
+          <Link 
+            href="/class/class_view" 
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${
+              pathname === '/teacher' 
+                ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Users size={16} /> Class
+          </Link>
         </div>
       </div>
 
