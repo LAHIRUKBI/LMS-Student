@@ -28,11 +28,11 @@ export default function StudentClassViewPage() {
     fetchData(token);
   }, [router]);
 
-  const fetchData = async (token: string) => {
+  const fetchData = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${token}` } })
+        axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${authToken}` } }),
+        axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${authToken}` } })
       ]);
       
       setRequests(reqRes.data);
@@ -58,6 +58,8 @@ export default function StudentClassViewPage() {
   const handleRequestClass = async (classId: string, teacherId: string) => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) return; // Null check එකක් එකතු කර ඇත
+
       const res = await axios.post("http://localhost:5000/api/classes/request", { classId, teacherId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
