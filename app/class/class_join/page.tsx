@@ -3,8 +3,78 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award } from "lucide-react";
+import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award, AlertTriangle } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
+
+// Quiz Card එක වෙනම Component එකක් ලෙස සකසා ධාවනය කිරීම (Timer එක ක්‍රියාත්මක කිරීමට)
+function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
+  // විනාඩි තත්පර වලට හැරවීම (duration එක විනාඩි වලින් ඇත)
+  const [timeLeft, setTimeLeft] = useState<number>(quiz.duration * 60);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          alert("කාලය අවසන් වී ඇත! ඔබගේ පිළිතුරු ස්වයංක්‍රීයව ඉදිරිපත් (Submit) වේ.");
+          // නිවැරදි කළ රවුටින් මාර්ගය (/class/quiz/[id]) වෙත නැවිගේට් වීම
+          router.push(`/class/quiz/${quiz._id}`);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [quiz._id, router]);
+
+  // කාලය විනාඩි සහ තත්පර ලෙස හැරවීම
+  const minutes = Math.floor(timeLeft / 60);
+  const seconds = timeLeft % 60;
+  const formatTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+  // විනාඩි 5 ට අඩු දැයි පරීක්ෂා කිරීම (විනාඩි 5 = තත්පර 300)
+  const isNearTimeout = timeLeft <= 300 && timeLeft > 0;
+
+  return (
+    <div className={`p-6 rounded-2xl border shadow-sm flex flex-col justify-between gap-4 transition-all ${
+      isNearTimeout ? "bg-rose-500/10 border-rose-500/50 animate-pulse" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
+    }`}>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-full text-xs font-bold flex items-center gap-1">
+            <Clock size={12} /> Duration: {quiz.duration} Mins
+          </span>
+          <span className="text-xs font-bold text-slate-400">{quiz.questions?.length || 0} Questions</span>
+        </div>
+
+        <h3 className="font-bold text-base text-slate-800 dark:text-white mb-1">{quiz.title}</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{quiz.description || "Test your knowledge with this quiz."}</p>
+
+        {/* Live Countdown Timer Display */}
+        <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${
+          isNearTimeout 
+            ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-300" 
+            : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+        }`}>
+          <span className="flex items-center gap-1.5">
+            {isNearTimeout && <AlertTriangle size={14} className="text-rose-500 animate-bounce" />}
+            {isNearTimeout ? "⚠️ Time is running out!" : "⏳ Time Remaining:"}
+          </span>
+          <span className="font-mono text-sm tracking-wider">{formatTime}</span>
+        </div>
+      </div>
+
+      {/* නිවැරදි කළ රවුටින් මාර්ගය (/class/quiz/[id]) වෙත නැවිගේට් වීම */}
+      <button 
+        onClick={() => router.push(`/class/quiz/${quiz._id}`)}
+        className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
+      >
+        <CheckCircle size={16} /> Start Quiz Now
+      </button>
+    </div>
+  );
+}
 
 export default function ClassJoinPage() {
   const router = useRouter();
@@ -17,7 +87,7 @@ export default function ClassJoinPage() {
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("all"); // all, videos, pdfs, quizzes
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -40,7 +110,6 @@ export default function ClassJoinPage() {
 
   const fetchClassRoomData = async (token: string, id: string) => {
     try {
-      // 1. සියලු පන්ති වලින් අදාළ පන්තිය සෙවීම
       const classRes = await axios.get(`http://localhost:5000/api/classes/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -53,7 +122,6 @@ export default function ClassJoinPage() {
       }
       setClassDetails(foundClass);
 
-      // 2. මෙම පන්තියට Publish කර ඇති Materials ලබා ගැනීම
       try {
         const matRes = await axios.get(`http://localhost:5000/api/materials/class/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -63,14 +131,12 @@ export default function ClassJoinPage() {
         console.error("Error fetching materials:", err);
       }
 
-      // 3. මෙම පන්තියට Publish කර ඇති Quizzes ලබා ගැනීම (Backend එකේ route එක ඇති නම්)
       try {
         const quizRes = await axios.get(`http://localhost:5000/api/quiz/class/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setQuizzes(quizRes.data);
       } catch (err) {
-        // Quiz route එක නැතිනම් හිස්ව තැබීම
         setQuizzes([]);
       }
 
@@ -90,14 +156,12 @@ export default function ClassJoinPage() {
 
   if (!user) return null;
 
-  // Filter materials based on active tab
   const filteredVideos = materials.filter(m => m.type === 'video');
   const filteredPdfs = materials.filter(m => m.type === 'pdf' || m.type === 'paper');
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-500 relative font-sans">
       
-      {/* Background ambient light */}
       <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/10 dark:bg-blue-600/10 blur-[120px] rounded-full"></div>
       <div className="pointer-events-none absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-400/10 dark:bg-teal-600/10 blur-[120px] rounded-full"></div>
 
@@ -105,7 +169,6 @@ export default function ClassJoinPage() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 relative z-10">
         
-        {/* Back Button */}
         <button 
           onClick={() => router.push("/class/class_view")}
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white mb-6 transition-colors"
@@ -159,7 +222,7 @@ export default function ClassJoinPage() {
 
             </div>
 
-            {/* Navigation Tabs for Published Content */}
+            {/* Navigation Tabs */}
             <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-4 overflow-x-auto">
               <button 
                 onClick={() => setActiveTab("all")}
@@ -190,7 +253,7 @@ export default function ClassJoinPage() {
             {/* Published Content Display Sections */}
             <div className="space-y-10">
               
-              {/* 1. Video Lessons Section */}
+              {/* Videos */}
               {(activeTab === "all" || activeTab === "videos") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -227,7 +290,7 @@ export default function ClassJoinPage() {
                 </div>
               )}
 
-              {/* 2. PDFs & Papers Section */}
+              {/* PDFs */}
               {(activeTab === "all" || activeTab === "pdfs") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -268,7 +331,7 @@ export default function ClassJoinPage() {
                 </div>
               )}
 
-              {/* 3. Quizzes Section */}
+              {/* Quizzes */}
               {(activeTab === "all" || activeTab === "quizzes") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -282,23 +345,7 @@ export default function ClassJoinPage() {
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {quizzes.map((quiz) => (
-                        <div key={quiz._id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-4">
-                          <div>
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-full text-xs font-bold">{quiz.duration} Minutes</span>
-                              <span className="text-xs font-bold text-slate-400">{quiz.questions?.length || 0} Questions</span>
-                            </div>
-                            <h3 className="font-bold text-base text-slate-800 dark:text-white mb-1">{quiz.title}</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{quiz.description || "Test your knowledge with this quiz."}</p>
-                          </div>
-
-                          <button 
-                            onClick={() => router.push(`/quiz/${quiz._id}`)}
-                            className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
-                          >
-                            <CheckCircle size={16} /> Start Quiz Now
-                          </button>
-                        </div>
+                        <QuizCardItem key={quiz._id} quiz={quiz} router={router} />
                       ))}
                     </div>
                   )}
