@@ -58,7 +58,7 @@ export default function StudentClassViewPage() {
   const handleRequestClass = async (classId: string, teacherId: string) => {
     try {
       const token = localStorage.getItem("token");
-      if (!token) return; // Null check එකක් එකතු කර ඇත
+      if (!token) return;
 
       const res = await axios.post("http://localhost:5000/api/classes/request", { classId, teacherId }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -141,7 +141,8 @@ export default function StudentClassViewPage() {
                               </button>
                             )}
                             {status === 'Approved' && (
-                              <button onClick={() => router.push(`/class/class_join/${cls._id}`)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+                              // මෙතන තමයි වෙනස් කළේ! ?classId= එකතු කළා
+                              <button onClick={() => router.push(`/class/class_join?classId=${cls._id}`)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
                                 <CheckCircle size={14} /> Join Class
                               </button>
                             )}

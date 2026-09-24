@@ -1,11 +1,9 @@
-//src/app/class/class_join/page.tsx
-
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, ShieldCheck } from "lucide-react";
+import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
 export default function ClassJoinPage() {
@@ -15,8 +13,11 @@ export default function ClassJoinPage() {
 
   const [user, setUser] = useState<any>(null);
   const [classDetails, setClassDetails] = useState<any>(null);
+  const [materials, setMaterials] = useState<any[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("all"); // all, videos, pdfs, quizzes
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -30,24 +31,49 @@ export default function ClassJoinPage() {
     setUser(JSON.parse(userData));
 
     if (classId) {
-      fetchClassDetails(token, classId);
+      fetchClassRoomData(token, classId);
     } else {
       setError("පන්ති විස්තර සොයාගත නොහැක.");
       setLoading(false);
     }
   }, [classId, router]);
 
-  const fetchClassDetails = async (token: string, id: string) => {
+  const fetchClassRoomData = async (token: string, id: string) => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/classes/all`, {
+      // 1. සියලු පන්ති වලින් අදාළ පන්තිය සෙවීම
+      const classRes = await axios.get(`http://localhost:5000/api/classes/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const foundClass = res.data.find((c: any) => c._id === id);
-      if (foundClass) {
-        setClassDetails(foundClass);
-      } else {
+      const foundClass = classRes.data.find((c: any) => c._id === id);
+      
+      if (!foundClass) {
         setError("අදාළ පන්තිය පද්ධතිය තුළ හමු නොවීය.");
+        setLoading(false);
+        return;
       }
+      setClassDetails(foundClass);
+
+      // 2. මෙම පන්තියට Publish කර ඇති Materials ලබා ගැනීම
+      try {
+        const matRes = await axios.get(`http://localhost:5000/api/materials/class/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMaterials(matRes.data);
+      } catch (err) {
+        console.error("Error fetching materials:", err);
+      }
+
+      // 3. මෙම පන්තියට Publish කර ඇති Quizzes ලබා ගැනීම (Backend එකේ route එක ඇති නම්)
+      try {
+        const quizRes = await axios.get(`http://localhost:5000/api/quiz/class/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setQuizzes(quizRes.data);
+      } catch (err) {
+        // Quiz route එක නැතිනම් හිස්ව තැබීම
+        setQuizzes([]);
+      }
+
     } catch (err) {
       console.error(err);
       setError("පන්ති තොරතුරු ලබාගැනීමේදී දෝෂයක් මතු විය.");
@@ -64,6 +90,10 @@ export default function ClassJoinPage() {
 
   if (!user) return null;
 
+  // Filter materials based on active tab
+  const filteredVideos = materials.filter(m => m.type === 'video');
+  const filteredPdfs = materials.filter(m => m.type === 'pdf' || m.type === 'paper');
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-500 relative font-sans">
       
@@ -73,7 +103,7 @@ export default function ClassJoinPage() {
 
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 relative z-10">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 relative z-10">
         
         {/* Back Button */}
         <button 
@@ -129,44 +159,151 @@ export default function ClassJoinPage() {
 
             </div>
 
-            {/* Student Learning Dashboard / Actions Inside Class */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Navigation Tabs for Published Content */}
+            <div className="flex gap-2 border-b border-slate-200 dark:border-slate-800 pb-4 overflow-x-auto">
+              <button 
+                onClick={() => setActiveTab("all")}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap ${activeTab === "all" ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "bg-white dark:bg-slate-900 border text-slate-600 dark:text-slate-400"}`}
+              >
+                All Resources ({materials.length + quizzes.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab("videos")}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap ${activeTab === "videos" ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "bg-white dark:bg-slate-900 border text-slate-600 dark:text-slate-400"}`}
+              >
+                Video Lessons ({filteredVideos.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab("pdfs")}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap ${activeTab === "pdfs" ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "bg-white dark:bg-slate-900 border text-slate-600 dark:text-slate-400"}`}
+              >
+                PDFs & Papers ({filteredPdfs.length})
+              </button>
+              <button 
+                onClick={() => setActiveTab("quizzes")}
+                className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap ${activeTab === "quizzes" ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "bg-white dark:bg-slate-900 border text-slate-600 dark:text-slate-400"}`}
+              >
+                Quizzes ({quizzes.length})
+              </button>
+            </div>
+
+            {/* Published Content Display Sections */}
+            <div className="space-y-10">
               
-              {/* Live Session Card */}
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[28px] p-8 text-white shadow-xl flex flex-col justify-between">
-                <div>
-                  <div className="bg-white/20 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-4">
-                    Live Stream
-                  </div>
-                  <h3 className="text-2xl font-extrabold mb-2">Join Live Classroom</h3>
-                  <p className="text-blue-100 text-sm mb-6">Connect directly to the ongoing live teaching session with your educator.</p>
+              {/* 1. Video Lessons Section */}
+              {(activeTab === "all" || activeTab === "videos") && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <Video size={20} className="text-blue-500" /> Published Video Lessons
+                  </h2>
+
+                  {filteredVideos.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border text-center text-slate-400 text-xs italic">
+                      No video lessons published for this class yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {filteredVideos.map((video) => (
+                        <div key={video._id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm flex flex-col">
+                          <div className="relative aspect-video bg-black">
+                            <video src={`http://localhost:5000${video.fileUrl}`} controls className="w-full h-full object-cover" />
+                          </div>
+                          <div className="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                              <h3 className="font-bold text-sm text-slate-800 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{video.description || "No description provided."}</p>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
+                              <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+                              <a href={`http://localhost:5000${video.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
+                                <PlayCircle size={14} /> Watch Full
+                              </a>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <button 
-                  onClick={() => router.push(`/class/room/${classDetails._id}`)}
-                  className="w-full py-4 bg-white text-blue-600 hover:bg-blue-50 rounded-2xl font-extrabold text-sm shadow-lg flex items-center justify-center gap-2 transition-all"
-                >
-                  <Video size={18} /> Enter Live Room
-                </button>
-              </div>
+              {/* 2. PDFs & Papers Section */}
+              {(activeTab === "all" || activeTab === "pdfs") && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <FileText size={20} className="text-teal-500" /> Study Materials, PDFs & Past Papers
+                  </h2>
 
-              {/* Class Materials & Notes Card */}
-              <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-200/80 dark:border-slate-800 p-8 shadow-xl flex flex-col justify-between">
-                <div>
-                  <div className="bg-teal-50 dark:bg-teal-500/10 text-teal-600 dark:text-teal-400 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider inline-block mb-4">
-                    Resources
-                  </div>
-                  <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">Class Notes & Papers</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">Access study materials, tutorials, and past papers uploaded for this class.</p>
+                  {filteredPdfs.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border text-center text-slate-400 text-xs italic">
+                      No PDFs or papers published for this class yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredPdfs.map((pdf) => (
+                        <div key={pdf._id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3.5 min-w-0">
+                            <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
+                              <FileText size={24} />
+                            </div>
+                            <div className="min-w-0">
+                              <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-600 mb-1 inline-block">{pdf.type}</span>
+                              <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate">{pdf.title}</h3>
+                              <p className="text-xs text-slate-400 truncate">{pdf.subject} • {pdf.grade}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <a href={`http://localhost:5000${pdf.fileUrl}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors" title="View Document">
+                              <Eye size={16} />
+                            </a>
+                            <a href={`http://localhost:5000${pdf.fileUrl}`} download className="p-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors shadow-sm" title="Download Document">
+                              <Download size={16} />
+                            </a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <button 
-                  onClick={() => router.push("/dashboard")}
-                  className="w-full py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-white rounded-2xl font-extrabold text-sm shadow-sm flex items-center justify-center gap-2 transition-all"
-                >
-                  <FileText size={18} /> View Materials
-                </button>
-              </div>
+              {/* 3. Quizzes Section */}
+              {(activeTab === "all" || activeTab === "quizzes") && (
+                <div className="space-y-4">
+                  <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                    <Award size={20} className="text-orange-500" /> Interactive Quizzes
+                  </h2>
+
+                  {quizzes.length === 0 ? (
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border text-center text-slate-400 text-xs italic">
+                      No quizzes published for this class yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {quizzes.map((quiz) => (
+                        <div key={quiz._id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between gap-4">
+                          <div>
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-full text-xs font-bold">{quiz.duration} Minutes</span>
+                              <span className="text-xs font-bold text-slate-400">{quiz.questions?.length || 0} Questions</span>
+                            </div>
+                            <h3 className="font-bold text-base text-slate-800 dark:text-white mb-1">{quiz.title}</h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{quiz.description || "Test your knowledge with this quiz."}</p>
+                          </div>
+
+                          <button 
+                            onClick={() => router.push(`/quiz/${quiz._id}`)}
+                            className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
+                          >
+                            <CheckCircle size={16} /> Start Quiz Now
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
             </div>
 
