@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users } from "lucide-react";
+import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -15,7 +15,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   
-  const pathname = usePathname(); // දැනට සිටින පිටුව හඳුනා ගැනීමට
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); 
+  
+  const pathname = usePathname(); 
 
   useEffect(() => {
     const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
@@ -53,6 +55,11 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     const newExpandState = !isExpanded;
     setIsExpanded(newExpandState);
     localStorage.setItem("navbarExpanded", String(newExpandState));
+    
+    // දිග හරින විට dropdown එක විවෘතව තිබේ නම් එය වසා දැමීම
+    if (!newExpandState) {
+      setIsDropdownOpen(false);
+    }
   };
 
   if (!isMounted) return null; 
@@ -68,41 +75,79 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     >
       {/* Left Part: Logo Area & Navigation Tabs */}
       <div 
-        className={`flex items-center h-full transition-all duration-700 pointer-events-auto
+        className={`flex items-center h-full transition-all duration-700 pointer-events-auto relative
           ${isExpanded 
             ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5' 
             : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
           }
         `}
       >
-        <Link href="/dashboard" className="flex items-center">
-          <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg text-white shadow-sm transition-transform hover:scale-105 shrink-0">
-            <BookOpen size={18} className="sm:hidden block" />
-            <BookOpen size={20} className="hidden sm:block" />
-          </div>
-          <span 
-            className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
-              ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-1.5 sm:ml-2 text-[15px] sm:text-xl'}
-            `}
+        {/* The section containing the logo and menu icon is set to 'relative' (to position the dropdown). */}
+        <div className="relative flex items-center">
+          <Link 
+            href="/home" 
+            className="flex items-center"
+            onClick={(e) => {
+              if (isExpanded) {
+                e.preventDefault();
+                setIsDropdownOpen(!isDropdownOpen); // Opens/closes the dropdown.
+              }
+            }}
           >
-            Student Portal
-          </span>
-        </Link>
+            <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg text-white shadow-sm transition-transform hover:scale-105 shrink-0">
+              {isExpanded ? (
+                <>
+                  <Menu size={18} className="sm:hidden block" />
+                  <Menu size={20} className="hidden sm:block" />
+                </>
+              ) : (
+                <>
+                  <BookOpen size={18} className="sm:hidden block" />
+                  <BookOpen size={20} className="hidden sm:block" />
+                </>
+              )}
+            </div>
+            <span 
+              className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
+                ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-1.5 sm:ml-2 text-[15px] sm:text-xl'}
+              `}
+            >
+              NovaSkill
+            </span>
+          </Link>
 
-        {/* Navigation Tabs (Dashboard & Teachers) */}
+          {/* Visible only when retracted. */}
+          {isExpanded && isDropdownOpen && (
+            <div className="absolute top-full left-0 mt-4 w-48 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
+              <Link 
+                href="/teacher" 
+                onClick={() => setIsDropdownOpen(false)}
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${
+                  pathname === '/teacher' 
+                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Users size={16} /> Teachers
+              </Link>
+              <Link 
+                href="/class/class_view" 
+                onClick={() => setIsDropdownOpen(false)}
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${
+                  pathname === '/class/class_view' 
+                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                <Users size={16} /> Class
+              </Link>
+            </div>
+          )}
+        </div>
+
+        {/* Navigation Tabs (Dashboard & Teachers) - For display when unfolded */}
         <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[300px] opacity-100'}`}>
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mr-2"></div>
-          
-          <Link 
-            href="/dashboard" 
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${
-              pathname === '/dashboard' 
-                ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <BookOpen size={16} /> Lessons
-          </Link>
           
           <Link 
             href="/teacher" 
@@ -118,7 +163,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           <Link 
             href="/class/class_view" 
             className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${
-              pathname === '/teacher' 
+              pathname === '/class/class_view' 
                 ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
                 : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
@@ -129,7 +174,6 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       </div>
 
       {/* Right Part: Actions (Dark mode, Profile, Logout, Split Button) */}
-      {/* ... [මෙතැන් සිට පහළට පරණ Navbar එකේ Right Part එකම කිසිදු වෙනසකින් තොරව පවතී] ... */}
       <div 
         className={`flex items-center gap-1.5 sm:gap-3 h-full transition-all duration-700 pointer-events-auto
           ${isExpanded 
