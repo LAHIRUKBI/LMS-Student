@@ -27,7 +27,8 @@ interface AdData {
   createdAt: string;
 }
 
-const galleryItems = [
+// Fallback items (යම් හෙයකින් Backend එකෙන් ඩේටා නොපැමිණියහොත් පෙන්වීමට)
+const fallbackGalleryItems = [
   { image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop", text: "Student 1" },
   { image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop", text: "Student 2" },
   { image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=600&fit=crop", text: "Online Class" },
@@ -35,13 +36,12 @@ const galleryItems = [
   { image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop", text: "Student 4" },
 ];
 
-const heroImages = [
+const fallbackHeroImages = [
   { id: 1, image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=800&fit=crop&crop=faces", title: "Student 1" },
   { id: 2, image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop&crop=faces", title: "Student 2" },
   { id: 3, image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=800&fit=crop&crop=faces", title: "Student 3" }
 ];
 
-// 2. Feature Carousel එක සඳහා දත්ත (Items)
 const featureItems = [
   {
     id: 1,
@@ -76,6 +76,9 @@ export default function StudentDashboard() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // Admin එකෙන් වෙනස් කරන Settings ගබඩා කරගැනීමට State එක
+  const [dashboardSettings, setDashboardSettings] = useState<any>(null);
+
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -90,6 +93,7 @@ export default function StudentDashboard() {
     const parsedUser = JSON.parse(userData);
     setUser(parsedUser);
     fetchActiveAds(token);
+    fetchDashboardSettings(); // Admin Settings fetch කරගැනීමට
   }, [router]);
 
   const fetchActiveAds = async (token: string) => {
@@ -105,6 +109,15 @@ export default function StudentDashboard() {
     }
   };
 
+  const fetchDashboardSettings = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/dashboard/settings");
+      setDashboardSettings(res.data);
+    } catch (err) {
+      console.error("Error fetching dashboard settings:", err);
+    }
+  };
+
   const handleLogout = async () => {
     await auth.signOut();
     localStorage.removeItem("token");
@@ -114,7 +127,7 @@ export default function StudentDashboard() {
 
   const getMediaUrl = (mediaPath: string) => {
     if (!mediaPath) return "";
-    if (mediaPath.startsWith("http")) return mediaPath;
+    if (mediaPath.startsWith("http") || mediaPath.startsWith("blob:")) return mediaPath;
     const cleanPath = mediaPath.startsWith("/") ? mediaPath : `/${mediaPath}`;
     return `http://localhost:5000${cleanPath}`;
   };
@@ -142,6 +155,29 @@ export default function StudentDashboard() {
 
   if (!user) return null;
 
+  // දත්ත ලබාගැනීම (Settings තිබේ නම් ඒවා පෙන්වීම, නැතහොත් Defaults පෙන්වීම)
+  const heroBadge = dashboardSettings?.heroBadge || "eLearning Platform";
+  const heroTitleLine1 = dashboardSettings?.heroTitleLine1 || "Smart Learning";
+  const heroTitleLine2 = dashboardSettings?.heroTitleLine2 || "Deeper & More";
+  const heroTitleHighlight = dashboardSettings?.heroTitleHighlight || "-Amazing";
+  const heroDescription = dashboardSettings?.heroDescription || "Phosfluorescently deploy unique intellectual capital without enterprise- after bricks & clicks synergy. Enthusiastically revolutionize intuitive.";
+  const primaryBtnText = dashboardSettings?.primaryBtnText || "Start Free Trial";
+  const secondaryBtnText = dashboardSettings?.secondaryBtnText || "How it Work";
+
+  const currentHeroImages = dashboardSettings?.heroImages?.length > 0 
+    ? dashboardSettings.heroImages.map((item: any) => ({
+        ...item,
+        image: getMediaUrl(item.image)
+      }))
+    : fallbackHeroImages;
+
+  const currentGalleryItems = dashboardSettings?.galleryItems?.length > 0 
+    ? dashboardSettings.galleryItems.map((item: any) => ({
+        ...item,
+        image: getMediaUrl(item.image)
+      }))
+    : fallbackGalleryItems;
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FFF5F1] to-white dark:from-slate-950 dark:to-slate-900 transition-colors duration-500 relative font-sans overflow-x-hidden">
       
@@ -155,29 +191,29 @@ export default function StudentDashboard() {
           {/* Left Content */}
           <div className="flex-1 space-y-6 z-20 mt-4 lg:mt-0 lg:max-w-xl">
             <div className="inline-block bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-sm">
-              eLearning Platform
+              {heroBadge}
             </div>
             
             <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-extrabold text-slate-900 dark:text-white leading-[1.1] tracking-tight">
-              Smart Learning <br className="hidden sm:block" />
-              Deeper & More <br className="hidden sm:block" />
-              <span className="text-orange-500">-Amazing</span>
+              {heroTitleLine1} <br className="hidden sm:block" />
+              {heroTitleLine2} <br className="hidden sm:block" />
+              <span className="text-orange-500">{heroTitleHighlight}</span>
             </h1>
             
             <p className="text-slate-600 dark:text-slate-400 max-w-lg text-base sm:text-lg leading-relaxed">
-              Phosfluorescently deploy unique intellectual capital without enterprise- after bricks & clicks synergy. Enthusiastically revolutionize intuitive.
+              {heroDescription}
             </p>
             
             <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4">
-              <button className="bg-[#00CBB8] hover:bg-[#00B5A4] text-white px-8 py-3.5 rounded-full font-bold transition-all shadow-lg shadow-teal-500/30 active:scale-95 flex items-center gap-2">
-                Start Free Trial <ChevronRight size={16} />
+              <button className="bg-[#00CBB8] hover:bg-[#00B5A4] text-white px-8 py-3.5 rounded-full font-bold transition-all shadow-lg shadow-teal-500/30 active:scale-95 flex items-center gap-2 cursor-pointer">
+                {primaryBtnText} <ChevronRight size={16} />
               </button>
               
-              <button className="flex items-center gap-3 group text-slate-800 dark:text-white font-bold">
+              <button className="flex items-center gap-3 group text-slate-800 dark:text-white font-bold cursor-pointer">
                 <div className="bg-orange-500 text-white p-3 rounded-full shadow-md group-hover:scale-105 transition-transform">
                   <PlayCircle size={20} />
                 </div>
-                <span>How it Work</span>
+                <span>{secondaryBtnText}</span>
               </button>
             </div>
           </div>
@@ -190,7 +226,7 @@ export default function StudentDashboard() {
             
             <div className="relative z-10 w-full h-full flex justify-center lg:justify-end items-end">
               <HeroCarousel 
-                items={heroImages} 
+                items={currentHeroImages} 
                 baseWidth={600} 
                 autoplay={true}
                 autoplayDelay={5000}
@@ -303,13 +339,13 @@ export default function StudentDashboard() {
                             <>
                               <button 
                                 onClick={() => prevImage(ad._id, validImages.length)}
-                                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-sm z-10"
+                                className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-sm z-10 cursor-pointer"
                               >
                                 <ChevronLeft size={18} />
                               </button>
                               <button 
                                 onClick={() => nextImage(ad._id, validImages.length)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-sm z-10"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-sm z-10 cursor-pointer"
                               >
                                 <ChevronRight size={18} />
                               </button>
@@ -370,12 +406,13 @@ export default function StudentDashboard() {
           )}
         </div>
 
+        {/* Gallery Section */}
         <div className="w-full h-[450px] relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
           <div className="text-center mb-6">
             <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Our Gallery</h3>
           </div>
           <CircularGallery 
-            items={galleryItems} 
+            items={currentGalleryItems} 
             bend={1.5} 
             textColor="#ffffff" 
             borderRadius={0.05} 
