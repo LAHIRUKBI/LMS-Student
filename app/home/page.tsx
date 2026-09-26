@@ -127,11 +127,9 @@ export default function StudentDashboard() {
     fetchActiveAds(token);
     fetchDashboardSettings();
 
-    // Real-time එකට Dark Mode වෙනස්වීම Detect කිරීම සඳහා MutationObserver භාවිතය
     const checkDarkMode = () => {
       setIsDarkMode(document.documentElement.classList.contains("dark"));
     };
-
     checkDarkMode();
 
     const observer = new MutationObserver(checkDarkMode);
@@ -201,18 +199,18 @@ export default function StudentDashboard() {
 
   const heroBadge = dashboardSettings?.heroBadge || "eLearning Platform";
   
-  // Light / Dark Mode වලට අදාළ වර්ණ නිවැරදිව ලබා ගැනීම
+  // Light / Dark Mode වර්ණ නිවැරදිව ලබා ගැනීම
   const titleColor1 = isDarkMode 
     ? (dashboardSettings?.darkTitleColor1 || "#ffffff") 
-    : (dashboardSettings?.titleColor1 || "#0f172a");
+    : (dashboardSettings?.titleColor1 || dashboardSettings?.heroTitleColor1 || "#0f172a");
 
   const titleColor2 = isDarkMode 
     ? (dashboardSettings?.darkTitleColor2 || "#ffffff") 
-    : (dashboardSettings?.titleColor2 || "#0f172a");
+    : (dashboardSettings?.titleColor2 || dashboardSettings?.heroTitleColor2 || "#0f172a");
 
   const highlightColor = isDarkMode 
     ? (dashboardSettings?.darkHighlightColor || "#fb923c") 
-    : (dashboardSettings?.highlightColor || "#f97316");
+    : (dashboardSettings?.highlightColor || dashboardSettings?.heroHighlightColor || "#f97316");
 
   const heroTitleLine1 = dashboardSettings?.heroTitleLine1 || "Smart Learning";
   const heroTitleLine2 = dashboardSettings?.heroTitleLine2 || "Deeper & More";
