@@ -1,16 +1,19 @@
+// src/app/student/profile/page.tsx
+
 "use client";
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Navbar from "@/app/components/Navbar"; 
-import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users } from "lucide-react";
+import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
+  const [myResults, setMyResults] = useState<any[]>([]);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -68,6 +71,107 @@ export default function ProfilePage() {
     
     setLoading(false);
   }, [router]);
+
+  useEffect(() => {
+    // සිසුවාගේ ලකුණු සහ paper ලබා ගැනීම සඳහා
+    const fetchMyResults = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await axios.get("http://localhost:5000/api/quiz/student/my-results", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setMyResults(res.data);
+      } catch (err) {
+        console.error("Error fetching results:", err);
+      }
+    };
+    fetchMyResults();
+  }, []);
+
+  // සිසුවාට තම පිළිතුරු පත්‍රය PDF ලෙස ඩවුන්ලෝඩ් කරගැනීමේ ශ්‍රිතය
+  const handleDownloadStudentPaperPDF = (result: any) => {
+    const quiz = result.quizId;
+    if (!quiz) return;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      alert("Please allow popups to download the PDF.");
+      return;
+    }
+
+    const studentAnswers = result.answers instanceof Map ? Object.fromEntries(result.answers) : (result.answers || {});
+
+    let htmlContent = `
+      <html>
+        <head>
+          <title>${quiz.title} - My Submission & Results</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 30px; color: #1e293b; }
+            h1 { font-size: 22px; color: #0f172a; margin-bottom: 5px; }
+            p { font-size: 13px; color: #64748b; margin-bottom: 15px; }
+            .score-box { background: #e0e7ff; color: #3730a3; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 25px; font-size: 14px; }
+            .question-box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; }
+            .q-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+            .badge { background: #f1f5f9; color: #475569; padding: 3px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
+            ul { margin: 8px 0; padding-left: 20px; font-size: 13px; }
+            li { margin-bottom: 4px; }
+            .ans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+            .ans-item { padding: 8px; border-radius: 6px; font-size: 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
+            .correct { color: #065f46; font-weight: bold; }
+            .incorrect { color: #991b1b; font-weight: bold; }
+          </style>
+        </head>
+        <body>
+          <h1>${quiz.title}</h1>
+          <p>Student Name: <strong>${currentUser?.name}</strong> | Time Taken: ${result.timeTaken || 'N/A'}</p>
+          <div class="score-box">Total Score Awarded: ${result.score} / ${result.maxScore} Marks</div>
+    `;
+
+    quiz.questions.forEach((q: any, idx: number) => {
+      const qId = q._id.toString();
+      const studentAns = String(studentAnswers[qId] || "No Answer Given").trim();
+      const correctAns = String(q.correctAnswer || "").trim();
+      const isCorrect = studentAns.toLowerCase() === correctAns.toLowerCase();
+
+      htmlContent += `
+        <div class="question-box">
+          <div class="q-title">${idx + 1}. ${q.questionText} <span class="badge">${q.type.toUpperCase()} (${q.marks || 5} Marks)</span></div>
+      `;
+      if (q.type === 'mcq' && q.options && q.options.length > 0) {
+        htmlContent += `<ul>`;
+        q.options.forEach((opt: string, oIdx: number) => {
+          htmlContent += `<li><strong>(${oIdx + 1})</strong> ${opt}</li>`;
+        });
+        htmlContent += `</ul>`;
+      }
+      htmlContent += `
+          <div class="ans-grid">
+            <div class="ans-item">
+              <strong>Your Answer:</strong><br/>
+              <span class="${q.type !== 'essay' ? (isCorrect ? 'correct' : 'incorrect') : ''}">${studentAns} ${q.type !== 'essay' ? (isCorrect ? '(Correct ✅)' : '(Incorrect ❌)') : ''}</span>
+            </div>
+            ${q.type !== 'essay' ? `
+            <div class="ans-item" style="background: #d1fae5; border-color: #a7f3d0;">
+              <strong>Correct Answer Key:</strong><br/>
+              <span class="correct">${q.correctAnswer}</span>
+            </div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+
+    htmlContent += `
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(htmlContent);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+    }, 500);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -213,7 +317,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Country & TimeZone Summary */}
                 <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
                   <div className="bg-emerald-100 dark:bg-emerald-500/20 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400 transition-colors duration-500">
                     <Globe size={18} />
@@ -226,7 +329,6 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Medium of Education Summary */}
                 <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
                   <div className="bg-purple-100 dark:bg-purple-500/20 p-2.5 rounded-xl text-purple-600 dark:text-purple-400 transition-colors duration-500">
                     <BookOpen size={18} />
@@ -251,8 +353,8 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Right Column: Edit Form */}
-          <div className="lg:col-span-8">
+          {/* Right Column: Edit Form & Quiz Results */}
+          <div className="lg:col-span-8 space-y-8">
             <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 transition-colors duration-500">
               
               <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 transition-colors duration-500">Edit Information</h3>
@@ -318,7 +420,6 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* නව ක්ෂේත්‍ර 4: Country, TimeZone, Medium, Parent Details */}
                   <div className="space-y-2">
                     <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Country</label>
                     <div className="relative">
@@ -439,6 +540,32 @@ export default function ProfilePage() {
               </form>
 
             </div>
+
+            {/* My Quiz Results Section */}
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">My Quiz Results & Papers</h3>
+              {myResults.length === 0 ? (
+                <p className="text-xs text-slate-400 italic">No evaluated quiz results sent by your teacher yet.</p>
+              ) : (
+                <div className="space-y-3">
+                  {myResults.map((res) => (
+                    <div key={res._id} className="p-4 rounded-2xl border flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/50">
+                      <div>
+                        <h4 className="font-bold text-sm text-slate-800 dark:text-white">{res.quizId?.title}</h4>
+                        <p className="text-slate-400 mt-0.5">Score: <strong className="text-emerald-500">{res.score} / {res.maxScore} Marks</strong></p>
+                      </div>
+                      <button 
+                        onClick={() => handleDownloadStudentPaperPDF(res)}
+                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Download size={14} /> Download Paper & Key
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
           </div>
 
         </div>
