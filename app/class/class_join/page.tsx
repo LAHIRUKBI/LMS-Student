@@ -1,3 +1,5 @@
+// src/app/teacher/materials/my-quize/page.tsx (or ClassJoinPage.tsx)
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,18 +8,22 @@ import axios from "axios";
 import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award, AlertTriangle } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
-// Quiz Card එක වෙනම Component එකක් ලෙස සකසා ධාවනය කිරීම (Timer එක ක්‍රියාත්මක කිරීමට)
+// Quiz Card Item Component to handle start action and timer activation
 function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
-  // විනාඩි තත්පර වලට හැරවීම (duration එක විනාඩි වලින් ඇත)
+  // State to check whether the student has clicked 'Start Quiz Now'
+  const [isStarted, setIsStarted] = useState<boolean>(false);
+  // Time left in seconds, initialized to quiz duration converted to seconds
   const [timeLeft, setTimeLeft] = useState<number>(quiz.duration * 60);
 
   useEffect(() => {
+    // Timer will only run if isStarted is true
+    if (!isStarted) return;
+
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          alert("කාලය අවසන් වී ඇත! ඔබගේ පිළිතුරු ස්වයංක්‍රීයව ඉදිරිපත් (Submit) වේ.");
-          // නිවැරදි කළ රවුටින් මාර්ගය (/class/quiz/[id]) වෙත නැවිගේට් වීම
+          alert("Time is up! Your answers will be submitted automatically.");
           router.push(`/class/quiz/${quiz._id}`);
           return 0;
         }
@@ -26,15 +32,20 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [quiz._id, router]);
+  }, [isStarted, quiz._id, router]);
 
-  // කාලය විනාඩි සහ තත්පර ලෙස හැරවීම
+  // Convert remaining seconds to minutes and seconds format
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const formatTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-  // විනාඩි 5 ට අඩු දැයි පරීක්ෂා කිරීම (විනාඩි 5 = තත්පර 300)
+  // Check if time is near timeout (less than or equal to 5 minutes)
   const isNearTimeout = timeLeft <= 300 && timeLeft > 0;
+
+  // Handler when student clicks start quiz now
+  const handleStartQuiz = () => {
+    setIsStarted(true);
+  };
 
   return (
     <div className={`p-6 rounded-2xl border shadow-sm flex flex-col justify-between gap-4 transition-all ${
@@ -45,13 +56,19 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
           <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-full text-xs font-bold flex items-center gap-1">
             <Clock size={12} /> Duration: {quiz.duration} Mins
           </span>
-          <span className="text-xs font-bold text-slate-400">{quiz.questions?.length || 0} Questions</span>
+          <div className="flex items-center gap-2">
+            {/* Open Status Badge */}
+            <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] font-extrabold uppercase">
+              Open
+            </span>
+            <span className="text-xs font-bold text-slate-400">{quiz.questions?.length || 0} Questions</span>
+          </div>
         </div>
 
         <h3 className="font-bold text-base text-slate-800 dark:text-white mb-1">{quiz.title}</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{quiz.description || "Test your knowledge with this quiz."}</p>
 
-        {/* Live Countdown Timer Display */}
+        {/* Live Countdown Timer Display (Only runs after starting) */}
         <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${
           isNearTimeout 
             ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-300" 
@@ -61,17 +78,28 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
             {isNearTimeout && <AlertTriangle size={14} className="text-rose-500 animate-bounce" />}
             {isNearTimeout ? "⚠️ Time is running out!" : "⏳ Time Remaining:"}
           </span>
-          <span className="font-mono text-sm tracking-wider">{formatTime}</span>
+          <span className="font-mono text-sm tracking-wider">
+            {isStarted ? formatTime : `${quiz.duration}:00`}
+          </span>
         </div>
       </div>
 
-      {/* නිවැරදි කළ රවුටින් මාර්ගය (/class/quiz/[id]) වෙත නැවිගේට් වීම */}
-      <button 
-        onClick={() => router.push(`/class/quiz/${quiz._id}`)}
-        className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
-      >
-        <CheckCircle size={16} /> Start Quiz Now
-      </button>
+      {/* Button to start timer or navigate if already started */}
+      {!isStarted ? (
+        <button 
+          onClick={handleStartQuiz}
+          className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
+        >
+          <CheckCircle size={16} /> Start Quiz Now
+        </button>
+      ) : (
+        <button 
+          onClick={() => router.push(`/class/quiz/${quiz._id}`)}
+          className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
+        >
+          <PlayCircle size={16} /> Proceed to Quiz Questions
+        </button>
+      )}
     </div>
   );
 }
@@ -103,7 +131,7 @@ export default function ClassJoinPage() {
     if (classId) {
       fetchClassRoomData(token, classId);
     } else {
-      setError("පන්ති විස්තර සොයාගත නොහැක.");
+      setError("Class details could not be found.");
       setLoading(false);
     }
   }, [classId, router]);
@@ -116,7 +144,7 @@ export default function ClassJoinPage() {
       const foundClass = classRes.data.find((c: any) => c._id === id);
       
       if (!foundClass) {
-        setError("අදාළ පන්තිය පද්ධතිය තුළ හමු නොවීය.");
+        setError("The requested class was not found in the system.");
         setLoading(false);
         return;
       }
@@ -142,7 +170,7 @@ export default function ClassJoinPage() {
 
     } catch (err) {
       console.error(err);
-      setError("පන්ති තොරතුරු ලබාගැනීමේදී දෝෂයක් මතු විය.");
+      setError("An error occurred while fetching class information.");
     } finally {
       setLoading(false);
     }
@@ -179,7 +207,7 @@ export default function ClassJoinPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
-            <p className="text-slate-500 dark:text-slate-400 font-medium">Loading class room...</p>
+            <p className="text-slate-500 dark:text-slate-400 font-medium">Loading classroom...</p>
           </div>
         ) : error || !classDetails ? (
           <div className="bg-white dark:bg-slate-900 border rounded-3xl p-12 text-center shadow-sm">
@@ -202,7 +230,7 @@ export default function ClassJoinPage() {
 
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="px-3 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-extrabold">{classDetails.grade}</span>
+                    <span className="px-3 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-extrabold">Grade {classDetails.grade}</span>
                     <span className="px-3 py-0.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-extrabold">{classDetails.medium}</span>
                     <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-lg text-xs font-extrabold">{classDetails.mode}</span>
                   </div>
@@ -312,7 +340,7 @@ export default function ClassJoinPage() {
                             <div className="min-w-0">
                               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-600 mb-1 inline-block">{pdf.type}</span>
                               <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate">{pdf.title}</h3>
-                              <p className="text-xs text-slate-400 truncate">{pdf.subject} • {pdf.grade}</p>
+                              <p className="text-xs text-slate-400 truncate">{pdf.subject} • Grade {pdf.grade}</p>
                             </div>
                           </div>
 
