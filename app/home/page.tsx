@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { auth } from "@/lib/firebase";
-import { PlayCircle, FileText, BookOpen, Download, User, Eye, Search, Loader2, CheckCircle, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, Clock, Users, GraduationCap, Video, Award, Layers, Layout, Code, Globe, MessageCircle, Send, Share2, X, Mail, Copy } from "lucide-react";
+import { PlayCircle, FileText, BookOpen, Download, User, Eye, Search, Loader2, CheckCircle, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, Clock, Users, GraduationCap, Video, Award, Layers, Layout, Code, Globe, MessageCircle, Send, Share2, X, Mail, Copy, Star } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import CircularGallery from "@/app/components/CircularGallery";
 import HeroCarousel from "@/app/components/HeroCarousel";
@@ -27,7 +27,6 @@ interface AdData {
   createdAt: string;
 }
 
-// Fallback items
 const fallbackGalleryItems = [
   { image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop", text: "Student 1" },
   { image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop", text: "Student 2" },
@@ -69,7 +68,6 @@ const featureItems = [
   }
 ];
 
-// සමාජ මාධ්‍ය සඳහා නිවැරදි SVG අයිකන ලබාදෙන Helper Function එක
 const getSocialIcon = (platform: string) => {
   const p = platform.toLowerCase();
   
@@ -113,6 +111,7 @@ export default function StudentDashboard() {
   
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -127,6 +126,18 @@ export default function StudentDashboard() {
     setUser(parsedUser);
     fetchActiveAds(token);
     fetchDashboardSettings();
+
+    // Real-time එකට Dark Mode වෙනස්වීම Detect කිරීම සඳහා MutationObserver භාවිතය
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains("dark"));
+    };
+
+    checkDarkMode();
+
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    return () => observer.disconnect();
   }, [router]);
 
   const fetchActiveAds = async (token: string) => {
@@ -189,12 +200,29 @@ export default function StudentDashboard() {
   if (!user) return null;
 
   const heroBadge = dashboardSettings?.heroBadge || "eLearning Platform";
+  
+  // Light / Dark Mode වලට අදාළ වර්ණ නිවැරදිව ලබා ගැනීම
+  const titleColor1 = isDarkMode 
+    ? (dashboardSettings?.darkTitleColor1 || "#ffffff") 
+    : (dashboardSettings?.titleColor1 || "#0f172a");
+
+  const titleColor2 = isDarkMode 
+    ? (dashboardSettings?.darkTitleColor2 || "#ffffff") 
+    : (dashboardSettings?.titleColor2 || "#0f172a");
+
+  const highlightColor = isDarkMode 
+    ? (dashboardSettings?.darkHighlightColor || "#fb923c") 
+    : (dashboardSettings?.highlightColor || "#f97316");
+
   const heroTitleLine1 = dashboardSettings?.heroTitleLine1 || "Smart Learning";
   const heroTitleLine2 = dashboardSettings?.heroTitleLine2 || "Deeper & More";
   const heroTitleHighlight = dashboardSettings?.heroTitleHighlight || "-Amazing";
   const heroDescription = dashboardSettings?.heroDescription || "Phosfluorescently deploy unique intellectual capital without enterprise- after bricks & clicks synergy. Enthusiastically revolutionize intuitive.";
   const primaryBtnText = dashboardSettings?.primaryBtnText || "Start Free Trial";
   const socialLinks = dashboardSettings?.socialLinks || [];
+  const testimonials = dashboardSettings?.testimonials || [];
+  const badgeText = dashboardSettings?.badgeText || "+3000 students worldwide";
+  const badgeAvatars = dashboardSettings?.badgeAvatars || [];
 
   const currentHeroImages = dashboardSettings?.heroImages?.length > 0 
     ? dashboardSettings.heroImages.map((item: any) => ({
@@ -230,14 +258,39 @@ export default function StudentDashboard() {
           
           {/* Left Content */}
           <div className="flex-1 space-y-6 z-20 mt-4 lg:mt-0 lg:max-w-xl">
-            <div className="inline-block bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-sm">
-              {heroBadge}
+            {/* Badge & Avatars Row */}
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="inline-block bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-sm">
+                {heroBadge}
+              </div>
+
+              {badgeAvatars.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2 overflow-hidden">
+                    {badgeAvatars.map((av: any, i: number) => (
+                      av.image && (
+                        <img 
+                          key={i} 
+                          src={getMediaUrl(av.image)} 
+                          alt="Student" 
+                          className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover" 
+                        />
+                      )
+                    ))}
+                  </div>
+                  {badgeText && (
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                      {badgeText}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-extrabold text-slate-900 dark:text-white leading-[1.1] tracking-tight">
-              {heroTitleLine1} <br className="hidden sm:block" />
-              {heroTitleLine2} <br className="hidden sm:block" />
-              <span className="text-orange-500">{heroTitleHighlight}</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-extrabold leading-[1.1] tracking-tight">
+              <span style={{ color: titleColor1 }}>{heroTitleLine1}</span> <br className="hidden sm:block" />
+              <span style={{ color: titleColor2 }}>{heroTitleLine2}</span> <br className="hidden sm:block" />
+              <span style={{ color: highlightColor }}>{heroTitleHighlight}</span>
             </h1>
             
             <p className="text-slate-600 dark:text-slate-400 max-w-lg text-base sm:text-lg leading-relaxed">
@@ -254,20 +307,18 @@ export default function StudentDashboard() {
               
               {/* Share Button Wrapper */}
               <div className="relative inline-block">
-                {/* Share Button (z-40 මඟින් බ්ලර් එකට උඩින් සහ ඉතා පැහැදිලිව පෙනෙන සේ සකසා ඇත) */}
                 <button
                   onClick={() => setIsShareOpen(!isShareOpen)}
                   title="Share Website"
-                  className="bg-orange-500 hover:bg-orange-600 text-white p-3.5 rounded-full transition-all shadow-xl hover:scale-110 flex items-center justify-center cursor-pointer active:scale-95 z-40 relative"
+                  className="bg-orange-500 hover:bg-orange-600 text-white p-3.5 rounded-full transition-all shadow-xl hover:scale-110 flex items-center justify-center cursor-pointer active:scale-95 z-50 relative"
                 >
                   {isShareOpen ? <X size={20} /> : <Share2 size={20} />}
                 </button>
 
                 {/* Animated Circular Social Share Popup Menu with Backdrop Blur */}
                 {isShareOpen && (
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 pointer-events-auto z-30 animate-in fade-in zoom-in duration-300 flex items-center justify-center">
-                    {/* පසුබිම Blur කර පෙන්වන ආවරණය (Backdrop Blur Layer) */}
-                    <div className="absolute inset-0 bg-white/70 dark:bg-slate-950/80 backdrop-blur-md rounded-full shadow-2xl border border-white/20 dark:border-slate-800 -z-10"></div>
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 pointer-events-auto z-40 animate-in fade-in zoom-in duration-300 flex items-center justify-center">
+                    <div className="absolute inset-0 bg-white/80 dark:bg-slate-950/90 backdrop-blur-md rounded-full shadow-2xl border border-white/30 dark:border-slate-800 -z-10"></div>
 
                     <div className="relative w-full h-full">
                       {/* WhatsApp (ඉහළින්) */}
@@ -534,6 +585,53 @@ export default function StudentDashboard() {
             </div>
           )}
         </div>
+
+        {/* ================= WHAT OUR CLIENTS SAY (TESTIMONIALS) SECTION START ================= */}
+        {testimonials.length > 0 && (
+          <section className="py-16 mb-20">
+            <div className="text-center max-w-3xl mx-auto mb-16">
+              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                What our <span className="text-blue-500">clients</span> say
+              </h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {testimonials.map((test: any, idx: number) => (
+                <div key={idx} className="bg-white dark:bg-[#111827] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col justify-between hover:-translate-y-1 transition-all duration-300">
+                  <div>
+                    {/* Stars Rating */}
+                    <div className="flex items-center gap-1 mb-6 text-yellow-400">
+                      {[...Array(Number(test.rating) || 5)].map((_, i) => (
+                        <Star key={i} size={18} fill="currentColor" />
+                      ))}
+                    </div>
+
+                    {/* Idea / Feedback */}
+                    <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-8">
+                      "{test.idea}"
+                    </p>
+                  </div>
+
+                  {/* Client Info */}
+                  <div className="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700">
+                      {test.image ? (
+                        <img src={getMediaUrl(test.image)} alt={test.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <User className="w-full h-full p-2 text-slate-400" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 dark:text-white text-base">{test.name}</h4>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{test.title}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {/* ================= WHAT OUR CLIENTS SAY (TESTIMONIALS) SECTION END ================= */}
 
         {/* Gallery Section */}
         <div className="w-full h-[450px] relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
