@@ -1,3 +1,5 @@
+// src/app/class/quiz/[id]/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -21,7 +23,6 @@ export default function TakeQuizPage() {
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [resultData, setResultData] = useState<any>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -58,7 +59,6 @@ export default function TakeQuizPage() {
 
   const checkAndFetchQuiz = async (token: string, id: string) => {
     try {
-      // 1. සිසුවා දැනටමත් කර ඇද්දැයි පරීක්ෂා කිරීම
       const checkRes = await axios.get(`http://localhost:5000/api/quiz/${id}/check-submission`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -69,7 +69,6 @@ export default function TakeQuizPage() {
         return;
       }
 
-      // 2. Quiz විස්තර ලබා ගැනීම
       const res = await axios.get(`http://localhost:5000/api/quiz/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -77,7 +76,7 @@ export default function TakeQuizPage() {
       setTimeLeft(res.data.duration * 60);
       setStartTime(Date.now());
     } catch (err: any) {
-      setError(err.response?.data?.message || "ප්‍රශ්න පත්‍රය ලබාගැනීමේදී දෝෂයක් මතු විය.");
+      setError(err.response?.data?.message || "Failed to fetch quiz data.");
     } finally {
       setLoading(false);
     }
@@ -99,26 +98,28 @@ export default function TakeQuizPage() {
     let timeTakenStr = "";
     if (remainingSec > 0) {
       const remMins = Math.floor(remainingSec / 60);
-      timeTakenStr = `විනාඩි ${remMins}කට කලින් නිම කළා`;
+      timeTakenStr = `Completed ${remMins} minutes early`;
     } else {
-      timeTakenStr = "නියමිත වේලාවට නිම කළා";
+      timeTakenStr = "Completed on time";
     }
 
     try {
-      const res = await axios.post(`http://localhost:5000/api/quiz/${quizId}/submit`, {
+      await axios.post(`http://localhost:5000/api/quiz/${quizId}/submit`, {
         answers,
         timeTaken: timeTakenStr
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      setResultData(res.data);
       if (isAutoSubmit) {
-        alert("කාලය අවසන්! ඔබගේ පිළිතුරු ස්වයංක්‍රීයව ඉදිරිපත් කරන ලදී.");
+        alert("Time is up! Your answers have been submitted automatically.");
+      } else {
+        alert("Quiz submitted successfully! Your paper has been sent to the teacher for evaluation.");
       }
-    } catch (err: any) {
-      alert(err.response?.data?.message || "ප්‍රශ්න පත්‍රය ඉදිරිපත් කිරීම අසාර්ථක විය.");
       router.back();
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Failed to submit quiz.");
+      setIsSubmitted(false);
     }
   };
 
@@ -144,7 +145,7 @@ export default function TakeQuizPage() {
           <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl border text-center space-y-4 shadow-sm">
             <AlertCircle size={56} className="text-amber-500 mx-auto" />
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Already Submitted!</h2>
-            <p className="text-sm text-slate-500">ඔබ දැනටමත් මෙම Quiz එක සම්පූර්ණ කර ඇත. එය කළ හැක්කේ එක් වරක් පමණි.</p>
+            <p className="text-sm text-slate-500">You have already completed this quiz. It can only be taken once.</p>
             <button onClick={() => router.back()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-md">
               Return to Class Room
             </button>
@@ -170,78 +171,62 @@ export default function TakeQuizPage() {
               )}
             </div>
 
-            {isSubmitted && resultData ? (
-              <div className="bg-white dark:bg-slate-900 p-10 rounded-3xl border border-slate-200 dark:border-slate-800 text-center space-y-4 shadow-sm">
-                <CheckCircle2 size={56} className="text-emerald-500 mx-auto" />
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Quiz Submitted Successfully!</h2>
-                <p className="text-lg font-semibold text-slate-700 dark:text-slate-300">
-                  Auto-Checked MCQ Score: <span className="text-blue-600 font-extrabold">{resultData.score} / {resultData.maxScore} Marks</span>
-                </p>
-                <p className="text-xs text-slate-400">Essay questions will be evaluated by your teacher.</p>
-                <button onClick={() => router.back()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-md">
-                  Return to Class Room
+            <div className="space-y-6">
+              {quiz.questions.map((q: any, idx: number) => (
+                <div key={q._id || idx} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-bold text-sm sm:text-base text-slate-800 dark:text-white">
+                      {idx + 1}. {q.questionText}
+                    </h3>
+                    <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600">{q.marks || 5} Marks ({q.type.toUpperCase()})</span>
+                  </div>
+
+                  {q.imageUrl && (
+                    <img src={`http://localhost:5000${q.imageUrl}`} alt="Question visual" className="max-h-48 rounded-xl border object-contain" />
+                  )}
+
+                  {q.type === 'mcq' && (
+                    <div className="space-y-2 pt-2">
+                      {q.options.map((opt: string, optIdx: number) => {
+                        const isSelected = answers[q._id] === opt;
+                        return (
+                          <div 
+                            key={optIdx}
+                            onClick={() => handleAnswerChange(q._id, opt)}
+                            className={`p-3.5 rounded-2xl border cursor-pointer text-xs sm:text-sm font-medium transition-all flex items-center gap-3 ${
+                              isSelected ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border ${isSelected ? "bg-white text-blue-600 border-white" : "border-slate-400"}`}>
+                              {optIdx + 1}
+                            </span>
+                            {opt}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {(q.type === 'essay' || q.type === 'short') && (
+                    <div className="pt-2">
+                      <textarea
+                        rows={q.type === 'essay' ? 5 : 2}
+                        value={answers[q._id] || ""}
+                        onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                        placeholder="Type your answer here..."
+                        className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+
+              <div className="flex justify-end pt-4">
+                <button onClick={() => handleSubmitQuiz(false)} className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm shadow-md transition-all">
+                  Submit Quiz
                 </button>
               </div>
-            ) : (
-              <div className="space-y-6">
-                {quiz.questions.map((q: any, idx: number) => (
-                  <div key={q._id || idx} className="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-4">
-                    <div className="flex justify-between items-start">
-                      <h3 className="font-bold text-sm sm:text-base text-slate-800 dark:text-white">
-                        {idx + 1}. {q.questionText}
-                      </h3>
-                      <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-blue-50 text-blue-600">{q.marks || 5} Marks ({q.type.toUpperCase()})</span>
-                    </div>
-
-                    {q.imageUrl && (
-                      <img src={`http://localhost:5000${q.imageUrl}`} alt="Question visual" className="max-h-48 rounded-xl border object-contain" />
-                    )}
-
-                    {/* MCQ Options */}
-                    {q.type === 'mcq' && (
-                      <div className="space-y-2 pt-2">
-                        {q.options.map((opt: string, optIdx: number) => {
-                          const isSelected = answers[q._id] === opt;
-                          return (
-                            <div 
-                              key={optIdx}
-                              onClick={() => handleAnswerChange(q._id, opt)}
-                              className={`p-3.5 rounded-2xl border cursor-pointer text-xs sm:text-sm font-medium transition-all flex items-center gap-3 ${
-                                isSelected ? "bg-blue-600 text-white border-blue-600 shadow-sm" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 text-slate-700 dark:text-slate-300"
-                              }`}
-                            >
-                              <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border ${isSelected ? "bg-white text-blue-600 border-white" : "border-slate-400"}`}>
-                                {optIdx + 1}
-                              </span>
-                              {opt}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* Essay or Short Answer Textarea */}
-                    {(q.type === 'essay' || q.type === 'short') && (
-                      <div className="pt-2">
-                        <textarea
-                          rows={q.type === 'essay' ? 5 : 2}
-                          value={answers[q._id] || ""}
-                          onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                          placeholder="Type your answer here..."
-                          className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                <div className="flex justify-end pt-4">
-                  <button onClick={() => handleSubmitQuiz(false)} className="px-8 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm shadow-md transition-all">
-                    Submit Quiz
-                  </button>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         )}
       </main>
