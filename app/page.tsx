@@ -19,9 +19,9 @@ export default function Home() {
       setIsLit(true);
     }, 2600);
 
-    // /login පිටුවට යාම (සම්පූර්ණ animation එක නැරඹීමට කාලය)
+    // /home පිටුවට යාම (සම්පූර්ණ animation එක නැරඹීමට කාලය)
     const redirectTimer = setTimeout(() => {
-      router.push("/login");
+      router.push("/home");
     }, 8500);
 
     return () => {
@@ -274,7 +274,7 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <div className="absolute bottom-6 text-xs text-gray-600 tracking-wider z-10">
+      <div className="absolute bottom-6 text-xs text-gray-600 tracking-wider z-15">
         powered by LI Solution @2026
       </div>
     </div>
