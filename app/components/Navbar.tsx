@@ -1,9 +1,12 @@
+// src/app/components/Navbar.tsx (Updated)
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu } from "lucide-react";
+import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import axios from "axios";
 
 interface NavbarProps {
   user: any;
@@ -16,6 +19,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const [isMounted, setIsMounted] = useState(false);
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); 
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
   
   const pathname = usePathname(); 
 
@@ -30,8 +35,51 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       document.documentElement.classList.add('dark');
     }
 
-    setIsMounted(true); 
+    setIsMounted(true);
+    fetchNotifications();
   }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get("http://localhost:5000/api/notifications/student", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(res.data);
+    } catch (err) {
+      console.error("Error fetching student notifications:", err);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      await axios.put("http://localhost:5000/api/notifications/student/mark-read", {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(notifications.map(n => ({ ...n, isRead: true })));
+    } catch (err) {
+      console.error("Error marking notifications as read:", err);
+    }
+  };
+
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      await axios.delete(`http://localhost:5000/api/notifications/student/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setNotifications(notifications.filter(n => n._id !== id));
+    } catch (err) {
+      console.error("Error deleting notification:", err);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const profileImgUrl = user?.profileImage 
     ? (user.profileImage.startsWith("http") 
@@ -56,7 +104,6 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     setIsExpanded(newExpandState);
     localStorage.setItem("navbarExpanded", String(newExpandState));
     
-    // දිග හරින විට dropdown එක විවෘතව තිබේ නම් එය වසා දැමීම
     if (!newExpandState) {
       setIsDropdownOpen(false);
     }
@@ -82,7 +129,6 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           }
         `}
       >
-        {/* The section containing the logo and menu icon is set to 'relative' (to position the dropdown). */}
         <div className="relative flex items-center">
           <Link 
             href="/home" 
@@ -90,22 +136,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             onClick={(e) => {
               if (isExpanded) {
                 e.preventDefault();
-                setIsDropdownOpen(!isDropdownOpen); // Opens/closes the dropdown.
+                setIsDropdownOpen(!isDropdownOpen);
               }
             }}
           >
             <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg text-white shadow-sm transition-transform hover:scale-105 shrink-0">
-              {isExpanded ? (
-                <>
-                  <Menu size={18} className="sm:hidden block" />
-                  <Menu size={20} className="hidden sm:block" />
-                </>
-              ) : (
-                <>
-                  <BookOpen size={18} className="sm:hidden block" />
-                  <BookOpen size={20} className="hidden sm:block" />
-                </>
-              )}
+              {isExpanded ? <Menu size={20} /> : <BookOpen size={20} />}
             </div>
             <span 
               className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
@@ -116,7 +152,6 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </span>
           </Link>
 
-          {/* Visible only when retracted. */}
           {isExpanded && isDropdownOpen && (
             <div className="absolute top-full left-0 mt-4 w-48 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
               <Link 
@@ -145,7 +180,6 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           )}
         </div>
 
-        {/* Navigation Tabs (Dashboard & Teachers) - For display when unfolded */}
         <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[300px] opacity-100'}`}>
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mr-2"></div>
           
@@ -173,7 +207,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         </div>
       </div>
 
-      {/* Right Part: Actions (Dark mode, Profile, Logout, Split Button) */}
+      {/* Right Part: Actions & Notifications */}
       <div 
         className={`flex items-center gap-1.5 sm:gap-3 h-full transition-all duration-700 pointer-events-auto
           ${isExpanded 
@@ -182,12 +216,72 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           }
         `}
       >
+        {/* Notification Bell Icon & Dropdown */}
+        <div className="relative">
+          <button 
+            onClick={() => {
+              setIsNotificationOpen(!isNotificationOpen);
+              if (!isNotificationOpen) fetchNotifications();
+            }}
+            className="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors relative shrink-0"
+          >
+            <Bell size={18} />
+            {unreadCount > 0 && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+            )}
+          </button>
+
+          {isNotificationOpen && (
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 z-50">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+                <h3 className="font-bold text-slate-900 dark:text-white text-sm">Notifications</h3>
+                <div className="flex items-center gap-2">
+                  <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                    <CheckCheck size={14} /> Mark all read
+                  </button>
+                </div>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto mt-2 space-y-2">
+                {notifications.length === 0 ? (
+                  <p className="text-center text-xs text-slate-400 py-6">No notifications found.</p>
+                ) : (
+                  notifications.map((notif) => (
+                    <div 
+                      key={notif._id} 
+                      className={`p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${
+                        notif.isRead 
+                          ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800' 
+                          : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'
+                      }`}
+                    >
+                      <div>
+                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{notif.title}</h4>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{notif.message}</p>
+                        <span className="text-[10px] text-slate-400 mt-1 block">
+                          {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <button 
+                        onClick={(e) => deleteNotification(notif._id, e)} 
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                        title="Delete notification"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
         <button 
           onClick={toggleDarkMode}
           className="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors shrink-0"
         >
-          <span className="block sm:hidden">{isDarkMode ? <Sun size={16} /> : <Moon size={16} />}</span>
-          <span className="hidden sm:block">{isDarkMode ? <Sun size={18} /> : <Moon size={18} />}</span>
+          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         <Link 
@@ -224,8 +318,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           onClick={toggleExpand}
           className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
         >
-          <span className="block sm:hidden">{isExpanded ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}</span>
-          <span className="hidden sm:block">{isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}</span>
+          {isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
       </div>
     </nav>
