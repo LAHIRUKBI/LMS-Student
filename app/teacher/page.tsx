@@ -43,23 +43,23 @@ export default function StudentTeacherView() {
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
+    // රෙජිස්ටර් වීමට පෙර (Login වීමකින් තොරව) දත්ත බලාගත හැකි වන පරිදි ටෝකන් පරීක්ෂා කිරීම ඉවත් කර ඇත
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
-    if (!token || !userData) {
-      router.push("/login");
-      return;
+    if (userData) {
+      setUser(JSON.parse(userData));
+    } else {
+      setUser({ name: "Guest Student" }); // ලොග් වී නැති නම් Guest ලෙස පෙන්වීමට
     }
-
-    setUser(JSON.parse(userData));
-    fetchTeachers(token);
+    
+    fetchPublicTeachers();
   }, [router]);
 
-  const fetchTeachers = async (token: string) => {
+  const fetchPublicTeachers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/teachers", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // රෙජිස්ටර් වීමට පෙර දැකගත හැකි වන පරිදි auth token එකක් අවශ්‍ය නොවන public endpoint එකකට දත්ත ලබා ගැනීම
+      const res = await axios.get("http://localhost:5000/api/admin/teachers");
       setTeachers(res.data);
     } catch (err) {
       console.error("Error fetching teachers:", err);

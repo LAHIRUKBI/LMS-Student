@@ -1,9 +1,7 @@
-// src/app/components/Navbar.tsx (Updated)
-
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck } from "lucide-react";
+import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck, FileText } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
@@ -17,26 +15,37 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
-  
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false); 
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
-  
-  const pathname = usePathname(); 
+
+  // State for student notices count
+  const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
+
+  const pathname = usePathname();
 
   useEffect(() => {
     const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
     const savedDarkMode = localStorage.getItem("darkMode") === "true";
-    
+
     setIsExpanded(savedExpandState);
     setIsDarkMode(savedDarkMode);
-    
+
     if (savedDarkMode) {
       document.documentElement.classList.add('dark');
     }
 
     setIsMounted(true);
     fetchNotifications();
+    fetchStudentNoticesCount();
+
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchStudentNoticesCount();
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchNotifications = async () => {
@@ -49,6 +58,21 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       setNotifications(res.data);
     } catch (err) {
       console.error("Error fetching student notifications:", err);
+    }
+  };
+
+  // Fetch student notices count to check if any new notice has arrived
+  const fetchStudentNoticesCount = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await axios.get("http://localhost:5000/api/student/notices", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const unread = res.data.filter((n: any) => !n.isRead).length;
+      setUnreadNoticeCount(unread);
+    } catch (err) {
+      // Prevent console error if endpoint differs
     }
   };
 
@@ -81,10 +105,10 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const profileImgUrl = user?.profileImage 
-    ? (user.profileImage.startsWith("http") 
-        ? user.profileImage 
-        : `http://localhost:5000${user.profileImage}`)
+  const profileImgUrl = user?.profileImage
+    ? (user.profileImage.startsWith("http")
+      ? user.profileImage
+      : `http://localhost:5000${user.profileImage}`)
     : null;
 
   const toggleDarkMode = () => {
@@ -103,35 +127,35 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     const newExpandState = !isExpanded;
     setIsExpanded(newExpandState);
     localStorage.setItem("navbarExpanded", String(newExpandState));
-    
+
     if (!newExpandState) {
       setIsDropdownOpen(false);
     }
   };
 
-  if (!isMounted) return null; 
+  if (!isMounted) return null;
 
   return (
-    <nav 
+    <nav
       className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between transition-all duration-700 ease-in-out h-14 sm:h-16
-        ${isExpanded 
-          ? 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-full pointer-events-none' 
+        ${isExpanded
+          ? 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-full pointer-events-none'
           : 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2 sm:px-4 pointer-events-auto'
         }
       `}
     >
       {/* Left Part: Logo Area & Navigation Tabs */}
-      <div 
+      <div
         className={`flex items-center h-full transition-all duration-700 pointer-events-auto relative
-          ${isExpanded 
-            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5' 
+          ${isExpanded
+            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5'
             : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
           }
         `}
       >
         <div className="relative flex items-center">
-          <Link 
-            href="/home" 
+          <Link
+            href="/home"
             className="flex items-center"
             onClick={(e) => {
               if (isExpanded) {
@@ -143,7 +167,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg text-white shadow-sm transition-transform hover:scale-105 shrink-0">
               {isExpanded ? <Menu size={20} /> : <BookOpen size={20} />}
             </div>
-            <span 
+            <span
               className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
                 ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-1.5 sm:ml-2 text-[15px] sm:text-xl'}
               `}
@@ -154,71 +178,96 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
           {isExpanded && isDropdownOpen && (
             <div className="absolute top-full left-0 mt-4 w-48 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
-              <Link 
-                href="/teacher" 
+              {/* Teachers Tab (Visible to everyone) */}
+              <Link
+                href="/teacher"
                 onClick={() => setIsDropdownOpen(false)}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${
-                  pathname === '/teacher' 
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/teacher' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
               >
                 <Users size={16} /> Teachers
               </Link>
-              <Link 
-                href="/class/class_view" 
+              {/* Class Tab (Visible to everyone) */}
+              <Link
+                href="/class/class_view"
                 onClick={() => setIsDropdownOpen(false)}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${
-                  pathname === '/class/class_view' 
-                    ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/class_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
               >
                 <Users size={16} /> Class
               </Link>
+              {/* Notices Tab (Visible only if the student is logged in and user has a valid ID or name) */}
+              {user && user.name !== "Guest Student" && (
+                <Link
+                  href="/notice_view"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 relative ${pathname === '/notice_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                >
+                  <FileText size={16} /> Notices
+                  {unreadNoticeCount > 0 && (
+                    <span className="ml-1 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      {unreadNoticeCount}
+                    </span>
+                  )}
+                </Link>
+              )}
             </div>
           )}
         </div>
 
-        <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[300px] opacity-100'}`}>
+        <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[400px] opacity-100'}`}>
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mr-2"></div>
-          
-          <Link 
-            href="/teacher" 
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${
-              pathname === '/teacher' 
-                ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+
+          {/* Teachers Tab (Visible to everyone) */}
+          <Link
+            href="/teacher"
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/teacher' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
           >
             <Users size={16} /> Teachers
           </Link>
 
-          <Link 
-            href="/class/class_view" 
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${
-              pathname === '/class/class_view' 
-                ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' 
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+          {/* Class Tab (Visible to everyone) */}
+          <Link
+            href="/class/class_view"
+            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/class_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
           >
             <Users size={16} /> Class
           </Link>
+
+          {/* Notices Tab (Visible only if the student is logged in and user has a valid ID or name) */}
+          {user && user.name !== "Guest Student" && (
+            <Link
+              href="/notice_view"
+              onClick={() => setIsDropdownOpen(false)}
+              className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center justify-between mx-2 rounded-xl ${pathname === '/notice_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+            >
+              <span className="flex items-center gap-2.5"><FileText size={16} /> Notices</span>
+              {unreadNoticeCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                  {unreadNoticeCount}
+                </span>
+              )}
+            </Link>
+          )}
         </div>
       </div>
 
-      {/* Right Part: Actions & Notifications */}
-      <div 
+      {/* Right Part: Actions & Notification Bell */}
+      <div
         className={`flex items-center gap-1.5 sm:gap-3 h-full transition-all duration-700 pointer-events-auto
-          ${isExpanded 
-            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5' 
+          ${isExpanded
+            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5'
             : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
           }
         `}
       >
         {/* Notification Bell Icon & Dropdown */}
         <div className="relative">
-          <button 
+          <button
             onClick={() => {
               setIsNotificationOpen(!isNotificationOpen);
               if (!isNotificationOpen) fetchNotifications();
@@ -247,13 +296,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   <p className="text-center text-xs text-slate-400 py-6">No notifications found.</p>
                 ) : (
                   notifications.map((notif) => (
-                    <div 
-                      key={notif._id} 
-                      className={`p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${
-                        notif.isRead 
-                          ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800' 
+                    <div
+                      key={notif._id}
+                      className={`p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${notif.isRead
+                          ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
                           : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'
-                      }`}
+                        }`}
                     >
                       <div>
                         <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{notif.title}</h4>
@@ -262,8 +310,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                           {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
-                      <button 
-                        onClick={(e) => deleteNotification(notif._id, e)} 
+                      <button
+                        onClick={(e) => deleteNotification(notif._id, e)}
                         className="text-slate-400 hover:text-red-500 transition-colors p-1"
                         title="Delete notification"
                       >
@@ -277,15 +325,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           )}
         </div>
 
-        <button 
+        <button
           onClick={toggleDarkMode}
           className="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors shrink-0"
         >
           {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
-        <Link 
-          href="/profile" 
+        <Link
+          href="/profile"
           className={`flex items-center text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-all duration-500 cursor-pointer 
             ${isExpanded ? 'p-1 sm:p-1.5' : 'px-2 py-1 sm:px-3 sm:py-1.5'}
           `}
@@ -300,21 +348,18 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </span>
         </Link>
 
-        <button 
+        <button
           onClick={onLogout}
           className={`flex items-center text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-all duration-500 shrink-0
             ${isExpanded ? 'p-1.5 sm:p-2' : 'p-1.5 sm:px-3 sm:py-2'}
           `}
         >
-          <LogOut size={16} className="shrink-0" /> 
+          <LogOut size={16} className="shrink-0" />
           <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'hidden sm:block max-w-[80px] opacity-100 ml-2'}`}>
             Logout
           </span>
         </button>
-
-        <div className={`w-px bg-slate-200 dark:bg-slate-700 hidden sm:block transition-all duration-500 ${isExpanded ? 'h-5 mx-0' : 'h-8 mx-1'}`}></div>
-        
-        <button 
+        <button
           onClick={toggleExpand}
           className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
         >
