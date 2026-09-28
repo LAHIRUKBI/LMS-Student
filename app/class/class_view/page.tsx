@@ -25,16 +25,16 @@ export default function StudentClassViewPage() {
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
-    if (!token || !userData) {
-      router.push("/login");
-      return;
+    if (token && userData) {
+      setUser(JSON.parse(userData));
+      fetchData(token);
+    } else {
+      setUser({ name: "Guest Student" });
+      fetchPublicClasses();
     }
-
-    setUser(JSON.parse(userData));
-    fetchData(token);
   }, [router]);
 
-  // Fetch all available classes and student requests
+  // Fetch all available classes and student requests (ලොග් වී ඇති විට)
   const fetchData = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
@@ -62,21 +62,51 @@ export default function StudentClassViewPage() {
     }
   };
 
-  // Handle sending request to join a class
-  const handleRequestClass = async (classId: string, teacherId: string) => {
+  // ලොග් වී නොමැති විට පන්ති ලැයිස්තුව පමණක් ලබා ගැනීමට
+  const fetchPublicClasses = async () => {
     try {
-      const token = localStorage.getItem("token");
-      if (!token) return;
+      const classRes = await axios.get("http://localhost:5000/api/classes/all");
 
+      const teacherMap: { [key: string]: any } = {};
+      classRes.data.forEach((cls: any) => {
+        if (!cls.teacherId) return;
+        const teacherId = cls.teacherId._id;
+        if (!teacherMap[teacherId]) {
+          teacherMap[teacherId] = { teacher: cls.teacherId, classes: [] };
+        }
+        teacherMap[teacherId].classes.push(cls);
+      });
+
+      setGroupedClasses(Object.values(teacherMap));
+    } catch (err: any) {
+      console.error("Error fetching public classes:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle sending request to join a class (ලොග් වී නැත්නම් දැනුම් දීම)
+  const handleRequestClass = async (classId: string, teacherId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setMessage({ 
+        type: "error", 
+        text: "Please register and log in to the system first before requesting a class!" 
+      });
+      setIsPopupOpen(true);
+      return;
+    }
+
+    try {
       const res = await axios.post("http://localhost:5000/api/classes/request", { classId, teacherId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: "success", text: res.data.message });
-      setIsPopupOpen(true); // Showing the popup
+      setIsPopupOpen(true);
       fetchData(token);
     } catch (err: any) {
       setMessage({ type: "error", text: err.response?.data?.message || "Failed to send the request." });
-      setIsPopupOpen(true); // Showing the popup
+      setIsPopupOpen(true);
     }
   };
 
