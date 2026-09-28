@@ -5,9 +5,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { Calendar, Clock, BookOpen, User, Loader2, ShieldAlert, Monitor, Search, CheckCircle, Send, ImageIcon } from "lucide-react";
+import { Calendar, Clock, BookOpen, User, Loader2, ShieldAlert, Monitor, Search, CheckCircle, Send, ImageIcon, ExternalLink } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
-import RequestPopup from "@/app/components/RequestPopup"; //
+import RequestPopup from "@/app/components/RequestPopup";
 
 export default function StudentClassViewPage() {
   const router = useRouter();
@@ -72,7 +72,7 @@ export default function StudentClassViewPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: "success", text: res.data.message });
-      setIsPopupOpen(true); // Showing the popupම
+      setIsPopupOpen(true); // Showing the popup
       fetchData(token);
     } catch (err: any) {
       setMessage({ type: "error", text: err.response?.data?.message || "Failed to send the request." });
@@ -103,12 +103,12 @@ export default function StudentClassViewPage() {
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-8">
             {groupedClasses.map((item) => (
-              <div key={item.teacher._id} className="bg-white dark:bg-slate-900 rounded-[32px] border p-6 sm:p-8 shadow-xl flex flex-col lg:flex-row gap-8 items-start">
+              <div key={item.teacher._id} className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xl flex flex-col lg:flex-row gap-8 items-start transition-all hover:shadow-2xl">
                 
                 {/* Left Side: Teacher Info Box */}
-                <div className="w-full lg:w-80 shrink-0 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-3xl p-6 text-center lg:sticky lg:top-28 space-y-4">
+                <div className="w-full lg:w-80 shrink-0 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/80 rounded-3xl p-6 text-center lg:sticky lg:top-28 space-y-4 border border-slate-100 dark:border-slate-700/50">
                   <div className="w-full px-4 py-2.5 bg-gradient-to-r from-teal-500/15 to-emerald-500/15 dark:from-teal-500/20 dark:to-emerald-500/20 text-teal-700 dark:text-teal-300 rounded-2xl border border-teal-500/30 shadow-sm flex items-center justify-center gap-2">
                     <BookOpen size={20} className="flex-shrink-0" />
                     <span className="text-base sm:text-lg font-black tracking-wide uppercase truncate">
@@ -116,9 +116,9 @@ export default function StudentClassViewPage() {
                     </span>
                   </div>
 
-                  <div className="w-full h-48 rounded-2xl overflow-hidden border bg-white dark:bg-slate-900 shadow-sm mt-1">
+                  <div className="w-full h-48 rounded-2xl overflow-hidden border bg-white dark:bg-slate-900 shadow-sm mt-1 relative group">
                     {item.teacher?.profilePhoto ? (
-                      <img src={getProfileImageUrl(item.teacher.profilePhoto) || ""} alt="" className="w-full h-full object-cover" />
+                      <img src={getProfileImageUrl(item.teacher.profilePhoto) || ""} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-slate-400">
                         <User size={48} />
@@ -126,35 +126,51 @@ export default function StudentClassViewPage() {
                     )}
                   </div>
                   
-                  <h3 className="font-extrabold text-xl text-slate-900 dark:text-white">{item.teacher?.name}</h3>
+                  {/* Teacher Name linked to Teacher Profile */}
+                  <div className="w-full space-y-2">
+                    <h3 
+                      onClick={() => router.push(`/teacher`)} 
+                      className="font-extrabold text-xl text-slate-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors flex items-center justify-center gap-1.5 group"
+                      title="View Teacher Profile"
+                    >
+                      <span className="border-b border-transparent group-hover:border-blue-600 dark:group-hover:border-blue-400">{item.teacher?.name}</span>
+                      <ExternalLink size={16} className="opacity-0 group-hover:opacity-100 transition-opacity text-blue-600 dark:text-blue-400" />
+                    </h3>
+                  </div>
                 </div>
 
                 {/* Right Side: Scheduled Classes Grid */}
                 <div className="flex-1 w-full">
-                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-4">Scheduled Classes</h4>
+                  <h4 className="text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-blue-600"></span>
+                    Scheduled Classes
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {item.classes.map((cls: any) => {
                       const req = requests.find((r) => r.classId === cls._id);
                       const status = req ? req.status : null;
 
                       return (
-                        <div key={cls._id} className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border flex flex-col justify-between gap-3">
+                        <div 
+                          key={cls._id} 
+                          className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 flex flex-col justify-between gap-3 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg hover:border-blue-500/40"
+                        >
                           
                           {cls.coverImage && (
                             <div className="w-full h-44 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                              <img src={`http://localhost:5000${cls.coverImage}`} alt={cls.grade} className="w-full h-full object-contain object-center" />
+                              <img src={`http://localhost:5000${cls.coverImage}`} alt={cls.grade} className="w-full h-full object-cover object-center" />
                             </div>
                           )}
 
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-xl text-xs font-extrabold">{cls.grade}</span>
-                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-xl text-xs font-extrabold">{cls.medium}</span>
-                            <span className="px-3 py-1 bg-orange-50 text-orange-600 rounded-xl text-xs font-extrabold">{cls.mode}</span>
+                            <span className="px-3 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-extrabold">{cls.grade}</span>
+                            <span className="px-3 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-extrabold">{cls.medium}</span>
+                            <span className="px-3 py-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl text-xs font-extrabold">{cls.mode}</span>
                           </div>
 
                           <div className="space-y-1 text-xs font-bold text-slate-700 dark:text-slate-300">
-                            <p>📅 Day: {cls.day}</p>
-                            <p>⏰ Time: {cls.startTime} - {cls.endTime}</p>
+                            <p className="flex items-center gap-1.5"><Calendar size={13} className="text-slate-400" /> Day: {cls.day}</p>
+                            <p className="flex items-center gap-1.5"><Clock size={13} className="text-slate-400" /> Time: {cls.startTime} - {cls.endTime}</p>
                           </div>
 
                           {cls.description && (
@@ -165,22 +181,22 @@ export default function StudentClassViewPage() {
 
                           <div className="pt-2">
                             {!status && (
-                              <button onClick={() => handleRequestClass(cls._id, item.teacher._id)} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md">
+                              <button onClick={() => handleRequestClass(cls._id, item.teacher._id)} className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-blue-500/20 transition-all">
                                 <Send size={14} /> Request Class
                               </button>
                             )}
                             {status === 'Pending' && (
-                              <button disabled className="w-full py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold">
+                              <button disabled className="w-full py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold cursor-not-allowed">
                                 Request Pending...
                               </button>
                             )}
                             {status === 'Approved' && (
-                              <button onClick={() => router.push(`/class/class_join?classId=${cls._id}`)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
+                              <button onClick={() => router.push(`/class/class_join?classId=${cls._id}`)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all">
                                 <CheckCircle size={14} /> Join Class
                               </button>
                             )}
                             {status === 'Blocked' && (
-                              <button disabled className="w-full py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold">
+                              <button disabled className="w-full py-2.5 bg-red-500 text-white rounded-xl text-xs font-bold cursor-not-allowed">
                                 Access Blocked by Admin
                               </button>
                             )}
