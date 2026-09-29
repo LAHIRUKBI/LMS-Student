@@ -5,8 +5,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import Navbar from "@/app/components/Navbar"; 
-import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X } from "lucide-react";
+import Navbar from "@/app/components/Navbar";
+import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -45,7 +45,7 @@ export default function ProfilePage() {
     }
 
     const parsedUser = JSON.parse(userData);
-    
+
     setCurrentUser(parsedUser);
 
     setFormData({
@@ -63,17 +63,16 @@ export default function ProfilePage() {
     });
 
     if (parsedUser.profileImage) {
-      const imgUrl = parsedUser.profileImage.startsWith("http") 
-        ? parsedUser.profileImage 
+      const imgUrl = parsedUser.profileImage.startsWith("http")
+        ? parsedUser.profileImage
         : `http://localhost:5000${parsedUser.profileImage}`;
       setImagePreview(imgUrl);
     }
-    
+
     setLoading(false);
   }, [router]);
 
   useEffect(() => {
-    // සිසුවාගේ ලකුණු සහ paper ලබා ගැනීම සඳහා
     const fetchMyResults = async () => {
       try {
         const token = localStorage.getItem("token");
@@ -88,7 +87,6 @@ export default function ProfilePage() {
     fetchMyResults();
   }, []);
 
-  // සිසුවාට තම පිළිතුරු පත්‍රය PDF ලෙස ඩවුන්ලෝඩ් කරගැනීමේ ශ්‍රිතය
   const handleDownloadStudentPaperPDF = (result: any) => {
     const quiz = result.quizId;
     if (!quiz) return;
@@ -181,7 +179,7 @@ export default function ProfilePage() {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       setImageFile(file);
-      setImagePreview(URL.createObjectURL(file)); 
+      setImagePreview(URL.createObjectURL(file));
     }
   };
 
@@ -192,7 +190,7 @@ export default function ProfilePage() {
 
     try {
       const token = localStorage.getItem("token");
-      
+
       const formDataToSend = new FormData();
       formDataToSend.append("name", formData.name);
       formDataToSend.append("phone", formData.phone);
@@ -204,21 +202,21 @@ export default function ProfilePage() {
       formDataToSend.append("medium", formData.medium);
       formDataToSend.append("parentName", formData.parentName);
       formDataToSend.append("parentPhone", formData.parentPhone);
-      
+
       if (imageFile) {
         formDataToSend.append("profileImage", imageFile);
       }
 
       const res = await axios.put("http://localhost:5000/api/auth/student/profile", formDataToSend, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"
         }
       });
 
       localStorage.setItem("user", JSON.stringify(res.data));
-      setCurrentUser(res.data); 
-      
+      setCurrentUser(res.data);
+
       setMessage({ type: "success", text: "Profile updated successfully!" });
     } catch (err) {
       console.error(err);
@@ -236,56 +234,54 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F2F5FA] dark:bg-slate-950 transition-colors duration-500">
+      <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-500">
         <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" size={44} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F2F5FA] dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans pb-12 transition-colors duration-500">
-      
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans pb-6 transition-colors duration-500 overflow-hidden">
+
       <Navbar user={currentUser} onLogout={handleLogout} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-28 mt-4">
-
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-white transition-colors duration-500">Student Profile</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 transition-colors duration-500">Manage your personal and academic information</p>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 lg:pt-24">
 
         {message.text && (
-          <div className={`flex items-center gap-3 p-4 rounded-2xl mb-6 shadow-sm border transition-colors duration-500 ${message.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' : 'bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-100 dark:border-red-500/20'}`}>
-            {message.type === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-            <p className="text-sm font-medium">{message.text}</p>
+          <div className={`flex items-center gap-3 py-2.5 px-4 rounded-2xl mb-3 shadow-sm border backdrop-blur-md transition-all duration-500 ${message.type === 'success' ? 'bg-emerald-50/90 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20' : 'bg-red-50/90 dark:bg-red-500/10 text-red-700 dark:text-red-400 border-red-200 dark:border-red-500/20'}`}>
+            {message.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <p className="text-xs font-semibold">{message.text}</p>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Column: Profile Summary */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 flex flex-col items-center transition-colors duration-500">
-              
-              <div className="relative group mb-6">
-                <div className="w-32 h-32 rounded-full overflow-hidden border-[6px] border-slate-50 dark:border-slate-800 shadow-md bg-blue-50 dark:bg-slate-800 flex items-center justify-center transition-colors duration-500">
+        {/* Global Executive Bento Grid Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+
+          {/* Column 1: Profile Summary & Guardian Info Card */}
+          <div className="lg:col-span-4 flex flex-col gap-4">
+
+            {/* Main Profile Identity Card */}
+            {/* Main Profile Identity Card */}
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex flex-col items-center text-center transition-all duration-500">
+
+              <div className="relative group mb-3">
+                <div className="w-20 h-20 rounded-full overflow-hidden ring-4 ring-blue-500/10 dark:ring-blue-400/20 shadow-inner bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 flex items-center justify-center">
                   {imagePreview ? (
                     <img src={imagePreview} alt="Profile Preview" className="w-full h-full object-cover" />
                   ) : (
-                    <User size={48} className="text-blue-300 dark:text-slate-500" />
+                    <User size={32} className="text-blue-400 dark:text-slate-500" />
                   )}
                 </div>
-                
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-1 right-1 p-2.5 bg-[#232B55] dark:bg-blue-600 rounded-full text-white shadow-lg hover:bg-blue-700 dark:hover:bg-blue-500 transition-colors border-2 border-white dark:border-slate-800"
+                  className="absolute bottom-0 right-0 p-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-full text-white shadow-lg transition-transform hover:scale-105 border-2 border-white dark:border-slate-900"
                   title="Change Photo"
                 >
-                  <Camera size={16} />
+                  <Camera size={12} />
                 </button>
-                <input 
-                  type="file" 
+                <input
+                  type="file"
                   ref={fileInputRef}
                   onChange={handleImageChange}
                   accept="image/*"
@@ -293,172 +289,167 @@ export default function ProfilePage() {
                 />
               </div>
 
-              <h2 className="text-xl font-bold text-slate-800 dark:text-white text-center transition-colors duration-500">{formData.name || "Student Name"}</h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 transition-colors duration-500">{formData.email}</p>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">{formData.name || "Student Name"}</h2>
+                <span title="Verified Student" className="inline-flex items-center">
+                  <ShieldCheck size={16} className="text-blue-600 dark:text-blue-400" />
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">{formData.email}</p>
 
-              <div className="w-full space-y-4">
-                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
-                  <div className="bg-orange-100 dark:bg-orange-500/20 p-2.5 rounded-xl text-orange-600 dark:text-orange-400 transition-colors duration-500">
-                    <GraduationCap size={18} />
+              <div className="w-full grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-left">
+                <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+                  <div className="bg-orange-500/10 dark:bg-orange-500/20 p-1.5 rounded-lg text-orange-600 dark:text-orange-400">
+                    <GraduationCap size={14} />
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium transition-colors duration-500">Grade / Class</p>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors duration-500">{formData.grade || "Not specified"}</p>
+                  <div className="overflow-hidden">
+                    <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Grade</p>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{formData.grade || "N/A"}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
-                  <div className="bg-blue-100 dark:bg-blue-500/20 p-2.5 rounded-xl text-blue-600 dark:text-blue-400 transition-colors duration-500">
-                    <Building size={18} />
+                <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+                  <div className="bg-blue-500/10 dark:bg-blue-500/20 p-1.5 rounded-lg text-blue-600 dark:text-blue-400">
+                    <BookOpen size={14} />
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium transition-colors duration-500">School</p>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors duration-500">{formData.school || "Not specified"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
-                  <div className="bg-emerald-100 dark:bg-emerald-500/20 p-2.5 rounded-xl text-emerald-600 dark:text-emerald-400 transition-colors duration-500">
-                    <Globe size={18} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium transition-colors duration-500">Country / Timezone</p>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors duration-500">
-                      {formData.country || "Not specified"} {formData.timeZone ? `(${formData.timeZone})` : ""}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
-                  <div className="bg-purple-100 dark:bg-purple-500/20 p-2.5 rounded-xl text-purple-600 dark:text-purple-400 transition-colors duration-500">
-                    <BookOpen size={18} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium transition-colors duration-500">Medium</p>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors duration-500">{formData.medium || "Not specified"}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 p-3 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors duration-500">
-                  <div className="bg-red-100 dark:bg-red-500/20 p-2.5 rounded-xl text-red-600 dark:text-red-400 transition-colors duration-500">
-                    <MapPin size={18} />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 dark:text-slate-500 font-medium transition-colors duration-500">Address</p>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 transition-colors duration-500">{formData.address || "Not specified"}</p>
+                  <div className="overflow-hidden">
+                    <p className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">Medium</p>
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">{formData.medium || "N/A"}</p>
                   </div>
                 </div>
               </div>
-
             </div>
+
+            {/* Guardian Info Card */}
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+                <div className="p-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                  <Users size={12} />
+                </div>
+                Guardian Contact
+              </h3>
+              <div className="space-y-2 text-xs">
+                <div className="flex justify-between items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 font-medium">Name:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{formData.parentName || "Not specified"}</span>
+                </div>
+                <div className="flex justify-between items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
+                  <span className="text-slate-400 font-medium">Phone:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{formData.parentPhone || "Not specified"}</span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* Right Column: Edit Form & Quiz Results */}
-          <div className="lg:col-span-8 space-y-8">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] border border-slate-100 dark:border-slate-800 transition-colors duration-500">
-              
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-6 transition-colors duration-500">Edit Information</h3>
-              
-              <form onSubmit={handleSubmit} className="space-y-6">
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Full Name</label>
-                    <div className="relative">
-                      <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="name" 
-                        value={formData.name} 
-                        onChange={handleChange} 
-                        required 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
-                      />
-                    </div>
-                  </div>
+          {/* Column 2: Edit Form (High-End Enterprise Inputs) */}
+          <div className="lg:col-span-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Edit Profile Information</h3>
+                </div>
+                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">Secure Profile</span>
+              </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Email Address</label>
-                    <div className="relative">
-                      <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="email" 
-                        name="email" 
-                        value={formData.email} 
-                        disabled 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 cursor-not-allowed outline-none transition-all duration-500" 
-                      />
-                    </div>
-                  </div>
+              <form onSubmit={handleSubmit} id="profile-form" className="space-y-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Phone Number</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
                     <div className="relative">
-                      <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="tel" 
-                        name="phone" 
-                        value={formData.phone} 
-                        onChange={handleChange} 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Grade / Class</label>
-                    <div className="relative">
-                      <GraduationCap size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="grade" 
-                        value={formData.grade} 
-                        onChange={handleChange} 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Country</label>
-                    <div className="relative">
-                      <Globe size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="country" 
-                        value={formData.country} 
-                        onChange={handleChange} 
-                        placeholder="e.g. Sri Lanka"
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Time Zone</label>
-                    <div className="relative">
-                      <Clock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="timeZone" 
-                        value={formData.timeZone} 
-                        onChange={handleChange} 
-                        placeholder="e.g. UTC+5:30"
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Medium of Education</label>
-                    <div className="relative">
-                      <BookOpen size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <select 
-                        name="medium" 
-                        value={formData.medium} 
+                      <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="name"
+                        value={formData.name}
                         onChange={handleChange}
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500"
+                        required
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                    <div className="relative">
+                      <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        disabled
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-100/50 dark:bg-slate-800/30 text-slate-400 border border-slate-200/40 dark:border-slate-700/40 cursor-not-allowed outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</label>
+                    <div className="relative">
+                      <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="tel"
+                        name="phone"
+                        value={formData.phone}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grade / Class</label>
+                    <div className="relative">
+                      <GraduationCap size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="grade"
+                        value={formData.grade}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Country</label>
+                    <div className="relative">
+                      <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="country"
+                        value={formData.country}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Zone</label>
+                    <div className="relative">
+                      <Clock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="timeZone"
+                        value={formData.timeZone}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Medium</label>
+                    <div className="relative">
+                      <BookOpen size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <select
+                        name="medium"
+                        value={formData.medium}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       >
                         <option value="">Select Medium</option>
                         <option value="Sinhala">Sinhala</option>
@@ -468,107 +459,120 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Parent / Guardian Name</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">School</label>
                     <div className="relative">
-                      <Users size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="parentName" 
-                        value={formData.parentName} 
-                        onChange={handleChange} 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
+                      <Building size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="school"
+                        value={formData.school}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Parent / Guardian Phone</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent Name</label>
                     <div className="relative">
-                      <Phone size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="tel" 
-                        name="parentPhone" 
-                        value={formData.parentPhone} 
-                        onChange={handleChange} 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
+                      <Users size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="parentName"
+                        value={formData.parentName}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">School</label>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent Phone</label>
                     <div className="relative">
-                      <Building size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="school" 
-                        value={formData.school} 
-                        onChange={handleChange} 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
+                      <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="tel"
+                        name="parentPhone"
+                        value={formData.parentPhone}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider transition-colors duration-500">Home Address</label>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Home Address</label>
                     <div className="relative">
-                      <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
-                      <input 
-                        type="text" 
-                        name="address" 
-                        value={formData.address} 
-                        onChange={handleChange} 
-                        className="w-full pl-12 pr-4 py-3.5 rounded-2xl border-none bg-slate-100/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-[#232B55] dark:focus:ring-blue-500 outline-none transition-all duration-500" 
+                      <MapPin size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                       />
                     </div>
                   </div>
-                  
+
                 </div>
-
-                <div className="pt-6 mt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end transition-colors duration-500">
-                  <button 
-                    type="submit"
-                    disabled={saving}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-500 text-white px-8 py-3.5 rounded-2xl font-medium transition-colors disabled:opacity-70 disabled:cursor-not-allowed shadow-md shadow-blue-600/20"
-                  >
-                    {saving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                    <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-                  </button>
-                </div>
-
               </form>
-
             </div>
 
-            {/* My Quiz Results Section */}
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">My Quiz Results & Papers</h3>
-              {myResults.length === 0 ? (
-                <p className="text-xs text-slate-400 italic">No evaluated quiz results sent by your teacher yet.</p>
-              ) : (
-                <div className="space-y-3">
-                  {myResults.map((res) => (
-                    <div key={res._id} className="p-4 rounded-2xl border flex items-center justify-between text-xs bg-slate-50 dark:bg-slate-800/50">
-                      <div>
-                        <h4 className="font-bold text-sm text-slate-800 dark:text-white">{res.quizId?.title}</h4>
-                        <p className="text-slate-400 mt-0.5">Score: <strong className="text-emerald-500">{res.score} / {res.maxScore} Marks</strong></p>
-                      </div>
-                      <button 
-                        onClick={() => handleDownloadStudentPaperPDF(res)}
-                        className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-xl font-bold flex items-center gap-1.5 shadow-sm"
-                      >
-                        <Download size={14} /> Download Paper & Key
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <div className="text-xs text-slate-400">
+                Total Results: <strong className="text-blue-600 dark:text-blue-400 font-bold">{myResults.length}</strong>
+              </div>
+
+              <button
+                type="submit"
+                form="profile-form"
+                disabled={saving}
+                className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70"
+              >
+                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+              </button>
             </div>
 
           </div>
 
         </div>
+
+        {/* Bottom Section: Clean Quiz Results Grid */}
+        <div className="mt-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
+              <div className="p-1 rounded-md bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                <Award size={12} />
+              </div>
+              My Quiz Results & Papers
+            </h3>
+            <span className="text-[10px] text-slate-400 font-medium">Downloadable Answer Sheets</span>
+          </div>
+
+          {myResults.length === 0 ? (
+            <p className="text-xs text-slate-400 italic py-2">No evaluated quiz results sent by your teacher yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
+              {myResults.map((res) => (
+                <div key={res._id} className="p-3 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+                  <div className="truncate mr-2">
+                    <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{res.quizId?.title}</h4>
+                    <p className="text-slate-400 text-[10px] mt-0.5">Score: <strong className="text-emerald-600 dark:text-emerald-400">{res.score} / {res.maxScore}</strong></p>
+                  </div>
+                  <button
+                    onClick={() => handleDownloadStudentPaperPDF(res)}
+                    className="px-3 py-1.5 bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-700 hover:to-emerald-700 text-white rounded-xl font-bold flex items-center gap-1 text-[10px] shrink-0 shadow-sm transition-transform hover:scale-105"
+                  >
+                    <Download size={12} /> PDF
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
       </main>
     </div>
   );
