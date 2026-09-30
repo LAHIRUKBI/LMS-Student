@@ -134,12 +134,6 @@ export default function Footer() {
                   FAQ
                 </Link>
               </li>
-              <li>
-                <Link href="/blog" className="text-slate-400 hover:text-[#00CBB8] transition-colors duration-200 inline-flex items-center gap-2">
-                  <span className="w-1 h-1 bg-[#00CBB8] rounded-full"></span>
-                  Blog
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -156,7 +150,7 @@ export default function Footer() {
               <li className="flex items-start gap-3">
                 <Phone size={16} className="text-[#00CBB8] mt-0.5 shrink-0" />
                 <a href="tel:+94112345678" className="text-slate-400 hover:text-[#00CBB8] transition-colors">
-                  +94 xx xxx xxxx
+                  +94 71 091 0202
                 </a>
               </li>
               <li className="flex items-start gap-3">
