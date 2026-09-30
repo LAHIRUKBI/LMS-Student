@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { CreditCard, Upload, FileText, X, CheckCircle2, AlertCircle, Loader2, Phone, MapPin, BookOpen, Check, Users, Briefcase } from "lucide-react";
+import { CreditCard, Upload, FileText, X, CheckCircle2, AlertCircle, Loader2, Phone, MapPin, BookOpen, Check, Users } from "lucide-react";
 
 interface FreeCardModalProps {
   isOpen: boolean;
@@ -41,7 +41,17 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
       setFreeCardForm(prev => ({
         ...prev,
         phone: currentUser.phone || "",
-        address: currentUser.address || ""
+        address: currentUser.address || "",
+        fatherName: currentUser.fatherName || "",
+        fatherOccupation: currentUser.fatherOccupation || "",
+        fatherPhone: currentUser.fatherPhone || "",
+        motherName: currentUser.motherName || "",
+        motherOccupation: currentUser.motherOccupation || "",
+        motherPhone: currentUser.motherPhone || "",
+        hasGuardian: currentUser.hasGuardian || false,
+        guardianName: currentUser.guardianName || "",
+        guardianRelation: currentUser.guardianRelation || "",
+        guardianPhone: currentUser.guardianPhone || ""
       }));
     }
 
@@ -81,7 +91,6 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
   };
 
   const validatePhone = (phone: string) => {
-    // දුරකථන අංකය හිස් නම් (optional fields වලට) ප්‍රශ්නයක් නැත, නමුත් පුරවා ඇත්නම් හරියටම අංක 10ක් විය යුතුය
     if (!phone) return true;
     const regex = /^\d{10}$/;
     return regex.test(phone);
@@ -90,37 +99,21 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
   const handleFreeCardSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 1. මව හෝ පියාගේ නම් වලින් අවම වශයෙන් එක් අයෙකුගේවත් නම තිබිය යුතුය
     if (!freeCardForm.fatherName.trim() && !freeCardForm.motherName.trim() && !freeCardForm.hasGuardian) {
       setFreeCardMsg({ type: "error", text: "Please provide either Father's name, Mother's name, or Guardian details." });
       return;
     }
 
-    // 2. භාරකරු යටතේ නම් භාරකරුගේ නම සහ නෑදෑකම අනිවාර්ය වේ
     if (freeCardForm.hasGuardian && (!freeCardForm.guardianName.trim() || !freeCardForm.guardianRelation.trim())) {
       setFreeCardMsg({ type: "error", text: "Please enter Guardian's name and relationship." });
       return;
     }
 
-    // 3. දුරකථන අංක වල අංක 10 ක් තිබේදැයි පරීක්ෂා කිරීම
     if (!validatePhone(freeCardForm.phone)) {
       setFreeCardMsg({ type: "error", text: "Student phone number must be exactly 10 digits." });
       return;
     }
-    if (freeCardForm.fatherPhone && !validatePhone(freeCardForm.fatherPhone)) {
-      setFreeCardMsg({ type: "error", text: "Father's phone number must be exactly 10 digits." });
-      return;
-    }
-    if (freeCardForm.motherPhone && !validatePhone(freeCardForm.motherPhone)) {
-      setFreeCardMsg({ type: "error", text: "Mother's phone number must be exactly 10 digits." });
-      return;
-    }
-    if (freeCardForm.guardianPhone && !validatePhone(freeCardForm.guardianPhone)) {
-      setFreeCardMsg({ type: "error", text: "Guardian's phone number must be exactly 10 digits." });
-      return;
-    }
 
-    // 4. පන්ති තෝරාගෙන ඇත්දැයි බැලීම
     if (selectedClassIds.length === 0) {
       setFreeCardMsg({ type: "error", text: "Please select at least one target class." });
       return;
@@ -163,12 +156,6 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
       setFreeCardMsg({ type: "success", text: "Free card request submitted successfully!" });
       setTimeout(() => {
         onClose();
-        setFreeCardForm({
-          fatherName: "", fatherOccupation: "", fatherPhone: "",
-          motherName: "", motherOccupation: "", motherPhone: "",
-          hasGuardian: false, guardianName: "", guardianRelation: "", guardianPhone: "",
-          familyBackground: "", phone: currentUser?.phone || "", address: currentUser?.address || ""
-        });
         setSelectedClassIds([]);
         setSelectedFiles([]);
         setFreeCardMsg({ type: "", text: "" });
@@ -212,7 +199,7 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
 
         <form onSubmit={handleFreeCardSubmit} className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
           
-          {/* Student Phone Number & Address */}
+          {/* Student Phone Number & Address (Profile එකෙන් ඇතොත් read-only, නැතහොත් ඇතුළත් කළ හැක) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -223,9 +210,10 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
                 maxLength={10}
                 required
                 value={freeCardForm.phone}
+                readOnly={!!currentUser?.phone}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, phone: e.target.value.replace(/\D/g, '') })}
                 placeholder="0712345678"
-                className="w-full mt-1 px-3 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                className={`w-full mt-1 px-3 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.phone ? 'opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-800' : ''}`}
               />
             </div>
             <div>
@@ -236,38 +224,42 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
                 type="text"
                 required
                 value={freeCardForm.address}
+                readOnly={!!currentUser?.address}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, address: e.target.value })}
                 placeholder="Enter home address"
-                className="w-full mt-1 px-3 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all"
+                className={`w-full mt-1 px-3 py-2.5 rounded-xl text-xs bg-slate-50 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.address ? 'opacity-75 cursor-not-allowed bg-slate-100 dark:bg-slate-800' : ''}`}
               />
             </div>
           </div>
 
-          {/* Father Details */}
+          {/* Father Details (Profile එකේ ඇතොත් Read-only ලෙස පෙන්වයි) */}
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 space-y-2">
             <p className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase">Father's Details</p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
               <input
                 type="text"
                 value={freeCardForm.fatherName}
+                readOnly={!!currentUser?.fatherName}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, fatherName: e.target.value })}
                 placeholder="Father's Name"
-                className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.fatherName ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
               />
               <input
                 type="text"
                 value={freeCardForm.fatherOccupation}
+                readOnly={!!currentUser?.fatherOccupation}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, fatherOccupation: e.target.value })}
                 placeholder="Occupation (Optional)"
-                className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.fatherOccupation ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
               />
               <input
                 type="tel"
                 maxLength={10}
                 value={freeCardForm.fatherPhone}
+                readOnly={!!currentUser?.fatherPhone}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, fatherPhone: e.target.value.replace(/\D/g, '') })}
-                placeholder="Phone (10 Digits - Opt)"
-                className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                placeholder="Phone (10 Digits)"
+                className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.fatherPhone ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
               />
             </div>
           </div>
@@ -279,24 +271,27 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
               <input
                 type="text"
                 value={freeCardForm.motherName}
+                readOnly={!!currentUser?.motherName}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, motherName: e.target.value })}
                 placeholder="Mother's Name"
-                className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.motherName ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
               />
               <input
                 type="text"
                 value={freeCardForm.motherOccupation}
+                readOnly={!!currentUser?.motherOccupation}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, motherOccupation: e.target.value })}
                 placeholder="Occupation (Optional)"
-                className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.motherOccupation ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
               />
               <input
                 type="tel"
                 maxLength={10}
                 value={freeCardForm.motherPhone}
+                readOnly={!!currentUser?.motherPhone}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, motherPhone: e.target.value.replace(/\D/g, '') })}
-                placeholder="Phone (10 Digits - Opt)"
-                className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                placeholder="Phone (10 Digits)"
+                className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.motherPhone ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
               />
             </div>
           </div>
@@ -307,6 +302,7 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
               <input
                 type="checkbox"
                 checked={freeCardForm.hasGuardian}
+                disabled={currentUser?.hasGuardian !== undefined && currentUser?.hasGuardian !== false}
                 onChange={(e) => setFreeCardForm({ ...freeCardForm, hasGuardian: e.target.checked })}
                 className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
               />
@@ -319,25 +315,28 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
                   type="text"
                   required={freeCardForm.hasGuardian}
                   value={freeCardForm.guardianName}
+                  readOnly={!!currentUser?.guardianName}
                   onChange={(e) => setFreeCardForm({ ...freeCardForm, guardianName: e.target.value })}
                   placeholder="Guardian Name"
-                  className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                  className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.guardianName ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
                 />
                 <input
                   type="text"
                   required={freeCardForm.hasGuardian}
                   value={freeCardForm.guardianRelation}
+                  readOnly={!!currentUser?.guardianRelation}
                   onChange={(e) => setFreeCardForm({ ...freeCardForm, guardianRelation: e.target.value })}
                   placeholder="Relationship (e.g. Uncle)"
-                  className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                  className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.guardianRelation ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
                 />
                 <input
                   type="tel"
                   maxLength={10}
                   value={freeCardForm.guardianPhone}
+                  readOnly={!!currentUser?.guardianPhone}
                   onChange={(e) => setFreeCardForm({ ...freeCardForm, guardianPhone: e.target.value.replace(/\D/g, '') })}
-                  placeholder="Phone (10 Digits - Opt)"
-                  className="px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none"
+                  placeholder="Phone (10 Digits)"
+                  className={`px-3 py-2 rounded-xl text-xs bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-700 outline-none ${currentUser?.guardianPhone ? 'opacity-75 cursor-not-allowed bg-slate-100' : ''}`}
                 />
               </div>
             )}

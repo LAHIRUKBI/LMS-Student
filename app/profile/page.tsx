@@ -6,7 +6,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Navbar from "@/app/components/Navbar";
-import FreeCardRequestModal from "@/app/page_components/free_card_request/page"; // 👈 Free Card Component එක import කර ඇත
+import FreeCardRequestModal from "@/app/page_components/free_card_request/page"; 
 import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard } from "lucide-react";
 
 export default function ProfilePage() {
@@ -35,8 +35,16 @@ export default function ProfilePage() {
     country: "",
     timeZone: "",
     medium: "",
-    parentName: "",
-    parentPhone: ""
+    fatherName: "",
+    fatherOccupation: "",
+    fatherPhone: "",
+    motherName: "",
+    motherOccupation: "",
+    motherPhone: "",
+    hasGuardian: false,
+    guardianName: "",
+    guardianRelation: "",
+    guardianPhone: ""
   });
 
   useEffect(() => {
@@ -62,8 +70,16 @@ export default function ProfilePage() {
       country: parsedUser.country || "",
       timeZone: parsedUser.timeZone || "",
       medium: parsedUser.medium || "",
-      parentName: parsedUser.parentName || "",
-      parentPhone: parsedUser.parentPhone || ""
+      fatherName: parsedUser.fatherName || "",
+      fatherOccupation: parsedUser.fatherOccupation || "",
+      fatherPhone: parsedUser.fatherPhone || "",
+      motherName: parsedUser.motherName || "",
+      motherOccupation: parsedUser.motherOccupation || "",
+      motherPhone: parsedUser.motherPhone || "",
+      hasGuardian: parsedUser.hasGuardian || false,
+      guardianName: parsedUser.guardianName || "",
+      guardianRelation: parsedUser.guardianRelation || "",
+      guardianPhone: parsedUser.guardianPhone || ""
     });
 
     if (parsedUser.profileImage) {
@@ -176,7 +192,9 @@ export default function ProfilePage() {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const target = e.target as HTMLInputElement;
+    const value = target.type === 'checkbox' ? target.checked : target.value;
+    setFormData({ ...formData, [target.name]: value });
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -204,8 +222,17 @@ export default function ProfilePage() {
       formDataToSend.append("country", formData.country);
       formDataToSend.append("timeZone", formData.timeZone);
       formDataToSend.append("medium", formData.medium);
-      formDataToSend.append("parentName", formData.parentName);
-      formDataToSend.append("parentPhone", formData.parentPhone);
+      
+      formDataToSend.append("fatherName", formData.fatherName);
+      formDataToSend.append("fatherOccupation", formData.fatherOccupation);
+      formDataToSend.append("fatherPhone", formData.fatherPhone);
+      formDataToSend.append("motherName", formData.motherName);
+      formDataToSend.append("motherOccupation", formData.motherOccupation);
+      formDataToSend.append("motherPhone", formData.motherPhone);
+      formDataToSend.append("hasGuardian", String(formData.hasGuardian));
+      formDataToSend.append("guardianName", formData.guardianName);
+      formDataToSend.append("guardianRelation", formData.guardianRelation);
+      formDataToSend.append("guardianPhone", formData.guardianPhone);
 
       if (imageFile) {
         formDataToSend.append("profileImage", imageFile);
@@ -261,7 +288,7 @@ export default function ProfilePage() {
         {/* Global Executive Bento Grid Container */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
 
-          {/* Column 1: Profile Summary & Guardian Info Card */}
+          {/* Column 1: Profile Summary & Family/Guardian Info Card */}
           <div className="lg:col-span-4 flex flex-col gap-4">
 
             {/* Main Profile Identity Card */}
@@ -332,29 +359,35 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Guardian Info Card */}
-            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80">
-              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider mb-3 flex items-center gap-2">
+            {/* Parent & Guardian Summary Info Card */}
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 space-y-3">
+              <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
                 <div className="p-1 rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400">
                   <Users size={12} />
                 </div>
-                Guardian Contact
+                Parent / Guardian Contacts
               </h3>
               <div className="space-y-2 text-xs">
-                <div className="flex justify-between items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 font-medium">Name:</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-200">{formData.parentName || "Not specified"}</span>
+                <div className="p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 flex justify-between">
+                  <span className="text-slate-400 font-medium">Father:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{formData.fatherName || "Not specified"}</span>
                 </div>
-                <div className="flex justify-between items-center p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
-                  <span className="text-slate-400 font-medium">Phone:</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-200">{formData.parentPhone || "Not specified"}</span>
+                <div className="p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 flex justify-between">
+                  <span className="text-slate-400 font-medium">Mother:</span>
+                  <span className="font-bold text-slate-700 dark:text-slate-200">{formData.motherName || "Not specified"}</span>
                 </div>
+                {formData.hasGuardian && (
+                  <div className="p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40 flex justify-between">
+                    <span className="text-slate-400 font-medium">Guardian ({formData.guardianRelation || "Other"}):</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-200">{formData.guardianName || "Not specified"}</span>
+                  </div>
+                )}
               </div>
             </div>
 
           </div>
 
-          {/* Column 2: Edit Form (High-End Enterprise Inputs) */}
+          {/* Column 2: Edit Form */}
           <div className="lg:col-span-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
@@ -365,7 +398,7 @@ export default function ProfilePage() {
                 <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">Secure Profile</span>
               </div>
 
-              <form onSubmit={handleSubmit} id="profile-form" className="space-y-3">
+              <form onSubmit={handleSubmit} id="profile-form" className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
                   <div className="space-y-1">
@@ -485,33 +518,126 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
+                  {/* Father Details */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent Name</label>
-                    <div className="relative">
-                      <Users size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="parentName"
-                        value={formData.parentName}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Name</label>
+                    <input
+                      type="text"
+                      name="fatherName"
+                      value={formData.fatherName}
+                      onChange={handleChange}
+                      placeholder="Father's Name"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Occupation</label>
+                    <input
+                      type="text"
+                      name="fatherOccupation"
+                      value={formData.fatherOccupation}
+                      onChange={handleChange}
+                      placeholder="Occupation"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Phone</label>
+                    <input
+                      type="tel"
+                      name="fatherPhone"
+                      value={formData.fatherPhone}
+                      onChange={handleChange}
+                      placeholder="Father's Phone"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                    />
                   </div>
 
+                  {/* Mother Details */}
                   <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Parent Phone</label>
-                    <div className="relative">
-                      <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="tel"
-                        name="parentPhone"
-                        value={formData.parentPhone}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Name</label>
+                    <input
+                      type="text"
+                      name="motherName"
+                      value={formData.motherName}
+                      onChange={handleChange}
+                      placeholder="Mother's Name"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                    />
                   </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Occupation</label>
+                    <input
+                      type="text"
+                      name="motherOccupation"
+                      value={formData.motherOccupation}
+                      onChange={handleChange}
+                      placeholder="Occupation"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Phone</label>
+                    <input
+                      type="tel"
+                      name="motherPhone"
+                      value={formData.motherPhone}
+                      onChange={handleChange}
+                      placeholder="Mother's Phone"
+                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 pt-2">
+                      <input
+                        type="checkbox"
+                        name="hasGuardian"
+                        checked={formData.hasGuardian}
+                        onChange={handleChange}
+                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                      />
+                      Under other Guardian
+                    </label>
+                  </div>
+
+                  {formData.hasGuardian && (
+                    <>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Name</label>
+                        <input
+                          type="text"
+                          name="guardianName"
+                          value={formData.guardianName}
+                          onChange={handleChange}
+                          placeholder="Guardian Name"
+                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Relationship</label>
+                        <input
+                          type="text"
+                          name="guardianRelation"
+                          value={formData.guardianRelation}
+                          onChange={handleChange}
+                          placeholder="Relationship (e.g. Uncle)"
+                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Phone</label>
+                        <input
+                          type="tel"
+                          name="guardianPhone"
+                          value={formData.guardianPhone}
+                          onChange={handleChange}
+                          placeholder="Guardian Phone"
+                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                        />
+                      </div>
+                    </>
+                  )}
 
                   <div className="space-y-1 md:col-span-2">
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Home Address</label>
