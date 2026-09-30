@@ -6,7 +6,8 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import Navbar from "@/app/components/Navbar";
-import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles } from "lucide-react";
+import FreeCardRequestModal from "@/app/page_components/free_card_request/page"; // 👈 Free Card Component එක import කර ඇත
+import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -16,6 +17,9 @@ export default function ProfilePage() {
   const [myResults, setMyResults] = useState<any[]>([]);
 
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Free Card Modal State
+  const [isFreeCardModalOpen, setIsFreeCardModalOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -241,7 +245,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans pb-6 transition-colors duration-500 overflow-hidden">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans pb-6 transition-colors duration-500 overflow-hidden relative">
 
       <Navbar user={currentUser} onLogout={handleLogout} />
 
@@ -260,7 +264,6 @@ export default function ProfilePage() {
           {/* Column 1: Profile Summary & Guardian Info Card */}
           <div className="lg:col-span-4 flex flex-col gap-4">
 
-            {/* Main Profile Identity Card */}
             {/* Main Profile Identity Card */}
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex flex-col items-center text-center transition-all duration-500">
 
@@ -296,6 +299,15 @@ export default function ProfilePage() {
                 </span>
               </div>
               <p className="text-xs text-slate-400 dark:text-slate-400 font-medium">{formData.email}</p>
+
+              {/* Free Card Request Button */}
+              <button
+                onClick={() => setIsFreeCardModalOpen(true)}
+                className="w-full mt-4 flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-500/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <CreditCard size={14} />
+                <span>Free Card Request</span>
+              </button>
 
               <div className="w-full grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 text-left">
                 <div className="flex items-center gap-2 p-2 rounded-xl bg-slate-50/50 dark:bg-slate-800/40">
@@ -574,6 +586,14 @@ export default function ProfilePage() {
         </div>
 
       </main>
+
+      {/* ===== Free Card Request Modal Component Render ===== */}
+      <FreeCardRequestModal 
+        isOpen={isFreeCardModalOpen} 
+        onClose={() => setIsFreeCardModalOpen(false)} 
+        currentUser={currentUser} 
+      />
+
     </div>
   );
 }
