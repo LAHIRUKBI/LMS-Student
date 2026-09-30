@@ -18,7 +18,7 @@ import {
   Loader2,
 } from "lucide-react";
 import TorchToggle from "@/app/components/TorchToggle";
-import SuccessPopup from "@/app/components/SuccessPopup"; // 👈 Success Popup Component එක import කර ඇත
+import SuccessPopup from "@/app/components/SuccessPopup";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -69,12 +69,12 @@ export default function RegisterPage() {
         name: user.displayName,
         email: user.email,
         googleId: user.uid,
+        isRegister: true,
       });
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       
-      // 👈 සාර්ථක වූ විට පණිවිඩය පෙන්වා තත්පර 3කින් redirect වීම
       setSuccessMessage("Google registration successful!");
       setTimeout(() => {
         router.push("/");

@@ -8,6 +8,7 @@ import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Mail, Lock, LogIn, AlertCircle, Loader2, GraduationCap } from "lucide-react";
 import TorchToggle from "@/app/components/TorchToggle";
+import ErrorPopup from "@/app/components/LoginErrorPopup";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,13 +51,18 @@ export default function LoginPage() {
         name: user.displayName,
         email: user.email,
         googleId: user.uid,
+        isRegister: false,
       });
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       router.push("/home");
     } catch (err: any) {
-      setError("Google Login process failed.");
+      if (auth.currentUser) {
+        await auth.signOut();
+      }
+      const errorMessage = err.response?.data?.message || "Google Login process failed. Please register first.";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -84,6 +90,13 @@ export default function LoginPage() {
   return (
     <div className={`relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden transition-colors duration-1000 px-4 ${theme.bg}`}>
       
+      {/* Adding the Error Popup Component */}
+      <ErrorPopup 
+        isOpen={!!error} 
+        onClose={() => setError("")} 
+        message={error} 
+      />
+
       {/* ===== Ambient Torch Glow (Dark Mode) ===== */}
       <div
         className={`absolute inset-0 pointer-events-none transition-opacity duration-1000 z-0 ${
@@ -135,13 +148,6 @@ export default function LoginPage() {
               Log in to your student account
             </p>
           </div>
-
-          {error && (
-            <div className="mb-5 flex items-start gap-2.5 rounded-xl border border-red-200 bg-red-50/90 p-3.5 text-sm leading-relaxed text-red-700 backdrop-blur-sm">
-              <AlertCircle size={18} className="mt-0.5 shrink-0 text-red-500" />
-              <span>{error}</span>
-            </div>
-          )}
 
           <button
             onClick={handleGoogleLogin}
@@ -222,7 +228,6 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* 👈 නව Torch Component එක භාවිතා කිරීම */}
       <TorchToggle 
         isRoomLightOn={isRoomLightOn} 
         onToggle={() => setIsRoomLightOn(!isRoomLightOn)} 
