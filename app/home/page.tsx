@@ -6,7 +6,7 @@ import axios from "axios";
 import { auth } from "@/lib/firebase";
 import { PlayCircle, FileText, BookOpen, Download, User, Eye, Search, Loader2, CheckCircle, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, Clock, Users, GraduationCap, Video, Award, Layers, Layout, Code, Globe, MessageCircle, Send, Share2, X, Mail, Copy, Star } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
-import CircularGallery from "@/app/components/CircularGallery";
+import AccordionGallery from "@/app/components/AccordionGallery";
 import HeroCarousel from "@/app/components/HeroCarousel";
 import FeatureCarousel from "@/app/components/FeatureCarousel";
 
@@ -28,11 +28,11 @@ interface AdData {
 }
 
 const fallbackGalleryItems = [
-  { image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop", text: "Student 1" },
-  { image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop", text: "Student 2" },
-  { image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=600&fit=crop", text: "Online Class" },
-  { image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=600&fit=crop", text: "Student 3" },
-  { image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop", text: "Student 4" },
+  { image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop", label: "Student 1" },
+  { image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop", label: "Student 2" },
+  { image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=600&fit=crop", label: "Online Class" },
+  { image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=600&fit=crop", label: "Student 3" },
+  { image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop", label: "Student 4" },
 ];
 
 const fallbackHeroImages = [
@@ -98,6 +98,9 @@ export default function StudentDashboard() {
   const [dashboardSettings, setDashboardSettings] = useState<any>(null);
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
   
+  // Testimonials Carousel State
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -208,7 +211,7 @@ export default function StudentDashboard() {
     : fallbackHeroImages;
 
   const currentGalleryItems = dashboardSettings?.galleryItems?.length > 0 
-    ? dashboardSettings.galleryItems.map((item: any) => ({ ...item, image: getMediaUrl(item.image) }))
+    ? dashboardSettings.galleryItems.map((item: any) => ({ ...item, image: getMediaUrl(item.image), label: item.text || item.label }))
     : fallbackGalleryItems;
 
   // ------------------ Feature Variables (Second Section) ------------------
@@ -224,7 +227,7 @@ export default function StudentDashboard() {
         description: item.description,
         iconType: item.iconType || "image",
         iconImage: item.iconImage ? getMediaUrl(item.iconImage) : null,
-        icon: <Star size={28} /> // fallback icon if iconType='icon' but not provided
+        icon: <Star size={28} />
       }))
     : fallbackFeatureItems;
 
@@ -235,6 +238,22 @@ export default function StudentDashboard() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
+
+  // Testimonials Navigation Functions
+  const nextTestimonials = () => {
+    if (testimonials.length <= 2) return;
+    setTestimonialIndex((prev) => (prev + 2 >= testimonials.length ? 0 : prev + 2));
+  };
+
+  const prevTestimonials = () => {
+    if (testimonials.length <= 2) return;
+    setTestimonialIndex((prev) => (prev - 2 < 0 ? Math.max(0, testimonials.length - (testimonials.length % 2 === 0 ? 2 : 1)) : prev - 2));
+  };
+
+  // Testimonial Background Image
+  const testimonialBg = dashboardSettings?.testimonialBgImage 
+    ? getMediaUrl(dashboardSettings.testimonialBgImage) 
+    : "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&h=900&fit=crop";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FFF5F1] to-white dark:from-slate-950 dark:to-slate-900 transition-colors duration-500 relative font-sans overflow-x-hidden">
@@ -492,59 +511,104 @@ export default function StudentDashboard() {
           )}
         </div>
 
-        {/* ================= Testimonials ================= */}
+        {/* ================= Testimonials Section (Updated with Curved Background Cutouts for Arrows) ================= */}
         {testimonials.length > 0 && (
-          <section className="py-16 mb-20">
-            <div className="text-center max-w-3xl mx-auto mb-16">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                What our <span className="text-blue-500">clients</span> say
+          <section className="py-20 mb-20 relative rounded-3xl overflow-hidden shadow-2xl">
+            {/* Background Image Container with Curved Cutouts (using mask-image / complex clip-path or background cutout simulation) */}
+            <div className="absolute inset-0 -z-20 overflow-hidden">
+              <div 
+                className="absolute inset-0 bg-cover bg-center filter brightness-[0.7]" 
+                style={{ backgroundImage: `url(${testimonialBg})` }}
+              ></div>
+              <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px]"></div>
+            </div>
+
+            {/* Custom SVG Background mask / shape simulation to create the semi-circle cutouts on left and right borders */}
+            <div className="absolute inset-0 -z-10 pointer-events-none flex justify-between items-center px-2">
+              {/* Left cutout ring indicator area */}
+              <div className="w-16 h-32 bg-white dark:bg-slate-900 rounded-r-full shadow-inner opacity-90"></div>
+              {/* Right cutout ring indicator area */}
+              <div className="w-16 h-32 bg-white dark:bg-slate-900 rounded-l-full shadow-inner opacity-90"></div>
+            </div>
+
+            <div className="text-center max-w-3xl mx-auto mb-12 px-4 relative z-10">
+              <h2 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
+                What our <span className="text-teal-400">clients</span> say
               </h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {testimonials.map((test: any, idx: number) => (
-                <div key={idx} className="bg-white dark:bg-[#111827] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl flex flex-col justify-between hover:-translate-y-1 transition-all duration-300">
-                  <div>
-                    <div className="flex items-center gap-1 mb-6 text-yellow-400">
-                      {[...Array(Number(test.rating) || 5)].map((_, i) => (
-                        <Star key={i} size={18} fill="currentColor" />
-                      ))}
-                    </div>
-                    <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed mb-8">
-                      "{test.idea}"
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700">
-                      {test.image ? (
-                        <img src={getMediaUrl(test.image)} alt={test.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <User className="w-full h-full p-2 text-slate-400" />
-                      )}
-                    </div>
+            {/* Testimonials Carousel Container */}
+            <div className="relative max-w-5xl mx-auto px-10 md:px-14">
+              
+              {/* Left Navigation Arrow (Positioned exactly on the left cutout border center) */}
+              {testimonials.length > 2 && (
+                <button 
+                  onClick={prevTestimonials}
+                  className="absolute -left-4 md:-left-5 top-1/2 -translate-y-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
+                  title="Previous"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              )}
+
+              {/* Cards Grid (Displaying 2 cards at a time) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 transition-all duration-500">
+                {testimonials.slice(testimonialIndex, testimonialIndex + 2).map((test: any, idx: number) => (
+                  <div key={testimonialIndex + idx} className="bg-white dark:bg-[#111827] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between hover:-translate-y-1 transition-all duration-300">
                     <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white text-base">{test.name}</h4>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{test.title}</p>
+                      <div className="flex items-center gap-1 mb-6 text-yellow-400">
+                        {[...Array(Number(test.rating) || 5)].map((_, i) => (
+                          <Star key={i} size={18} fill="currentColor" />
+                        ))}
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed mb-8 font-medium">
+                        "{test.idea}"
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700">
+                        {test.image ? (
+                          <img src={getMediaUrl(test.image)} alt={test.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="w-full h-full p-2 text-slate-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 dark:text-white text-base">{test.name}</h4>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{test.title}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {/* Right Navigation Arrow (Positioned exactly on the right cutout border center) */}
+              {testimonials.length > 2 && (
+                <button 
+                  onClick={nextTestimonials}
+                  className="absolute -right-4 md:-right-5 top-1/2 -translate-y-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
+                  title="Next"
+                >
+                  <ChevronRight size={22} />
+                </button>
+              )}
+
             </div>
           </section>
         )}
 
-        {/* ================= Gallery ================= */}
-        <div className="w-full h-[450px] relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
-          <div className="text-center mb-6">
+        {/* ================= Gallery (Accordion Gallery) ================= */}
+        <div className="w-full relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
+          <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Our Gallery</h3>
           </div>
-          <CircularGallery 
+          <AccordionGallery 
             items={currentGalleryItems} 
-            bend={1.5} 
-            textColor="#ffffff" 
-            borderRadius={0.05} 
-            scrollSpeed={2}
-            fontUrl=""
+            height={460}
+            accentColor="#00CBB8"
+            overlayColor="#0a0713"
+            textColor="#ffffff"
+            radius={16}
           />
         </div>
 
