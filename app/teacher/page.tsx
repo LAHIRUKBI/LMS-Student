@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { auth } from "@/lib/firebase";
-import { Search, Loader2, User, Mail, GraduationCap, Globe, ExternalLink, ChevronRight, Sparkles, BookOpen, X, ShieldCheck } from "lucide-react";
+import { Search, Loader2, User, Mail, GraduationCap, Globe, ExternalLink, ChevronRight, X } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
 interface Qualification {
@@ -43,14 +43,13 @@ export default function StudentTeacherView() {
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
 
   useEffect(() => {
-    // රෙජිස්ටර් වීමට පෙර (Login වීමකින් තොරව) දත්ත බලාගත හැකි වන පරිදි ටෝකන් පරීක්ෂා කිරීම ඉවත් කර ඇත
     const token = localStorage.getItem("token");
     const userData = localStorage.getItem("user");
 
     if (userData) {
       setUser(JSON.parse(userData));
     } else {
-      setUser({ name: "Guest Student" }); // ලොග් වී නැති නම් Guest ලෙස පෙන්වීමට
+      setUser({ name: "Guest Student" });
     }
     
     fetchPublicTeachers();
@@ -58,7 +57,6 @@ export default function StudentTeacherView() {
 
   const fetchPublicTeachers = async () => {
     try {
-      // රෙජිස්ටර් වීමට පෙර දැකගත හැකි වන පරිදි auth token එකක් අවශ්‍ය නොවන public endpoint එකකට දත්ත ලබා ගැනීම
       const res = await axios.get("http://localhost:5000/api/admin/teachers");
       setTeachers(res.data);
     } catch (err) {
@@ -99,7 +97,6 @@ export default function StudentTeacherView() {
 
   if (!user) return null;
 
-  // Find currently selected teacher for modal view
   const selectedTeacher = teachers.find((t) => t._id === expandedTeacherId);
 
   return (
@@ -155,15 +152,10 @@ export default function StudentTeacherView() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
             {filteredTeachers.map((t) => {
               return (
-                <div key={t._id} className="flex flex-col group">
+                <div key={t._id} className="flex flex-col group bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-lg transition-all duration-300 hover:shadow-2xl p-3">
                   
-                  {/* Subject Name Displayed Above Photo (Only Subject Name, Larger) */}
-                  <div className="mb-3 text-center bg-teal-50 dark:bg-teal-500/10 border border-teal-200 dark:border-teal-500/20 py-3 px-4 rounded-2xl shadow-sm">
-                    <span className="text-lg font-black text-teal-700 dark:text-teal-300 truncate block">{t.subject}</span>
-                  </div>
-
-                  {/* Teacher Photo Card */}
-                  <div className="relative w-full h-[360px] bg-slate-100 dark:bg-slate-900 rounded-[28px] overflow-hidden border border-slate-200/80 dark:border-slate-800 shadow-lg flex items-center justify-center">
+                  {/* Teacher Photo Card with Clean Inward Curve & Hover Arrow Animation */}
+                  <div className="relative w-full h-[340px] bg-slate-100 dark:bg-slate-800 rounded-[24px] overflow-hidden flex items-center justify-center">
                     {t.profilePhoto ? (
                       <img 
                         src={getProfileImageUrl(t.profilePhoto) || ""} 
@@ -177,23 +169,27 @@ export default function StudentTeacherView() {
                       <User size={80} className="text-slate-300 dark:text-slate-600" />
                     )}
 
-                    {/* Gradient Overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent"></div>
+                    {/* Top Subject Badge */}
+                    <div className="absolute top-4 left-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-3.5 py-1.5 rounded-full text-xs font-extrabold text-slate-800 dark:text-white shadow-md border border-slate-200/50 dark:border-slate-700/50">
+                      {t.subject}
+                    </div>
 
-                    {/* View Details Button */}
+                    {/* Smooth Inward Corner Mask/Background Shape at bottom-right corner */}
+                    <div className="absolute bottom-0 right-0 w-20 h-20 bg-white dark:bg-slate-900 rounded-tl-[36px] pointer-events-none z-10"></div>
+
+                    {/* Floating Round Action Button with Smooth Arrow Hover Angle Animation */}
                     <button 
                       onClick={() => toggleExpand(t._id)}
-                      className="absolute left-4 bottom-4 w-11 h-11 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-white hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 transition-all duration-300 z-20"
+                      className="absolute right-3 bottom-3 w-12 h-12 rounded-full bg-blue-600 text-white shadow-xl flex items-center justify-center hover:bg-blue-700 transition-all duration-300 z-20 group-hover:scale-110"
                       title="View Details"
                     >
-                      <ChevronRight size={20} />
+                      <ChevronRight size={22} className="transition-transform duration-300 group-hover:rotate-45" />
                     </button>
                   </div>
 
-                  {/* Teacher Name Displayed Below Photo */}
-                  <div className="mt-4 text-center">
+                  {/* Teacher Name Footer */}
+                  <div className="p-4">
                     <h3 className="font-extrabold text-xl text-slate-900 dark:text-white truncate">{t.name}</h3>
-                    <p className="text-xs text-slate-400 font-medium mt-0.5">Educator</p>
                   </div>
 
                 </div>
@@ -202,7 +198,7 @@ export default function StudentTeacherView() {
           </div>
         )}
 
-        {/* LARGER & CLEARER PROFESSIONAL MODAL POPUP FOR TEACHER DETAILS */}
+        {/* PROFESSIONAL MODAL POPUP FOR TEACHER DETAILS */}
         {selectedTeacher && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
             <div className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
@@ -236,7 +232,7 @@ export default function StudentTeacherView() {
                 </button>
               </div>
 
-              {/* Modal Body (Larger text & spacing) */}
+              {/* Modal Body */}
               <div className="p-8 space-y-6 overflow-y-auto max-h-[62vh] custom-scrollbar bg-slate-50/50 dark:bg-slate-900">
                 
                 {/* Email Section */}
@@ -270,7 +266,7 @@ export default function StudentTeacherView() {
               </div>
 
               {/* Modal Footer */}
-              <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap-2.5">
+              <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-wrap gap.2.5">
                 {selectedTeacher.website && (
                   <a href={selectedTeacher.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-xs shadow-sm hover:bg-blue-700 transition-colors">
                     <Globe size={15} /> Website
