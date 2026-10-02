@@ -105,9 +105,10 @@ export default function StudentDashboard() {
   const [copied, setCopied] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // State to manage announcement page index for sliding animation (showing 3 per page)
+  // Announcement pagination state (Desktop: 3 per page, Mobile: 1 per page)
   const [announcementPage, setAnnouncementPage] = useState(0);
   const [fadeAnim, setFadeAnim] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const announcementsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -133,10 +134,20 @@ export default function StudentDashboard() {
     };
     checkDarkMode();
 
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkScreenSize();
+
     const observer = new MutationObserver(checkDarkMode);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 
-    return () => observer.disconnect();
+    window.addEventListener("resize", checkScreenSize);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", checkScreenSize);
+    };
   }, [router]);
 
   const fetchActiveAds = async (authToken: string | null) => {
@@ -195,7 +206,8 @@ export default function StudentDashboard() {
     return matchesSearch && matchesAudience;
   });
 
-  const itemsPerPage = 3;
+  // Items per page: 1 for mobile view, 3 for desktop view
+  const itemsPerPage = isMobile ? 1 : 3;
   const totalPages = Math.ceil(filteredAds.length / itemsPerPage);
   const displayedAds = filteredAds.slice(announcementPage * itemsPerPage, (announcementPage + 1) * itemsPerPage);
 
@@ -437,8 +449,8 @@ export default function StudentDashboard() {
                <div className="flex items-center gap-3">
                  <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Explore Latest Updates</h2>
                  
-                 {/* Up/Down symbol-only Buttons as Requested */}
-                 {filteredAds.length > 3 && (
+                 {/* Up/Down symbol-only Buttons (Shows on mobile if > 1, desktop if > 3) */}
+                 {filteredAds.length > (isMobile ? 1 : 3) && (
                    <div className="flex items-center gap-1.5 ml-2">
                      <button
                        onClick={handlePrevAnnouncements}
@@ -505,7 +517,7 @@ export default function StudentDashboard() {
                 fadeAnim ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
               }`}
             >
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8">
+              <div className={`grid grid-cols-1 ${isMobile ? 'max-w-md mx-auto' : 'sm:grid-cols-2 lg:grid-cols-3'} gap-8`}>
                 {displayedAds.map((ad) => {
                   const validImages = ad.images && Array.isArray(ad.images) 
                     ? ad.images.filter(img => img && img.trim() !== "") 
@@ -579,7 +591,7 @@ export default function StudentDashboard() {
           )}
 
           {/* Bottom symbol-only navigation bar */}
-          {filteredAds.length > 3 && (
+          {filteredAds.length > (isMobile ? 1 : 3) && (
             <div className="flex justify-center items-center gap-3 mt-8">
               <button
                 onClick={handlePrevAnnouncements}
