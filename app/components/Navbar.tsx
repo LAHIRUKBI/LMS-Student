@@ -140,7 +140,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between transition-all duration-700 ease-in-out h-14 sm:h-16
         ${isExpanded
           ? 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-full pointer-events-none'
-          : 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2 sm:px-4 pointer-events-auto'
+          : 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-4 sm:px-6 pointer-events-auto'
         }
       `}
     >
@@ -148,7 +148,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       <div
         className={`flex items-center h-full transition-all duration-700 pointer-events-auto relative
           ${isExpanded
-            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5'
+            ? 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-3 sm:px-6'
             : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
           }
         `}
@@ -164,12 +164,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               }
             }}
           >
-            <div className="bg-blue-600 p-1.5 sm:p-2 rounded-lg text-white shadow-sm transition-transform hover:scale-105 shrink-0">
+            <div className="bg-blue-600 p-1.5 sm:p-2 rounded-full text-white shadow-sm transition-transform hover:scale-105 shrink-0">
               {isExpanded ? <Menu size={20} /> : <BookOpen size={20} />}
             </div>
             <span
               className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
-                ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-1.5 sm:ml-2 text-[15px] sm:text-xl'}
+                ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-2 sm:ml-3 text-[15px] sm:text-xl'}
               `}
             >
               NovaSkill
@@ -177,12 +177,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </Link>
 
           {isExpanded && isDropdownOpen && (
-            <div className="absolute top-full left-0 mt-4 w-48 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
+            <div className="absolute top-full left-0 mt-4 w-48 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
               {/* Teachers Tab (Visible to everyone) */}
               <Link
                 href="/teacher"
                 onClick={() => setIsDropdownOpen(false)}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/teacher' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/teacher' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
                   }`}
               >
                 <Users size={16} /> Teachers
@@ -191,7 +191,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               <Link
                 href="/class/class_view"
                 onClick={() => setIsDropdownOpen(false)}
-                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/class_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/class_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
                   }`}
               >
                 <Users size={16} /> Class
@@ -201,7 +201,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 <Link
                   href="/notice_view"
                   onClick={() => setIsDropdownOpen(false)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 relative ${pathname === '/notice_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 relative ${pathname === '/notice_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
                     }`}
                 >
                   <FileText size={16} /> Notices
@@ -217,12 +217,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         </div>
 
         <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[400px] opacity-100'}`}>
-          <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mr-2"></div>
+          <div className="h-6 w-px bg-slate-300/40 dark:bg-slate-700/40 mr-2"></div>
 
           {/* Teachers Tab (Visible to everyone) */}
           <Link
             href="/teacher"
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/teacher' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/teacher' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
               }`}
           >
             <Users size={16} /> Teachers
@@ -231,7 +231,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           {/* Class Tab (Visible to everyone) */}
           <Link
             href="/class/class_view"
-            className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/class_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+            className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/class_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
               }`}
           >
             <Users size={16} /> Class
@@ -242,12 +242,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             <Link
               href="/notice_view"
               onClick={() => setIsDropdownOpen(false)}
-              className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center justify-between mx-2 rounded-xl ${pathname === '/notice_view' ? 'bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
+              className={`px-4 py-2 text-sm font-bold transition-colors flex items-center justify-between mx-2 rounded-full ${pathname === '/notice_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
                 }`}
             >
-              <span className="flex items-center gap-2.5"><FileText size={16} /> Notices</span>
+              <span className="flex items-center gap-2"><FileText size={16} /> Notices</span>
               {unreadNoticeCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold">
+                <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1.5">
                   {unreadNoticeCount}
                 </span>
               )}
@@ -260,7 +260,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       <div
         className={`flex items-center gap-1.5 sm:gap-3 h-full transition-all duration-700 pointer-events-auto
           ${isExpanded
-            ? 'bg-white/90 dark:bg-slate-900/90 backdrop-blur-md shadow-lg border border-slate-200 dark:border-slate-800 rounded-2xl px-2.5 sm:px-5'
+            ? 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-3 sm:px-6'
             : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
           }
         `}
@@ -272,7 +272,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               setIsNotificationOpen(!isNotificationOpen);
               if (!isNotificationOpen) fetchNotifications();
             }}
-            className="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors relative shrink-0"
+            className="p-2 rounded-full text-slate-600 hover:bg-white/50 dark:text-slate-300 dark:hover:bg-slate-800/50 transition-colors relative shrink-0"
           >
             <Bell size={18} />
             {unreadCount > 0 && (
@@ -281,8 +281,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </button>
 
           {isNotificationOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 z-50">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-4 z-50">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-slate-800/50">
                 <h3 className="font-bold text-slate-900 dark:text-white text-sm">Notifications</h3>
                 <div className="flex items-center gap-2">
                   <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
@@ -299,8 +299,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                     <div
                       key={notif._id}
                       className={`p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${notif.isRead
-                          ? 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'
-                          : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800'
+                          ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40'
+                          : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50'
                         }`}
                     >
                       <div>
@@ -327,31 +327,31 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
         <button
           onClick={toggleDarkMode}
-          className="p-1.5 sm:p-2 rounded-full text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 transition-colors shrink-0"
+          className="p-2 rounded-full text-slate-600 hover:bg-white/50 dark:text-slate-300 dark:hover:bg-slate-800/50 transition-colors shrink-0"
         >
           {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
         </button>
 
         <Link
           href="/profile"
-          className={`flex items-center text-sm font-medium text-slate-600 dark:text-slate-300 bg-slate-100/80 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-all duration-500 cursor-pointer 
-            ${isExpanded ? 'p-1 sm:p-1.5' : 'px-2 py-1 sm:px-3 sm:py-1.5'}
+          className={`flex items-center text-sm font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 hover:bg-white/70 dark:hover:bg-slate-700/60 rounded-full transition-all duration-500 cursor-pointer border border-white/20 dark:border-slate-700/30
+            ${isExpanded ? 'p-1.5' : 'px-3 py-1.5'}
           `}
         >
           {profileImgUrl ? (
-            <img src={profileImgUrl} alt={user?.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-slate-300 dark:border-slate-600 shrink-0" />
+            <img src={profileImgUrl} alt={user?.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-slate-300/50 dark:border-slate-600/50 shrink-0" />
           ) : (
             <User size={16} className="text-blue-500 shrink-0" />
           )}
-          <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[65px] sm:max-w-[150px] opacity-100 ml-1.5 sm:ml-2 text-xs sm:text-sm'}`}>
+          <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[65px] sm:max-w-[150px] opacity-100 ml-2 text-xs sm:text-sm'}`}>
             {user?.name}
           </span>
         </Link>
 
         <button
           onClick={onLogout}
-          className={`flex items-center text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 hover:bg-red-100 dark:hover:bg-red-500/20 rounded-lg transition-all duration-500 shrink-0
-            ${isExpanded ? 'p-1.5 sm:p-2' : 'p-1.5 sm:px-3 sm:py-2'}
+          className={`flex items-center text-sm font-medium text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-500/10 hover:bg-red-100/70 dark:hover:bg-red-500/20 rounded-full transition-all duration-500 shrink-0 border border-red-200/30 dark:border-red-500/20
+            ${isExpanded ? 'p-2' : 'px-3.5 py-1.5'}
           `}
         >
           <LogOut size={16} className="shrink-0" />
@@ -359,9 +359,10 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             Logout
           </span>
         </button>
+
         <button
           onClick={toggleExpand}
-          className="flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-all duration-300 shrink-0"
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-white/40 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-700/60 transition-all duration-300 shrink-0 border border-white/20 dark:border-slate-700/30"
         >
           {isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>

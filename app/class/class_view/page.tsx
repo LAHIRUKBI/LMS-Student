@@ -135,10 +135,10 @@ export default function StudentClassViewPage() {
         ) : (
           <div className="space-y-8">
             {groupedClasses.map((item) => (
-              <div key={item.teacher._id} className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xl flex flex-col lg:flex-row gap-8 items-start transition-all hover:shadow-2xl">
+              <div key={item.teacher._id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[32px] border border-white/40 dark:border-slate-800/80 p-6 sm:p-8 shadow-2xl flex flex-col lg:flex-row gap-8 items-start transition-all hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)]">
                 
                 {/* Left Side: Teacher Info Box */}
-                <div className="w-full lg:w-80 shrink-0 flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-800/80 rounded-3xl p-6 text-center lg:sticky lg:top-28 space-y-4 border border-slate-100 dark:border-slate-700/50">
+                <div className="w-full lg:w-80 shrink-0 flex flex-col items-center justify-center bg-slate-50/70 dark:bg-slate-800/50 backdrop-blur-md rounded-3xl p-6 text-center lg:sticky lg:top-28 space-y-4 border border-slate-200/50 dark:border-slate-700/40">
                   <div className="w-full px-4 py-2.5 bg-gradient-to-r from-teal-500/15 to-emerald-500/15 dark:from-teal-500/20 dark:to-emerald-500/20 text-teal-700 dark:text-teal-300 rounded-2xl border border-teal-500/30 shadow-sm flex items-center justify-center gap-2">
                     <BookOpen size={20} className="flex-shrink-0" />
                     <span className="text-base sm:text-lg font-black tracking-wide uppercase truncate">
@@ -183,11 +183,11 @@ export default function StudentClassViewPage() {
                       return (
                         <div 
                           key={cls._id} 
-                          className="bg-slate-50 dark:bg-slate-800/60 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 flex flex-col justify-between gap-3 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-lg hover:border-blue-500/40"
+                          className="bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl p-5 rounded-2xl border border-white/80 dark:border-slate-700/60 shadow-lg shadow-slate-200/40 dark:shadow-none flex flex-col justify-between gap-3 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-blue-500/40"
                         >
                           
                           {cls.coverImage && (
-                            <div className="w-full h-44 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
+                            <div className="w-full h-44 rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
                               <img src={`http://localhost:5000${cls.coverImage}`} alt={cls.grade} className="w-full h-full object-cover object-center" />
                             </div>
                           )}
@@ -204,7 +204,7 @@ export default function StudentClassViewPage() {
                           </div>
 
                           {cls.description && (
-                            <p className="text-xs text-slate-600 dark:text-slate-400 italic bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-800">
+                            <p className="text-xs text-slate-600 dark:text-slate-400 italic bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800/80">
                               {cls.description}
                             </p>
                           )}
@@ -216,7 +216,8 @@ export default function StudentClassViewPage() {
                               </button>
                             )}
                             {status === 'Pending' && (
-                              <button disabled className="w-full py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold cursor-not-allowed">
+                              <button disabled className="w-full py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+                                <Loader2 size={15} className="animate-spin" />
                                 Request Pending...
                               </button>
                             )}
