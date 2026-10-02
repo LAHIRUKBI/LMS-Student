@@ -29,11 +29,11 @@ interface AdData {
 }
 
 const fallbackGalleryItems = [
-  { image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop", label: "Student 1" },
-  { image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop", label: "Student 2" },
-  { image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=600&fit=crop", label: "Online Class" },
-  { image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=600&fit=crop", label: "Student 3" },
-  { image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop", label: "Student 4" },
+  { image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&h=600&fit=crop", label: "Student 1", description: "Default student description 1" },
+  { image: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800&h=600&fit=crop", label: "Student 2", description: "Default student description 2" },
+  { image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=800&h=600&fit=crop", label: "Online Class", description: "Default online class description" },
+  { image: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800&h=600&fit=crop", label: "Student 3", description: "Default student description 3" },
+  { image: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800&h=600&fit=crop", label: "Student 4", description: "Default student description 4" },
 ];
 
 const fallbackHeroImages = [
@@ -209,8 +209,14 @@ export default function StudentDashboard() {
     ? dashboardSettings.heroImages.map((item: any) => ({ ...item, image: getMediaUrl(item.image) }))
     : fallbackHeroImages;
 
+  const galleryDescription = dashboardSettings?.galleryDescription || "";
   const currentGalleryItems = dashboardSettings?.galleryItems?.length > 0 
-    ? dashboardSettings.galleryItems.map((item: any) => ({ ...item, image: getMediaUrl(item.image), label: item.text || item.label }))
+    ? dashboardSettings.galleryItems.map((item: any) => ({ 
+        ...item, 
+        image: getMediaUrl(item.image), 
+        label: item.text || item.label,
+        description: item.description || "" 
+      }))
     : fallbackGalleryItems;
 
   const featureBadge = dashboardSettings?.featureBadge || "Why Choose Us";
@@ -513,10 +519,8 @@ export default function StudentDashboard() {
                 : `url("https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&h=900&fit=crop")`
             }}
           >
-            {/* Background Overlay */}
             <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] -z-10 rounded-3xl overflow-hidden"></div>
 
-            {/* Left Navigation Button */}
             {testimonials.length > 2 && (
               <button 
                 onClick={prevTestimonials}
@@ -527,7 +531,6 @@ export default function StudentDashboard() {
               </button>
             )}
 
-            {/* Right Navigation Button */}
             {testimonials.length > 2 && (
               <button 
                 onClick={nextTestimonials}
@@ -587,11 +590,17 @@ export default function StudentDashboard() {
           </section>
         )}
 
-        {/* ================= Gallery ================= */}
+        {/* ================= Gallery Section (Updated with Descriptions) ================= */}
         <div className="w-full relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
-          <div className="text-center mb-8">
-            <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Our Gallery</h3>
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3">Our Gallery</h3>
+            {galleryDescription && (
+              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                {galleryDescription}
+              </p>
+            )}
           </div>
+
           <AccordionGallery 
             items={currentGalleryItems} 
             height={460}
