@@ -9,6 +9,7 @@ interface GalleryItem {
   link?: string;
   alt?: string;
   text?: string;
+  description?: string; // අලුතින් එකතු කළ description සඳහා
 }
 
 interface AccordionGalleryProps {
@@ -34,11 +35,11 @@ interface AccordionGalleryProps {
 }
 
 const DEFAULT_ITEMS: GalleryItem[] = [
-  { image: 'https://picsum.photos/id/1015/900/1200', label: 'Canyon', link: '#' },
-  { image: 'https://picsum.photos/id/1018/900/1200', label: 'Ridgeline', link: '#' },
-  { image: 'https://picsum.photos/id/1039/900/1200', label: 'Falls', link: '#' },
-  { image: 'https://picsum.photos/id/1043/900/1200', label: 'Harbour', link: '#' },
-  { image: 'https://picsum.photos/id/1044/900/1200', label: 'Skyline', link: '#' }
+  { image: 'https://picsum.photos/id/1015/900/1200', label: 'Canyon', description: 'Explore the deep majestic canyons.', link: '#' },
+  { image: 'https://picsum.photos/id/1018/900/1200', label: 'Ridgeline', description: 'Breathtaking mountain ridgelines.', link: '#' },
+  { image: 'https://picsum.photos/id/1039/900/1200', label: 'Falls', description: 'Crystal clear rushing water falls.', link: '#' },
+  { image: 'https://picsum.photos/id/1043/900/1200', label: 'Harbour', description: 'Peaceful and calm evening harbour.', link: '#' },
+  { image: 'https://picsum.photos/id/1044/900/1200', label: 'Skyline', description: 'Modern city skyline at night.', link: '#' }
 ];
 
 const AccordionGallery: React.FC<AccordionGalleryProps> = ({
@@ -66,7 +67,7 @@ const AccordionGallery: React.FC<AccordionGalleryProps> = ({
   const panelRefs = useRef<(HTMLElement | null)[]>([]);
   const mediaRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const barRefs = useRef<(HTMLSpanElement | null)[]>([]);
-  const textRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const contentRefs = useRef<(HTMLDivElement | null)[]>([]); // Label සහ Description එක ඇතුළත් container එක සඳහා
   const tlRef = useRef<gsap.core.Timeline | null>(null);
   const firstRunRef = useRef(true);
   const mediaSizeRef = useRef(320);
@@ -80,7 +81,8 @@ const AccordionGallery: React.FC<AccordionGalleryProps> = ({
       ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
       : false;
 
-  const overlayBg = `linear-gradient(180deg, transparent 45%, color-mix(in srgb, ${overlayColor} 78%, transparent) 100%), color-mix(in srgb, ${overlayColor} calc(var(--ag-dim, 0.35) * 100%), transparent)`;
+  // වඩාත් ලස්සනට පෙනෙන ගැඹුරු ශේඩ් එකක් (Gradient Shade) සඳහා overlay background එක සකසා ඇත
+  const overlayBg = `linear-gradient(180deg, transparent 30%, color-mix(in srgb, ${overlayColor} 85%, transparent) 100%), color-mix(in srgb, ${overlayColor} calc(var(--ag-dim, 0.35) * 100%), transparent)`;
 
   const applyLayout = useCallback(
     (animate: boolean) => {
@@ -100,7 +102,7 @@ const AccordionGallery: React.FC<AccordionGalleryProps> = ({
         const isActive = i === active;
         const media = mediaRefs.current[i];
         const bar = barRefs.current[i];
-        const text = textRefs.current[i];
+        const contentBox = contentRefs.current[i];
 
         const rot = isActive ? 0 : i < active ? tilt : -tilt;
         const rotProp = vertical ? { rotateX: -rot } : { rotateY: rot };
@@ -127,11 +129,11 @@ const AccordionGallery: React.FC<AccordionGalleryProps> = ({
           );
         }
 
-        if (showLabels && bar && text) {
+        if (showLabels && bar && contentBox) {
           if (isActive) {
-            tl.to([bar, text], { opacity: 1, x: 0, duration: dur, ease, stagger: prefersReduced ? 0 : stagger }, 0);
+            tl.to([bar, contentBox], { opacity: 1, x: 0, duration: dur, ease, stagger: prefersReduced ? 0 : stagger }, 0);
           } else {
-            tl.to([bar, text], { opacity: 0, x: -14, duration: dur * 0.6, ease }, 0);
+            tl.to([bar, contentBox], { opacity: 0, x: -14, duration: dur * 0.6, ease }, 0);
           }
         }
       });
@@ -252,31 +254,44 @@ const AccordionGallery: React.FC<AccordionGalleryProps> = ({
                 />
               </span>
               <span
-                className="pointer-events-none absolute inset-0"
+                className="pointer-events-none absolute inset-0 transition-opacity duration-500"
                 style={{ background: overlayBg }}
                 aria-hidden="true"
               />
             </span>
+
             {showLabels && (
               <span
-                className="pointer-events-none absolute bottom-5 left-5 right-5 z-[2] flex items-center gap-3"
+                className="pointer-events-none absolute bottom-6 left-6 right-6 z-[2] flex items-start gap-3"
                 aria-hidden="true"
               >
                 <span
                   ref={(el: HTMLSpanElement | null) => { barRefs.current[i] = el; }}
-                  className="h-[26px] w-[3px] flex-none rounded-[3px] opacity-0"
+                  className="h-[42px] w-[3.5px] flex-none rounded-[3px] opacity-0 mt-1"
                   style={{
                     background: accentColor,
-                    boxShadow: `0 0 12px color-mix(in srgb, ${accentColor} 60%, transparent)`
+                    boxShadow: `0 0 14px color-mix(in srgb, ${accentColor} 70%, transparent)`
                   }}
                 />
-                <span
-                  ref={(el: HTMLSpanElement | null) => { textRefs.current[i] = el; }}
-                  className="overflow-hidden text-ellipsis whitespace-nowrap text-[clamp(1rem,1.4vw,1.4rem)] font-semibold tracking-[0.01em] opacity-0 [text-shadow:0_2px_14px_rgba(0,0,0,0.55)]"
-                  style={{ color: textColor }}
+                <div
+                  ref={(el: HTMLDivElement | null) => { contentRefs.current[i] = el; }}
+                  className="flex flex-col opacity-0 overflow-hidden"
                 >
-                  {item.label}
-                </span>
+                  <span
+                    className="text-[clamp(1.1rem,1.5vw,1.5rem)] font-bold tracking-[0.01em] [text-shadow:0_2px_14px_rgba(0,0,0,0.7)]"
+                    style={{ color: textColor }}
+                  >
+                    {item.label}
+                  </span>
+                  {item.description && (
+                    <span 
+                      className="text-[clamp(0.8rem,1vw,0.95rem)] font-medium mt-1 opacity-90 line-clamp-2 [text-shadow:0_2px_10px_rgba(0,0,0,0.6)]"
+                      style={{ color: textColor }}
+                    >
+                      {item.description}
+                    </span>
+                  )}
+                </div>
               </span>
             )}
           </Tag>
