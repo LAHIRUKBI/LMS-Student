@@ -9,6 +9,7 @@ import Navbar from "@/app/components/Navbar";
 import AccordionGallery from "@/app/components/AccordionGallery";
 import HeroCarousel from "@/app/components/HeroCarousel";
 import FeatureCarousel from "@/app/components/FeatureCarousel";
+import ScrollRevealCards from "@/app/components/ScrollRevealCards";
 
 interface AdLink {
   label: string;
@@ -98,7 +99,6 @@ export default function StudentDashboard() {
   const [dashboardSettings, setDashboardSettings] = useState<any>(null);
   const [imageIndexes, setImageIndexes] = useState<Record<string, number>>({});
   
-  // Testimonials Carousel State
   const [testimonialIndex, setTestimonialIndex] = useState(0);
 
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -190,7 +190,6 @@ export default function StudentDashboard() {
     return matchesSearch && matchesAudience;
   });
 
-  // ------------------ Hero Variables ------------------
   const heroBadge = dashboardSettings?.heroBadge || "eLearning Platform";
   const titleColor1 = isDarkMode ? (dashboardSettings?.darkTitleColor1 || "#ffffff") : (dashboardSettings?.titleColor1 || "#0f172a");
   const titleColor2 = isDarkMode ? (dashboardSettings?.darkTitleColor2 || "#ffffff") : (dashboardSettings?.titleColor2 || "#0f172a");
@@ -214,7 +213,6 @@ export default function StudentDashboard() {
     ? dashboardSettings.galleryItems.map((item: any) => ({ ...item, image: getMediaUrl(item.image), label: item.text || item.label }))
     : fallbackGalleryItems;
 
-  // ------------------ Feature Variables (Second Section) ------------------
   const featureBadge = dashboardSettings?.featureBadge || "Why Choose Us";
   const featureTitleLine1 = dashboardSettings?.featureTitleLine1 || "Everything you need to";
   const featureTitleHighlight = dashboardSettings?.featureTitleHighlight || "excel";
@@ -239,7 +237,6 @@ export default function StudentDashboard() {
     setTimeout(() => setCopied(false), 2500);
   };
 
-  // Testimonials Navigation Functions
   const nextTestimonials = () => {
     if (testimonials.length <= 2) return;
     setTestimonialIndex((prev) => (prev + 2 >= testimonials.length ? 0 : prev + 2));
@@ -249,11 +246,6 @@ export default function StudentDashboard() {
     if (testimonials.length <= 2) return;
     setTestimonialIndex((prev) => (prev - 2 < 0 ? Math.max(0, testimonials.length - (testimonials.length % 2 === 0 ? 2 : 1)) : prev - 2));
   };
-
-  // Testimonial Background Image
-  const testimonialBg = dashboardSettings?.testimonialBgImage 
-    ? getMediaUrl(dashboardSettings.testimonialBgImage) 
-    : "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&h=900&fit=crop";
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FFF5F1] to-white dark:from-slate-950 dark:to-slate-900 transition-colors duration-500 relative font-sans overflow-x-hidden">
@@ -409,7 +401,7 @@ export default function StudentDashboard() {
                </div>
                <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Explore Latest Updates</h2>
              </div>
-             
+            
              <div className="relative w-full md:w-80 lg:w-96 group">
                <input 
                  type="text" 
@@ -511,25 +503,40 @@ export default function StudentDashboard() {
           )}
         </div>
 
-        {/* ================= Testimonials Section (Updated with Curved Background Cutouts for Arrows) ================= */}
+        {/* ================= Testimonials Section ================= */}
         {testimonials.length > 0 && (
-          <section className="py-20 mb-20 relative rounded-3xl overflow-hidden shadow-2xl">
-            {/* Background Image Container with Curved Cutouts (using mask-image / complex clip-path or background cutout simulation) */}
-            <div className="absolute inset-0 -z-20 overflow-hidden">
-              <div 
-                className="absolute inset-0 bg-cover bg-center filter brightness-[0.7]" 
-                style={{ backgroundImage: `url(${testimonialBg})` }}
-              ></div>
-              <div className="absolute inset-0 bg-slate-950/75 backdrop-blur-[2px]"></div>
-            </div>
+          <section 
+            className="py-20 mb-20 relative rounded-3xl overflow-visible shadow-2xl bg-cover bg-center bg-no-repeat"
+            style={{
+              backgroundImage: dashboardSettings?.testimonialBgImage 
+                ? `url("${getMediaUrl(dashboardSettings.testimonialBgImage)}")` 
+                : `url("https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&h=900&fit=crop")`
+            }}
+          >
+            {/* Background Overlay */}
+            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] -z-10 rounded-3xl overflow-hidden"></div>
 
-            {/* Custom SVG Background mask / shape simulation to create the semi-circle cutouts on left and right borders */}
-            <div className="absolute inset-0 -z-10 pointer-events-none flex justify-between items-center px-2">
-              {/* Left cutout ring indicator area */}
-              <div className="w-16 h-32 bg-white dark:bg-slate-900 rounded-r-full shadow-inner opacity-90"></div>
-              {/* Right cutout ring indicator area */}
-              <div className="w-16 h-32 bg-white dark:bg-slate-900 rounded-l-full shadow-inner opacity-90"></div>
-            </div>
+            {/* Left Navigation Button */}
+            {testimonials.length > 2 && (
+              <button 
+                onClick={prevTestimonials}
+                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
+                title="Previous"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+
+            {/* Right Navigation Button */}
+            {testimonials.length > 2 && (
+              <button 
+                onClick={nextTestimonials}
+                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
+                title="Next"
+              >
+                <ChevronRight size={22} />
+              </button>
+            )}
 
             <div className="text-center max-w-3xl mx-auto mb-12 px-4 relative z-10">
               <h2 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
@@ -537,24 +544,19 @@ export default function StudentDashboard() {
               </h2>
             </div>
 
-            {/* Testimonials Carousel Container */}
-            <div className="relative max-w-5xl mx-auto px-10 md:px-14">
-              
-              {/* Left Navigation Arrow (Positioned exactly on the left cutout border center) */}
-              {testimonials.length > 2 && (
-                <button 
-                  onClick={prevTestimonials}
-                  className="absolute -left-4 md:-left-5 top-1/2 -translate-y-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
-                  title="Previous"
-                >
-                  <ChevronLeft size={22} />
-                </button>
-              )}
-
-              {/* Cards Grid (Displaying 2 cards at a time) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 transition-all duration-500">
-                {testimonials.slice(testimonialIndex, testimonialIndex + 2).map((test: any, idx: number) => (
-                  <div key={testimonialIndex + idx} className="bg-white dark:bg-[#111827] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between hover:-translate-y-1 transition-all duration-300">
+            <div className="relative max-w-5xl mx-auto px-6 md:px-10">
+              <ScrollRevealCards
+                maxTranslateX={180}
+                maxTranslateY={40}
+                maxScaleReduction={0.18}
+                maxRotate={6}
+                maxOpacityReduction={0.9}
+              >
+                {testimonials.slice(testimonialIndex, testimonialIndex + 2).map((test: any) => (
+                  <div 
+                    key={test.name + test.title}
+                    className="bg-white dark:bg-[#111827] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between h-full"
+                  >
                     <div>
                       <div className="flex items-center gap-1 mb-6 text-yellow-400">
                         {[...Array(Number(test.rating) || 5)].map((_, i) => (
@@ -580,24 +582,12 @@ export default function StudentDashboard() {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              {/* Right Navigation Arrow (Positioned exactly on the right cutout border center) */}
-              {testimonials.length > 2 && (
-                <button 
-                  onClick={nextTestimonials}
-                  className="absolute -right-4 md:-right-5 top-1/2 -translate-y-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
-                  title="Next"
-                >
-                  <ChevronRight size={22} />
-                </button>
-              )}
-
+              </ScrollRevealCards>
             </div>
           </section>
         )}
 
-        {/* ================= Gallery (Accordion Gallery) ================= */}
+        {/* ================= Gallery ================= */}
         <div className="w-full relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
           <div className="text-center mb-8">
             <h3 className="text-2xl font-bold text-slate-800 dark:text-white">Our Gallery</h3>
