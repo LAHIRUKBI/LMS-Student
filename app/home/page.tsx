@@ -262,6 +262,16 @@ export default function StudentDashboard() {
       }))
     : fallbackGalleryItems;
 
+  const heroStatsBadge = dashboardSettings?.heroStatsBadge || "About Us";
+  const heroStatsTitle = dashboardSettings?.heroStatsTitle || "We are passionate about empowering learners Worldwide with high-quality, accessible & engaging education. Our mission offering a diverse range of courses.";
+  const heroStatsList = dashboardSettings?.heroStatsList?.length > 0 
+    ? dashboardSettings.heroStatsList 
+    : [
+        { value: "25+", label: "Years of eLearning Education Experience" },
+        { value: "56k", label: "Students Enrolled in LMSZONE Courses" },
+        { value: "170+", label: "Experienced Teacher's service." }
+      ];  
+
   const featureBadge = dashboardSettings?.featureBadge || "Why Choose Us";
   const featureTitleLine1 = dashboardSettings?.featureTitleLine1 || "Everything you need to";
   const featureTitleHighlight = dashboardSettings?.featureTitleHighlight || "excel";
@@ -325,6 +335,9 @@ export default function StudentDashboard() {
           handleCopyLink={handleCopyLink}
           getMediaUrl={getMediaUrl}
           getSocialIcon={getSocialIcon}
+          heroStatsBadge={heroStatsBadge}
+          heroStatsTitle={heroStatsTitle}
+          heroStatsList={heroStatsList}
         />
 
         {/* 2. Second Section (Features) */}
