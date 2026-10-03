@@ -1,8 +1,6 @@
-// src/components/Navbar.tsx (or student navigation bar component)
-
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck, FileText, Gift } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -25,6 +23,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   // State for student notices count
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
 
+  // Notification dropdown එකෙන් පිටත ක්ලික් කළ විට එය වසා දැමීමට Ref එකක්
+  const notificationRef = useRef<HTMLDivElement>(null);
+
   const pathname = usePathname();
 
   useEffect(() => {
@@ -42,12 +43,24 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     fetchNotifications();
     fetchStudentNoticesCount();
 
+    // Notification dropdown එකෙන් පිටත ක්ලික් කිරීම හඳුනා ගැනීමට Event Listener එකක්
+    const handleClickOutside = (event: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
     const interval = setInterval(() => {
       fetchNotifications();
       fetchStudentNoticesCount();
     }, 10000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const fetchNotifications = async () => {
@@ -285,8 +298,8 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           }
         `}
       >
-        {/* Notification Bell Icon & Dropdown */}
-        <div className="relative">
+        {/* Notification Bell Icon & Responsive Dropdown */}
+        <div className="relative" ref={notificationRef}>
           <button
             onClick={() => {
               setIsNotificationOpen(!isNotificationOpen);
@@ -301,32 +314,32 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </button>
 
           {isNotificationOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-4 z-50">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-200/50 dark:border-slate-800/50">
-                <h3 className="font-bold text-slate-900 dark:text-white text-sm">Notifications</h3>
+            <div className="absolute right-[-100px] sm:right-0 mt-3 w-[270px] sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-3 sm:p-4 z-50">
+              <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/50 dark:border-slate-800/50">
+                <h3 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Notifications</h3>
                 <div className="flex items-center gap-2">
-                  <button onClick={markAllAsRead} className="text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
-                    <CheckCheck size={14} /> Mark all read
+                  <button onClick={markAllAsRead} className="text-[11px] sm:text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                    <CheckCheck size={13} /> Mark all read
                   </button>
                 </div>
               </div>
 
-              <div className="max-h-80 overflow-y-auto mt-2 space-y-2">
+              <div className="max-h-72 overflow-y-auto mt-2 space-y-2 custom-scrollbar">
                 {notifications.length === 0 ? (
                   <p className="text-center text-xs text-slate-400 py-6">No notifications found.</p>
                 ) : (
                   notifications.map((notif) => (
                     <div
                       key={notif._id}
-                      className={`p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${notif.isRead
+                      className={`p-2.5 sm:p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${notif.isRead
                           ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40'
                           : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50'
                         }`}
                     >
                       <div>
-                        <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">{notif.title}</h4>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">{notif.message}</p>
-                        <span className="text-[10px] text-slate-400 mt-1 block">
+                        <h4 className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200">{notif.title}</h4>
+                        <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 mt-0.5">{notif.message}</p>
+                        <span className="text-[9px] sm:text-[10px] text-slate-400 mt-1 block">
                           {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
@@ -335,7 +348,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                         className="text-slate-400 hover:text-red-500 transition-colors p-1"
                         title="Delete notification"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   ))
