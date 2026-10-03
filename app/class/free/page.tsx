@@ -20,6 +20,7 @@ import {
   Film
 } from "lucide-react"; 
 import Navbar from "@/app/components/Navbar";
+import AIChatWidget from "@/app/components/AIChatWidget";
 
 export default function FreeMaterialsPage() {
   const router = useRouter();
@@ -343,6 +344,7 @@ export default function FreeMaterialsPage() {
         )}
 
       </main>
+      <AIChatWidget />
     </div>
   );
 }

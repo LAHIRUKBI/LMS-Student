@@ -1,7 +1,9 @@
+// src/components/AIChatWidget.tsx
+
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { X, Bot, User, Loader2, Sparkles, BookOpen, ChevronRight, GraduationCap, Heart, Mail, Phone, MapPin, Award, Globe, ExternalLink } from "lucide-react";
+import { X, Bot, User, Loader2, BookOpen, ChevronRight, GraduationCap, Mail, Phone, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 
@@ -21,17 +23,25 @@ export default function AIChatWidget() {
   const [loading, setLoading] = useState(false);
   const [selectedTeacherModal, setSelectedTeacherModal] = useState<any | null>(null);
 
+  // Ref to detect clicks outside the chat window
+  const chatRef = useRef<HTMLDivElement>(null);
+
+  // Free Dragging States for Toggle Button
+  const [position, setPosition] = useState({ x: 30, y: 30 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; posX: number; posY: number }>({ startX: 0, startY: 0, posX: 0, posY: 0 });
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
       sender: "bot",
-      text: "Hello!, I'm your NovaSkill AI Study Assistant. How can I help you today? Please choose an option below:",
+      text: "Hello! I'm your NovaSkill AI Assistant. How can I help you today? Please choose an option below:",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       options: [
         { label: "📚 Explore Live Classes", action: "view_classes" },
         { label: "👩‍🏫 Explore Teachers", action: "view_teachers" },
         { label: "📅 View Class Schedule", action: "view_schedule" },
-        { label: "❓ Help & FAQs", action: "help_faq" }
+        { label: "❓ Help & FAQs", action: "goto_faq" }
       ]
     }
   ]);
@@ -48,7 +58,78 @@ export default function AIChatWidget() {
     }
   }, [isOpen, messages, selectedTeacherModal]);
 
-  // Fetch classes safely with fallback
+  // Click Outside Handler to close chat window
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isOpen && chatRef.current && !chatRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isOpen]);
+
+  // Dragging Handlers for Free Movement
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      posX: position.x,
+      posY: position.y
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    setPosition({
+      x: Math.max(10, dragRef.current.posX - dx),
+      y: Math.max(10, dragRef.current.posY - dy)
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", handleMouseUp);
+  };
+
+  // Touch handlers for mobile free dragging
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragRef.current = {
+      startX: touch.clientX,
+      startY: touch.clientY,
+      posX: position.x,
+      posY: position.y
+    };
+    window.addEventListener("touchmove", handleTouchMove);
+    window.addEventListener("touchend", handleTouchEnd);
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    const touch = e.touches[0];
+    const dx = touch.clientX - dragRef.current.startX;
+    const dy = touch.clientY - dragRef.current.startY;
+    setPosition({
+      x: Math.max(10, dragRef.current.posX - dx),
+      y: Math.max(10, dragRef.current.posY - dy)
+    });
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    window.removeEventListener("touchmove", handleTouchMove);
+    window.removeEventListener("touchend", handleTouchEnd);
+  };
+
   const fetchClassesForChat = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/classes");
@@ -62,13 +143,11 @@ export default function AIChatWidget() {
     }
   };
 
-  // Fetch teachers from backend API
   const fetchTeachersForChat = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/admin/teachers");
       return res.data || [];
     } catch (err) {
-      console.warn("Teachers API error, using sample teachers.");
       return [
         { _id: "t1", name: "Dr. Samantha Perera", subject: "Mathematics", email: "samantha@novaskill.com", phone: "+94 71 234 5678" },
         { _id: "t2", name: "Prof. Kamal Gunawardena", subject: "Science & ICT", email: "kamal@novaskill.com", phone: "+94 77 987 6543" }
@@ -96,40 +175,32 @@ export default function AIChatWidget() {
     if (action === "view_classes") {
       setTimeout(async () => {
         const fetchedClasses = await fetchClassesForChat();
-        
         const botReply: Message = {
           id: (Date.now() + 1).toString(),
           sender: "bot",
           text: "Here are the available classes right now. Click on any class to view details:",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           classesList: fetchedClasses,
-          options: [
-            { label: "🔄 Back to Main Menu", action: "reset_options" }
-          ]
+          options: [{ label: "🔄 Back to Main Menu", action: "reset_options" }]
         };
-
         setMessages(prev => [...prev, botReply]);
         setLoading(false);
-      }, 500);
+      }, 400);
     } 
     else if (action === "view_teachers") {
       setTimeout(async () => {
         const fetchedTeachers = await fetchTeachersForChat();
-
         const botReply: Message = {
           id: (Date.now() + 1).toString(),
           sender: "bot",
-          text: "Here are our experienced educators. Click on any teacher to view their full credentials:",
+          text: "Here are our experienced educators. Click on any teacher to view their credentials:",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           teachersList: fetchedTeachers,
-          options: [
-            { label: "🔄 Back to Main Menu", action: "reset_options" }
-          ]
+          options: [{ label: "🔄 Back to Main Menu", action: "reset_options" }]
         };
-
         setMessages(prev => [...prev, botReply]);
         setLoading(false);
-      }, 500);
+      }, 400);
     }
     else if (action === "view_schedule") {
       setTimeout(() => {
@@ -145,16 +216,17 @@ export default function AIChatWidget() {
         };
         setMessages(prev => [...prev, botReply]);
         setLoading(false);
-      }, 400);
+      }, 300);
     }
     else if (action === "help_faq") {
       setTimeout(() => {
         const botReply: Message = {
           id: (Date.now() + 1).toString(),
           sender: "bot",
-          text: "NovaSkill helps you access courses, meet expert teachers, and join live sessions effortlessly.",
+          text: "Need more information about NovaSkill? You can explore our Frequently Asked Questions (FAQs) page.",
           timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           options: [
+            { label: "❓ Go to FAQs Page", action: "goto_faq" },
             { label: "👩‍🏫 Explore Teachers", action: "view_teachers" },
             { label: "📚 Explore Live Classes", action: "view_classes" },
             { label: "🔙 Back to Main Menu", action: "reset_options" }
@@ -162,10 +234,14 @@ export default function AIChatWidget() {
         };
         setMessages(prev => [...prev, botReply]);
         setLoading(false);
-      }, 400);
+      }, 300);
     }
     else if (action === "goto_class_view") {
       router.push("/class/class_view");
+      setIsOpen(false);
+    }
+    else if (action === "goto_faq") {
+      router.push("/faq");
       setIsOpen(false);
     }
     else if (action === "reset_options") {
@@ -184,7 +260,7 @@ export default function AIChatWidget() {
         };
         setMessages(prev => [...prev, botReply]);
         setLoading(false);
-      }, 400);
+      }, 300);
     }
   };
 
@@ -195,81 +271,79 @@ export default function AIChatWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 font-sans">
-      {/* Monochrome & Dark Mode Adaptive Cute Toggle Button - Made more compact */}
+    <div ref={chatRef} className="fixed z-50 font-sans" style={{ right: `${position.x}px`, bottom: `${position.y}px` }}>
+      {/* Free Draggable Toggle Button */}
       {!isOpen && (
         <button
-          onClick={() => setIsOpen(true)}
-          className="relative group bg-slate-900 dark:bg-slate-100 hover:bg-black dark:hover:bg-white text-white dark:text-slate-900 p-1 rounded-full shadow-[0_6px_16px_rgba(0,0,0,0.15)] hover:scale-110 transition-all duration-300 flex items-center justify-center cursor-pointer border border-slate-700 dark:border-slate-300"
-          title="Chat with AI Assistant"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onClick={() => {
+            if (!isDragging) setIsOpen(true);
+          }}
+          className="relative group bg-slate-900 dark:bg-slate-100 hover:bg-black dark:hover:bg-white text-white dark:text-slate-900 p-1.5 rounded-full shadow-2xl hover:scale-105 transition-transform duration-200 flex items-center justify-center cursor-grab active:cursor-grabbing border border-slate-700 dark:border-slate-300"
+          title="Drag or Click to chat with AI Assistant"
         >
-          {/* Status Online Ping Badge */}
-          <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 z-10">
+          <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5 z-10 pointer-events-none">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-slate-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-slate-900 dark:bg-white border-2 border-slate-100 dark:border-slate-900"></span>
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-slate-900 dark:bg-white border-2 border-slate-100 dark:border-slate-900"></span>
           </span>
 
-          {/* More Compact Cute Child Avatar Illustration Container */}
-          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-300 dark:border-slate-700 shadow-inner relative">
+          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center pointer-events-none">
             <svg viewBox="0 0 100 100" className="w-full h-full object-cover scale-110 translate-y-1">
               <path d="M 25 45 Q 50 15 75 45 Q 85 30 70 20 Q 50 5 30 20 Q 15 30 25 45 Z" fill="#334155" />
               <circle cx="50" cy="55" r="28" fill="#e2e8f0" />
-              <circle cx="36" cy="62" r="5" fill="#cbd5e1" opacity="0.8" />
-              <circle cx="64" cy="62" r="5" fill="#cbd5e1" opacity="0.8" />
-              <circle cx="40" cy="52" r="3.5" fill="#0f172a" />
-              <circle cx="60" cy="52" r="3.5" fill="#0f172a" />
-              <circle cx="41.5" cy="50.5" r="1.2" fill="#ffffff" />
-              <circle cx="61.5" cy="50.5" r="1.2" fill="#ffffff" />
-              <path d="M 44 64 Q 50 71 56 64" stroke="#0f172a" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+              <circle cx="36" cy="62" r="4" fill="#cbd5e1" opacity="0.8" />
+              <circle cx="64" cy="62" r="4" fill="#cbd5e1" opacity="0.8" />
+              <circle cx="40" cy="52" r="3" fill="#0f172a" />
+              <circle cx="60" cy="52" r="3" fill="#0f172a" />
+              <path d="M 44 64 Q 50 70 56 64" stroke="#0f172a" strokeWidth="2.2" strokeLinecap="round" fill="none" />
               <path d="M 30 90 Q 50 75 70 90 Z" fill="#0f172a" />
             </svg>
           </div>
         </button>
       )}
 
-      {/* Black & White / Dark Mode Adaptive Chat Window */}
+      {/* Compact Chat Window */}
       {isOpen && (
-        <div className="w-[370px] sm:w-[410px] h-[600px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[28px] shadow-[0_20px_50px_rgba(0,0,0,0.15)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative">
+        <div className="w-[340px] sm:w-[370px] h-[500px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 relative">
           
           {/* Header */}
-          <div className="bg-slate-900 dark:bg-slate-950 text-white p-4.5 flex items-center justify-between shadow-sm relative border-b border-slate-800">
-            <div className="flex items-center gap-3 relative z-10">
-              <div className="w-10 h-10 rounded-2xl bg-slate-800 dark:bg-slate-800 flex items-center justify-center border border-slate-700 shadow-inner">
-                <GraduationCap size={20} className="text-white" />
+          <div className="bg-slate-900 dark:bg-slate-950 text-white px-4 py-3 flex items-center justify-between border-b border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center border border-slate-700">
+                <GraduationCap size={16} className="text-white" />
               </div>
-              <div>
-                <h3 className="font-bold text-sm tracking-wide flex items-center gap-1.5 text-white">
-                  Nova AI Assistant
-                </h3>
-              </div>
+              <h3 className="font-bold text-xs sm:text-sm tracking-wide text-white">
+                Nova AI Assistant
+              </h3>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800 transition-all cursor-pointer relative z-10"
+              className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 transition-all cursor-pointer"
             >
-              <X size={18} />
+              <X size={16} />
             </button>
           </div>
 
           {/* Messages Area */}
-          <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50 dark:bg-slate-950/60">
+          <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-slate-50 dark:bg-slate-950/60 text-xs">
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex flex-col gap-2.5 max-w-[94%] ${
+                className={`flex flex-col gap-2 max-w-[92%] ${
                   msg.sender === "user" ? "ml-auto items-end" : "mr-auto items-start"
                 }`}
               >
-                <div className={`flex gap-2.5 items-start ${msg.sender === "user" ? "flex-row-reverse" : ""}`}>
-                  <div className={`w-8 h-8 rounded-2xl shrink-0 flex items-center justify-center text-xs shadow-sm ${
+                <div className={`flex gap-2 items-start ${msg.sender === "user" ? "flex-row-reverse" : ""}`}>
+                  <div className={`w-7 h-7 rounded-xl shrink-0 flex items-center justify-center text-[10px] shadow-sm ${
                     msg.sender === "user" 
                       ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900" 
                       : "bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200"
                   }`}>
-                    {msg.sender === "user" ? <User size={15} /> : <Bot size={15} />}
+                    {msg.sender === "user" ? <User size={13} /> : <Bot size={13} />}
                   </div>
                   <div
-                    className={`p-3.5 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm ${
+                    className={`p-3 rounded-2xl text-xs leading-relaxed shadow-sm ${
                       msg.sender === "user"
                         ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-tr-none font-medium"
                         : "bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700/80 rounded-tl-none font-normal"
@@ -281,63 +355,59 @@ export default function AIChatWidget() {
 
                 {/* Classes List */}
                 {msg.classesList && msg.classesList.length > 0 && (
-                  <div className="w-full pl-10 space-y-2 mt-1">
+                  <div className="w-full pl-9 space-y-1.5 mt-0.5">
                     {msg.classesList.map((cls: any, idx: number) => (
                       <div
                         key={cls._id || idx}
                         onClick={() => handleSelectClass(cls)}
-                        className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl shadow-sm cursor-pointer transition-all duration-200 flex items-center justify-between group hover:scale-[1.02]"
+                        className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl shadow-sm cursor-pointer transition-all flex items-center justify-between group"
                       >
-                        <div className="flex items-center gap-2.5 overflow-hidden">
-                          <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-center shrink-0 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-colors">
-                            <BookOpen size={15} />
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <div className="w-7 h-7 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-center shrink-0">
+                            <BookOpen size={13} />
                           </div>
                           <div className="truncate">
-                            <h4 className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-black dark:group-hover:text-white">
+                            <h4 className="text-[11px] font-bold text-slate-800 dark:text-white truncate">
                               {cls.title || cls.name}
                             </h4>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
-                              {cls.subject || "General Class"}
+                            <p className="text-[9px] text-slate-500 dark:text-slate-400 font-medium">
+                              {cls.subject || "General"}
                             </p>
                           </div>
                         </div>
-                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-all shrink-0">
-                          <ChevronRight size={13} />
-                        </div>
+                        <ChevronRight size={12} className="text-slate-400 shrink-0" />
                       </div>
                     ))}
                   </div>
                 )}
 
-                {/* Teachers List inside Chat */}
+                {/* Teachers List */}
                 {msg.teachersList && msg.teachersList.length > 0 && (
-                  <div className="w-full pl-10 space-y-2 mt-1 max-h-64 overflow-y-auto pr-1">
+                  <div className="w-full pl-9 space-y-1.5 mt-0.5 max-h-48 overflow-y-auto pr-1">
                     {msg.teachersList.map((t: any, idx: number) => (
                       <div
                         key={t._id || idx}
                         onClick={() => setSelectedTeacherModal(t)}
-                        className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 p-3 rounded-2xl shadow-sm cursor-pointer transition-all duration-200 flex items-center justify-between group hover:scale-[1.02]"
+                        className="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 p-2.5 rounded-xl shadow-sm cursor-pointer transition-all flex items-center justify-between group"
                       >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 border border-slate-300 dark:border-slate-600">
+                        <div className="flex items-center gap-2.5 overflow-hidden">
+                          <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 border border-slate-300 dark:border-slate-600">
                             {t.profilePhoto ? (
                               <img src={getProfileImageUrl(t.profilePhoto) || ""} alt={t.name} className="w-full h-full object-cover" />
                             ) : (
-                              <User size={16} className="m-auto mt-2 text-slate-500" />
+                              <User size={14} className="m-auto mt-2 text-slate-500" />
                             )}
                           </div>
                           <div className="truncate">
-                            <h4 className="text-xs font-bold text-slate-800 dark:text-white truncate group-hover:text-black dark:group-hover:text-white">
+                            <h4 className="text-[11px] font-bold text-slate-800 dark:text-white truncate">
                               {t.name}
                             </h4>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold inline-block mt-0.5">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 font-semibold inline-block mt-0.5">
                               {t.subject}
                             </span>
                           </div>
                         </div>
-                        <div className="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-300 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-all shrink-0">
-                          <ChevronRight size={13} />
-                        </div>
+                        <ChevronRight size={12} className="text-slate-400 shrink-0" />
                       </div>
                     ))}
                   </div>
@@ -345,105 +415,87 @@ export default function AIChatWidget() {
 
                 {/* Options */}
                 {msg.options && msg.options.length > 0 && (
-                  <div className="w-full pl-10 flex flex-col gap-2 mt-1">
+                  <div className="w-full pl-9 flex flex-col gap-1.5 mt-0.5">
                     {msg.options.map((opt, idx) => (
                       <button
                         key={idx}
                         onClick={() => handleOptionClick(opt.action, opt.label)}
-                        className="w-full text-left bg-white dark:bg-slate-800 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-100 dark:hover:text-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-4 py-3 rounded-xl text-xs font-bold shadow-sm transition-all duration-200 flex items-center justify-between group cursor-pointer active:scale-95"
+                        className="w-full text-left bg-white dark:bg-slate-800 hover:bg-slate-900 hover:text-white dark:hover:bg-slate-100 dark:hover:text-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3.5 py-2.5 rounded-xl text-[11px] font-bold shadow-sm transition-all flex items-center justify-between group cursor-pointer active:scale-95"
                       >
                         <span>{opt.label}</span>
-                        <ChevronRight size={14} className="text-slate-400 group-hover:text-white dark:group-hover:text-slate-900 transition-colors" />
+                        <ChevronRight size={12} className="text-slate-400 group-hover:text-white dark:group-hover:text-slate-900" />
                       </button>
                     ))}
                   </div>
                 )}
                 
-                <span className={`text-[10px] text-slate-400 px-10 font-medium ${msg.sender === "user" ? "text-right" : "text-left"}`}>
+                <span className={`text-[9px] text-slate-400 px-9 font-medium ${msg.sender === "user" ? "text-right" : "text-left"}`}>
                   {msg.timestamp}
                 </span>
               </div>
             ))}
 
             {loading && (
-              <div className="flex gap-2.5 max-w-[85%] mr-auto items-center">
-                <div className="w-8 h-8 rounded-2xl shrink-0 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 shadow-sm">
-                  <Bot size={15} />
+              <div className="flex gap-2 max-w-[85%] mr-auto items-center">
+                <div className="w-7 h-7 rounded-xl shrink-0 flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
+                  <Bot size={13} />
                 </div>
-                <div className="bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-700 rounded-tl-none flex items-center gap-2.5 shadow-sm">
-                  <Loader2 size={16} className="animate-spin text-slate-800 dark:text-slate-200" />
-                  <span className="text-xs font-medium text-slate-500 dark:text-slate-400">Loading for you...</span>
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-sm">
+                  <Loader2 size={14} className="animate-spin text-slate-800 dark:text-slate-200" />
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">Loading...</span>
                 </div>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Teacher Profile Preview Modal inside Chat */}
+          {/* Teacher Profile Preview Modal */}
           {selectedTeacherModal && (
-            <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col p-4 animate-in fade-in duration-200">
-              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex-1 flex flex-col overflow-hidden">
-                <div className="bg-slate-900 text-white p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full overflow-hidden bg-slate-800 border border-white/20">
+            <div className="absolute inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex flex-col p-3 animate-in fade-in duration-200">
+              <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex-1 flex flex-col overflow-hidden text-xs">
+                <div className="bg-slate-900 text-white p-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full overflow-hidden bg-slate-800 border border-white/20">
                       {selectedTeacherModal.profilePhoto ? (
                         <img src={getProfileImageUrl(selectedTeacherModal.profilePhoto) || ""} alt="" className="w-full h-full object-cover" />
                       ) : (
-                        <User size={18} className="m-auto mt-2 text-slate-400" />
+                        <User size={15} className="m-auto mt-2 text-slate-400" />
                       )}
                     </div>
                     <div>
-                      <h4 className="font-bold text-sm">{selectedTeacherModal.name}</h4>
-                      <span className="text-[10px] text-slate-300 font-medium">{selectedTeacherModal.subject}</span>
+                      <h4 className="font-bold text-xs">{selectedTeacherModal.name}</h4>
+                      <span className="text-[9px] text-slate-300">{selectedTeacherModal.subject}</span>
                     </div>
                   </div>
-                  <button onClick={() => setSelectedTeacherModal(null)} className="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800">
-                    <X size={18} />
+                  <button onClick={() => setSelectedTeacherModal(null)} className="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800">
+                    <X size={16} />
                   </button>
                 </div>
 
-                <div className="p-4 flex-1 overflow-y-auto space-y-3 text-xs">
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1.5">
+                <div className="p-3.5 flex-1 overflow-y-auto space-y-2.5">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 space-y-1">
                     <p className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                      <Mail size={14} className="text-slate-400 shrink-0" /> {selectedTeacherModal.email || "No email provided"}
+                      <Mail size={13} className="text-slate-400 shrink-0" /> {selectedTeacherModal.email || "No email"}
                     </p>
                     {selectedTeacherModal.phone && (
                       <p className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                        <Phone size={14} className="text-slate-400 shrink-0" /> {selectedTeacherModal.phone}
+                        <Phone size={13} className="text-slate-400 shrink-0" /> {selectedTeacherModal.phone}
                       </p>
                     )}
                     {selectedTeacherModal.address && (
                       <p className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
-                        <MapPin size={14} className="text-slate-400 shrink-0" /> {selectedTeacherModal.address}
+                        <MapPin size={13} className="text-slate-400 shrink-0" /> {selectedTeacherModal.address}
                       </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <p className="font-bold text-slate-400 uppercase text-[10px] mb-2 flex items-center gap-1">
-                      <GraduationCap size={13} /> Qualifications
-                    </p>
-                    {selectedTeacherModal.qualifications && selectedTeacherModal.qualifications.length > 0 ? (
-                      <div className="space-y-2">
-                        {selectedTeacherModal.qualifications.map((q: any, i: number) => (
-                          <div key={i} className="bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                            <p className="font-bold text-slate-900 dark:text-white">{q.degree}</p>
-                            <p className="text-[11px] text-slate-500">{q.institution} ({q.period})</p>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-slate-400 italic">No qualifications listed.</p>
                     )}
                   </div>
                 </div>
 
-                <div className="p-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-end">
+                <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex justify-end">
                   <button
                     onClick={() => setSelectedTeacherModal(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-xs shadow"
+                    className="px-3.5 py-1.5 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold text-[11px] shadow"
                   >
-                    Close Preview
+                    Close
                   </button>
                 </div>
               </div>
@@ -451,8 +503,8 @@ export default function AIChatWidget() {
           )}
 
           {/* Footer */}
-          <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center flex items-center justify-center gap-1.5">
-            <p className="text-[11px] text-slate-400 font-medium flex items-center gap-1">
+          <div className="py-2.5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 text-center">
+            <p className="text-[10px] text-slate-400 font-medium">
               Powered by NovaSkill AI
             </p>
           </div>
