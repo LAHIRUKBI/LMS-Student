@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import Navbar from "@/app/components/Navbar";
 import FreeCardRequestModal from "@/app/page_components/free_card_request/page"; 
-import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard } from "lucide-react";
+import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -15,6 +15,16 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [myResults, setMyResults] = useState<any[]>([]);
+  const [joinedClassesCount, setJoinedClassesCount] = useState(0);
+
+  // Edit Profile Section Collapse State (localStorage මඟින් මතක තබා ගනී)
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(() => {
+    if (typeof window !== "undefined") {
+      const savedState = localStorage.getItem("isEditProfileOpen");
+      return savedState !== null ? JSON.parse(savedState) : true;
+    }
+    return true;
+  });
 
   const [currentUser, setCurrentUser] = useState<any>(null);
 
@@ -89,8 +99,29 @@ export default function ProfilePage() {
       setImagePreview(imgUrl);
     }
 
+    fetchJoinedClassesCount(token);
     setLoading(false);
   }, [router]);
+
+  // ලියාපදිංචි වී අනුමත වී ඇති classes ගණන ලබා ගැනීම
+  const fetchJoinedClassesCount = async (authToken: string) => {
+    try {
+      const [classRes, reqRes] = await Promise.all([
+        axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${authToken}` } }),
+        axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${authToken}` } })
+      ]);
+
+      const requests = reqRes.data;
+      const approvedClassIds = requests
+        .filter((r: any) => r.status === 'Approved')
+        .map((r: any) => r.classId);
+
+      const filteredClasses = classRes.data.filter((cls: any) => approvedClassIds.includes(cls._id));
+      setJoinedClassesCount(filteredClasses.length);
+    } catch (err) {
+      console.error("Error fetching joined classes count:", err);
+    }
+  };
 
   useEffect(() => {
     const fetchMyResults = async () => {
@@ -106,6 +137,12 @@ export default function ProfilePage() {
     };
     fetchMyResults();
   }, []);
+
+  const handleToggleEditProfile = () => {
+    const newState = !isEditProfileOpen;
+    setIsEditProfileOpen(newState);
+    localStorage.setItem("isEditProfileOpen", JSON.stringify(newState));
+  };
 
   const handleDownloadStudentPaperPDF = (result: any) => {
     const quiz = result.quizId;
@@ -248,6 +285,14 @@ export default function ProfilePage() {
       localStorage.setItem("user", JSON.stringify(res.data));
       setCurrentUser(res.data);
 
+      if (res.data.profileImage) {
+        const imgUrl = res.data.profileImage.startsWith("http")
+          ? res.data.profileImage
+          : `http://localhost:5000${res.data.profileImage}`;
+        setImagePreview(imgUrl);
+      }
+      setImageFile(null);
+
       setMessage({ type: "success", text: "Profile updated successfully!" });
     } catch (err) {
       console.error(err);
@@ -359,6 +404,25 @@ export default function ProfilePage() {
               </div>
             </div>
 
+            {/* Joined Classes Card (අලුතින් එකතු කරන ලද කාඩ් එක) */}
+            <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+                  <BookOpen size={20} />
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Joined Classes</p>
+                  <h4 className="text-lg font-extrabold text-slate-900 dark:text-white">{joinedClassesCount} Active Classes</h4>
+                </div>
+              </div>
+              <button 
+                onClick={() => router.push("/class/myclass")}
+                className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline"
+              >
+                View
+              </button>
+            </div>
+
             {/* Parent & Guardian Summary Info Card */}
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 space-y-3">
               <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
@@ -387,7 +451,7 @@ export default function ProfilePage() {
 
           </div>
 
-          {/* Column 2: Edit Form */}
+          {/* Column 2: Edit Form (ಹකුළා/දිගහැරීමට හැකි වන පරිදි සකසා ඇත) */}
           <div className="lg:col-span-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
@@ -395,266 +459,279 @@ export default function ProfilePage() {
                   <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Edit Profile Information</h3>
                 </div>
-                <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">Secure Profile</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400">Secure Profile</span>
+                  <button
+                    type="button"
+                    onClick={handleToggleEditProfile}
+                    className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                    title={isEditProfileOpen ? "Collapse Form" : "Expand Form"}
+                  >
+                    {isEditProfileOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
               </div>
 
-              <form onSubmit={handleSubmit} id="profile-form" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Collapsible Form Container */}
+              {isEditProfileOpen && (
+                <form onSubmit={handleSubmit} id="profile-form" className="space-y-4 animate-fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
-                    <div className="relative">
-                      <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
-                    <div className="relative">
-                      <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        disabled
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-100/50 dark:bg-slate-800/30 text-slate-400 border border-slate-200/40 dark:border-slate-700/40 cursor-not-allowed outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</label>
-                    <div className="relative">
-                      <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grade / Class</label>
-                    <div className="relative">
-                      <GraduationCap size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="grade"
-                        value={formData.grade}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Country</label>
-                    <div className="relative">
-                      <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Zone</label>
-                    <div className="relative">
-                      <Clock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="timeZone"
-                        value={formData.timeZone}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Medium</label>
-                    <div className="relative">
-                      <BookOpen size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <select
-                        name="medium"
-                        value={formData.medium}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      >
-                        <option value="">Select Medium</option>
-                        <option value="Sinhala">Sinhala</option>
-                        <option value="English">English</option>
-                        <option value="Tamil">Tamil</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">School</label>
-                    <div className="relative">
-                      <Building size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input
-                        type="text"
-                        name="school"
-                        value={formData.school}
-                        onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Father Details */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Name</label>
-                    <input
-                      type="text"
-                      name="fatherName"
-                      value={formData.fatherName}
-                      onChange={handleChange}
-                      placeholder="Father's Name"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Occupation</label>
-                    <input
-                      type="text"
-                      name="fatherOccupation"
-                      value={formData.fatherOccupation}
-                      onChange={handleChange}
-                      placeholder="Occupation"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Phone</label>
-                    <input
-                      type="tel"
-                      name="fatherPhone"
-                      value={formData.fatherPhone}
-                      onChange={handleChange}
-                      placeholder="Father's Phone"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
-                    />
-                  </div>
-
-                  {/* Mother Details */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Name</label>
-                    <input
-                      type="text"
-                      name="motherName"
-                      value={formData.motherName}
-                      onChange={handleChange}
-                      placeholder="Mother's Name"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Occupation</label>
-                    <input
-                      type="text"
-                      name="motherOccupation"
-                      value={formData.motherOccupation}
-                      onChange={handleChange}
-                      placeholder="Occupation"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Phone</label>
-                    <input
-                      type="tel"
-                      name="motherPhone"
-                      value={formData.motherPhone}
-                      onChange={handleChange}
-                      placeholder="Mother's Phone"
-                      className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 pt-2">
-                      <input
-                        type="checkbox"
-                        name="hasGuardian"
-                        checked={formData.hasGuardian}
-                        onChange={handleChange}
-                        className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
-                      />
-                      Under other Guardian
-                    </label>
-                  </div>
-
-                  {formData.hasGuardian && (
-                    <>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Name</label>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Full Name</label>
+                      <div className="relative">
+                        <User size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                           type="text"
-                          name="guardianName"
-                          value={formData.guardianName}
+                          name="name"
+                          value={formData.name}
                           onChange={handleChange}
-                          placeholder="Guardian Name"
-                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                          required
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Relationship</label>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+                      <div className="relative">
+                        <Mail size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
-                          type="text"
-                          name="guardianRelation"
-                          value={formData.guardianRelation}
-                          onChange={handleChange}
-                          placeholder="Relationship (e.g. Uncle)"
-                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          disabled
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-100/50 dark:bg-slate-800/30 text-slate-400 border border-slate-200/40 dark:border-slate-700/40 cursor-not-allowed outline-none"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Phone</label>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Phone Number</label>
+                      <div className="relative">
+                        <Phone size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                         <input
                           type="tel"
-                          name="guardianPhone"
-                          value={formData.guardianPhone}
+                          name="phone"
+                          value={formData.phone}
                           onChange={handleChange}
-                          placeholder="Guardian Phone"
-                          className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
                         />
                       </div>
-                    </>
-                  )}
+                    </div>
 
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Home Address</label>
-                    <div className="relative">
-                      <MapPin size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Grade / Class</label>
+                      <div className="relative">
+                        <GraduationCap size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          name="grade"
+                          value={formData.grade}
+                          onChange={handleChange}
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Country</label>
+                      <div className="relative">
+                        <Globe size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          name="country"
+                          value={formData.country}
+                          onChange={handleChange}
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Time Zone</label>
+                      <div className="relative">
+                        <Clock size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          name="timeZone"
+                          value={formData.timeZone}
+                          onChange={handleChange}
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Medium</label>
+                      <div className="relative">
+                        <BookOpen size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <select
+                          name="medium"
+                          value={formData.medium}
+                          onChange={handleChange}
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        >
+                          <option value="">Select Medium</option>
+                          <option value="Sinhala">Sinhala</option>
+                          <option value="English">English</option>
+                          <option value="Tamil">Tamil</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">School</label>
+                      <div className="relative">
+                        <Building size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          name="school"
+                          value={formData.school}
+                          onChange={handleChange}
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Father Details */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Name</label>
                       <input
                         type="text"
-                        name="address"
-                        value={formData.address}
+                        name="fatherName"
+                        value={formData.fatherName}
                         onChange={handleChange}
-                        className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        placeholder="Father's Name"
+                        className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
                       />
                     </div>
-                  </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Occupation</label>
+                      <input
+                        type="text"
+                        name="fatherOccupation"
+                        value={formData.fatherOccupation}
+                        onChange={handleChange}
+                        placeholder="Occupation"
+                        className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Father's Phone</label>
+                      <input
+                        type="tel"
+                        name="fatherPhone"
+                        value={formData.fatherPhone}
+                        onChange={handleChange}
+                        placeholder="Father's Phone"
+                        className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                      />
+                    </div>
 
-                </div>
-              </form>
+                    {/* Mother Details */}
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Name</label>
+                      <input
+                        type="text"
+                        name="motherName"
+                        value={formData.motherName}
+                        onChange={handleChange}
+                        placeholder="Mother's Name"
+                        className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Occupation</label>
+                      <input
+                        type="text"
+                        name="motherOccupation"
+                        value={formData.motherOccupation}
+                        onChange={handleChange}
+                        placeholder="Occupation"
+                        className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Mother's Phone</label>
+                      <input
+                        type="tel"
+                        name="motherPhone"
+                        value={formData.motherPhone}
+                        onChange={handleChange}
+                        placeholder="Mother's Phone"
+                        className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-700 dark:text-slate-300 pt-2">
+                        <input
+                          type="checkbox"
+                          name="hasGuardian"
+                          checked={formData.hasGuardian}
+                          onChange={handleChange}
+                          className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500"
+                        />
+                        Under other Guardian
+                      </label>
+                    </div>
+
+                    {formData.hasGuardian && (
+                      <>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Name</label>
+                          <input
+                            type="text"
+                            name="guardianName"
+                            value={formData.guardianName}
+                            onChange={handleChange}
+                            placeholder="Guardian Name"
+                            className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Relationship</label>
+                          <input
+                            type="text"
+                            name="guardianRelation"
+                            value={formData.guardianRelation}
+                            onChange={handleChange}
+                            placeholder="Relationship (e.g. Uncle)"
+                            className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Guardian Phone</label>
+                          <input
+                            type="tel"
+                            name="guardianPhone"
+                            value={formData.guardianPhone}
+                            onChange={handleChange}
+                            placeholder="Guardian Phone"
+                            className="w-full px-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 outline-none"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    <div className="space-y-1 md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Home Address</label>
+                      <div className="relative">
+                        <MapPin size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          name="address"
+                          value={formData.address}
+                          onChange={handleChange}
+                          className="w-full pl-9 pr-3 py-2.5 rounded-xl text-xs bg-slate-50/70 dark:bg-slate-800/60 text-slate-800 dark:text-slate-100 border border-slate-200/60 dark:border-slate-700/60 focus:bg-white dark:focus:bg-slate-800 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+                </form>
+              )}
             </div>
 
             <div className="pt-3 mt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
@@ -662,15 +739,17 @@ export default function ProfilePage() {
                 Total Results: <strong className="text-blue-600 dark:text-blue-400 font-bold">{myResults.length}</strong>
               </div>
 
-              <button
-                type="submit"
-                form="profile-form"
-                disabled={saving}
-                className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70"
-              >
-                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-                <span>{saving ? 'Saving...' : 'Save Changes'}</span>
-              </button>
+              {isEditProfileOpen && (
+                <button
+                  type="submit"
+                  form="profile-form"
+                  disabled={saving}
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-md shadow-blue-500/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70"
+                >
+                  {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+              )}
             </div>
 
           </div>
