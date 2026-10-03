@@ -45,6 +45,7 @@ export default function StudentTeacherView() {
   const [search, setSearch] = useState("");
 
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
+  const [activeTouchId, setActiveTouchId] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -131,7 +132,6 @@ export default function StudentTeacherView() {
             <div className="space-y-4 max-w-2xl">
               {/* Small badge */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold tracking-wide">
-                
                 EDUCATORS DIRECTORY
               </div>
 
@@ -222,11 +222,19 @@ export default function StudentTeacherView() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
             {filteredTeachers.map((t, index) => {
+              const allLinks = [
+                ...(t.website ? [{ platform: "Website", url: t.website }] : []),
+                ...(t.socialLinks || [])
+              ];
+
+              const isTouched = activeTouchId === t._id;
+
               return (
                 <div
                   key={t._id}
                   style={{ animationDelay: `${index * 60}ms` }}
                   className="group relative flex flex-col bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-slate-900/10 hover:-translate-y-2 transition-all duration-500 p-3 animate-fade-in opacity-0"
+                  onTouchStart={() => setActiveTouchId(t._id)}
                 >
                   {/* Neutral border glow on hover */}
                   <div className="absolute inset-0 rounded-[32px] bg-slate-900 dark:bg-slate-100 opacity-0 group-hover:opacity-10 transition-opacity duration-500 -z-10 blur-sm" />
@@ -248,6 +256,51 @@ export default function StudentTeacherView() {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-700">
                         <User size={80} className="text-slate-300 dark:text-slate-600" />
+                      </div>
+                    )}
+
+                    {/* Glassmorphism Social Links Bar: Mobile shows 2 links (left-aligned), Desktop shows 3 links (centered) */}
+                    {allLinks.length > 0 && (
+                      <div
+                        className={`absolute bottom-4 inset-x-4 mx-auto max-w-[90%] bg-white/20 dark:bg-black/35 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-full px-4 py-2 flex items-center justify-start md:justify-center gap-2 shadow-xl z-10 transition-all duration-300 ease-out overflow-x-auto custom-scrollbar ${
+                          isTouched
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0"
+                        }`}
+                      >
+                        {/* Mobile links (Max 2) */}
+                        <div className="flex md:hidden items-center gap-2 shrink-0">
+                          {allLinks.slice(0, 2).map((link, idx) => (
+                            <a
+                              key={idx}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white hover:text-slate-200 transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-white/10 dark:bg-white/5"
+                              title={link.platform}
+                            >
+                              {link.platform === "Website" ? <Globe size={14} /> : <ExternalLink size={14} />}
+                              <span className="text-[11px] font-semibold truncate max-w-[75px]">{link.platform}</span>
+                            </a>
+                          ))}
+                        </div>
+
+                        {/* Desktop links (Max 3) */}
+                        <div className="hidden md:flex items-center gap-2 shrink-0">
+                          {allLinks.slice(0, 3).map((link, idx) => (
+                            <a
+                              key={idx}
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-white hover:text-slate-200 transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-white/10 dark:bg-white/5"
+                              title={link.platform}
+                            >
+                              {link.platform === "Website" ? <Globe size={14} /> : <ExternalLink size={14} />}
+                              <span className="text-[11px] font-semibold truncate max-w-[75px]">{link.platform}</span>
+                            </a>
+                          ))}
+                        </div>
                       </div>
                     )}
 
@@ -296,76 +349,52 @@ export default function StudentTeacherView() {
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-modal-in"
+              className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-modal-in"
             >
               {/* Modal Header */}
-              <div className="relative bg-slate-900 dark:bg-slate-950 text-white p-7 overflow-hidden border-b border-slate-800">
-                {/* Neutral decorative blob */}
-                <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white opacity-5 blur-3xl" />
-
-                <div className="relative flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-5 min-w-0">
-                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-800 border-2 border-white/10 shrink-0 ring-4 ring-white/5">
-                      {selectedTeacher.profilePhoto ? (
-                        <img
-                          src={getProfileImageUrl(selectedTeacher.profilePhoto) || ""}
-                          alt={selectedTeacher.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User size={32} className="text-slate-500 m-auto mt-4" />
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <span className="inline-block text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-full bg-white/10 text-white mb-1.5 border border-white/10">
-                        {selectedTeacher.subject}
-                      </span>
-                      <h3 className="text-2xl font-extrabold truncate">{selectedTeacher.name}</h3>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/70 animate-pulse" />
-                        <span className="text-[11px] text-slate-300 font-medium">Available</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => setExpandedTeacherId(null)}
-                    className="w-10 h-10 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-slate-300 hover:text-white hover:bg-red-600 hover:rotate-90 transition-all duration-300 shrink-0"
-                  >
-                    <X size={20} />
-                  </button>
+              <div className="relative bg-slate-900 dark:bg-slate-950 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Teacher Details</span>
                 </div>
+
+                <button
+                  onClick={() => setExpandedTeacherId(null)}
+                  className="w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-slate-300 hover:text-white hover:bg-red-600 hover:rotate-90 transition-all duration-300 shrink-0"
+                >
+                  <X size={18} />
+                </button>
               </div>
 
               {/* Modal Body */}
-              <div className="p-6 sm:p-8 space-y-5 overflow-y-auto max-h-[62vh] custom-scrollbar bg-slate-50/50 dark:bg-slate-900">
+              <div className="p-5 sm:p-6 space-y-4 overflow-y-auto max-h-[55vh] custom-scrollbar bg-slate-50/50 dark:bg-slate-900">
 
                 {/* Contact Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-colors">
-                    <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                      <Mail size={18} className="text-slate-700 dark:text-slate-300" />
+                  <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                      <Mail size={16} className="text-slate-700 dark:text-slate-300" />
                     </div>
                     <div className="min-w-0">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                         Email
                       </span>
-                      <span className="text-slate-800 dark:text-slate-200 font-bold text-sm truncate block">
+                      <span className="text-slate-800 dark:text-slate-200 font-bold text-xs truncate block">
                         {selectedTeacher.email || "Not provided"}
                       </span>
                     </div>
                   </div>
 
                   {selectedTeacher.phone && (
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-colors">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        <Phone size={18} className="text-slate-700 dark:text-slate-300" />
+                    <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                        <Phone size={16} className="text-slate-700 dark:text-slate-300" />
                       </div>
                       <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                           Phone
                         </span>
-                        <span className="text-slate-800 dark:text-slate-200 font-bold text-sm truncate block">
+                        <span className="text-slate-800 dark:text-slate-200 font-bold text-xs truncate block">
                           {selectedTeacher.phone}
                         </span>
                       </div>
@@ -373,15 +402,15 @@ export default function StudentTeacherView() {
                   )}
 
                   {selectedTeacher.address && (
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:border-slate-400 dark:hover:border-slate-600 transition-colors sm:col-span-2">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        <MapPin size={18} className="text-slate-700 dark:text-slate-300" />
+                    <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm sm:col-span-2">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                        <MapPin size={16} className="text-slate-700 dark:text-slate-300" />
                       </div>
                       <div className="min-w-0">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
                           Address
                         </span>
-                        <span className="text-slate-800 dark:text-slate-200 font-bold text-sm block">
+                        <span className="text-slate-800 dark:text-slate-200 font-bold text-xs block">
                           {selectedTeacher.address}
                         </span>
                       </div>
@@ -391,35 +420,35 @@ export default function StudentTeacherView() {
 
                 {/* Qualifications */}
                 <div>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                    <GraduationCap size={16} className="text-slate-700 dark:text-slate-300" />
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-2">
+                    <GraduationCap size={15} className="text-slate-700 dark:text-slate-300" />
                     Qualifications & Credentials
                   </p>
                   {selectedTeacher.qualifications && selectedTeacher.qualifications.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       {selectedTeacher.qualifications.map((q, idx) => (
                         <div
                           key={idx}
-                          className="group/q relative bg-white dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md hover:border-slate-400 dark:hover:border-slate-600 transition-all duration-300"
+                          className="group/q relative bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
                         >
                           <div className="flex items-start gap-3">
-                            <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
-                              <Award size={16} className="text-slate-700 dark:text-slate-300" />
+                            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
+                              <Award size={15} className="text-slate-700 dark:text-slate-300" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-extrabold text-slate-900 dark:text-white text-base">
+                              <p className="font-extrabold text-slate-900 dark:text-white text-sm">
                                 {q.degree}
                               </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1 flex items-center gap-1.5">
-                                <GraduationCap size={12} /> {q.institution}
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5 flex items-center gap-1.5">
+                                <GraduationCap size={11} /> {q.institution}
                               </p>
                               {q.period && (
-                                <span className="inline-block text-[10px] text-slate-700 dark:text-slate-300 font-bold mt-1.5 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                                <span className="inline-block text-[10px] text-slate-700 dark:text-slate-300 font-bold mt-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                                   {q.period}
                                 </span>
                               )}
                               {q.description && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
                                   {q.description}
                                 </p>
                               )}
@@ -429,8 +458,8 @@ export default function StudentTeacherView() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-6 bg-white dark:bg-slate-950 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-                      <GraduationCap size={24} className="mx-auto text-slate-300 dark:text-slate-700 mb-1.5" />
+                    <div className="text-center py-4 bg-white dark:bg-slate-950 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                      <GraduationCap size={20} className="mx-auto text-slate-300 dark:text-slate-700 mb-1" />
                       <p className="text-xs text-slate-400 italic">No qualifications listed.</p>
                     </div>
                   )}
@@ -440,8 +469,8 @@ export default function StudentTeacherView() {
               {/* Modal Footer */}
               {(selectedTeacher.website ||
                 (selectedTeacher.socialLinks && selectedTeacher.socialLinks.length > 0)) && (
-                <div className="p-5 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
                     <Link2 size={12} /> Connect
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -450,10 +479,10 @@ export default function StudentTeacherView() {
                         href={selectedTeacher.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow-lg shadow-slate-900/20 hover:bg-slate-800 dark:hover:bg-slate-100 hover:scale-105 active:scale-95 transition-all duration-300"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition-all duration-300"
                       >
-                        <Globe size={15} /> Website
-                        <ExternalLink size={12} className="opacity-70" />
+                        <Globe size={14} /> Website
+                        <ExternalLink size={11} className="opacity-70" />
                       </a>
                     )}
                     {selectedTeacher.socialLinks?.map((s, idx) => (
@@ -462,9 +491,9 @@ export default function StudentTeacherView() {
                         href={s.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all duration-300"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all duration-300"
                       >
-                        <ExternalLink size={14} /> {s.platform}
+                        <ExternalLink size={13} /> {s.platform}
                       </a>
                     ))}
                   </div>
@@ -498,7 +527,7 @@ export default function StudentTeacherView() {
         .animate-pulse-slow {
           animation: pulseSlow 8s ease-in-out infinite;
         }
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
         .custom-scrollbar::-webkit-scrollbar-thumb {
           background: rgba(100, 116, 139, 0.4);
