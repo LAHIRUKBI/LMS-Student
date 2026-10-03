@@ -1,4 +1,4 @@
-// src/app/teacher/materials/my-quize/page.tsx (or ClassJoinPage.tsx)
+// src/app/class/class_join/page.tsx
 
 "use client";
 

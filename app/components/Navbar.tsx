@@ -1,4 +1,4 @@
-// src/app/components/Navbar (ወይም ඔබගේ Navbar සංරචකය පවතින ස්ථානය)
+// src/app/components/Navbar.tsx
 
 "use client";
 
@@ -355,9 +355,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   notifications.map((notif) => (
                     <div
                       key={notif._id}
-                      className={`p-2.5 sm:p-3 rounded-xl border transition-all flex items-start justify-between gap-2 ${notif.isRead
-                          ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40'
-                          : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50'
+                      onClick={() => {
+                        if (notif.classId) {
+                          window.location.href = `/class/class_join?classId=${notif.classId}`;
+                          setIsNotificationOpen(false);
+                        }
+                      }}
+                      className={`p-2.5 sm:p-3 rounded-xl border transition-all flex items-start justify-between gap-2 cursor-pointer ${notif.isRead
+                          ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40 hover:bg-slate-100/50'
+                          : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50 hover:bg-blue-100/50'
                         }`}
                     >
                       <div>
