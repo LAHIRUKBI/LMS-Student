@@ -1,3 +1,5 @@
+// src/app/teacher/page.tsx (හෝ අදාළ StudentTeacherView පිටුව)
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -43,6 +45,7 @@ export default function StudentTeacherView() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("all");
 
   const [expandedTeacherId, setExpandedTeacherId] = useState<string | null>(null);
   const [activeTouchId, setActiveTouchId] = useState<string | null>(null);
@@ -84,12 +87,18 @@ export default function StudentTeacherView() {
     return `http://localhost:5000/profile_photos/${photoUrl}`;
   };
 
+  // ලබා ගත හැකි සියලුම විෂයයන් (Subjects) ස්වයංක්‍රීයව ලබා ගැනීම
+  const subjects = ["all", ...Array.from(new Set(teachers.map((t) => t.subject).filter(Boolean)))];
+
   const filteredTeachers = teachers.filter((t) => {
     const q = search.toLowerCase();
-    return (
+    const matchesSearch =
       (t.name && t.name.toLowerCase().includes(q)) ||
-      (t.subject && t.subject.toLowerCase().includes(q))
-    );
+      (t.subject && t.subject.toLowerCase().includes(q));
+    
+    const matchesSubject = selectedSubject === "all" || t.subject === selectedSubject;
+
+    return matchesSearch && matchesSubject;
   });
 
   const toggleExpand = (id: string) => {
@@ -127,14 +136,9 @@ export default function StudentTeacherView() {
       <main className="max-w-[90%] xl:max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-10 pt-32 pb-24 relative z-10">
 
         {/* ============ HEADER ============ */}
-        <div className="relative mb-16">
+        <div className="relative mb-12">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-slate-800/80">
             <div className="space-y-4 max-w-2xl">
-              {/* Small badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold tracking-wide">
-                EDUCATORS DIRECTORY
-              </div>
-
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.1]">
                 Meet Your{" "}
                 <span className="relative inline-block">
@@ -160,24 +164,49 @@ export default function StudentTeacherView() {
                 </span>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Search Bar */}
-            <div className="relative w-full md:w-96 group">
-              <div className="absolute -inset-0.5 rounded-full bg-slate-900 dark:bg-slate-100 opacity-0 group-focus-within:opacity-100 blur transition-opacity duration-500" />
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search by name or subject..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full pl-6 pr-14 py-4 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm font-medium text-slate-800 dark:text-white placeholder-slate-400 outline-none focus:border-transparent focus:ring-2 focus:ring-slate-900/30 dark:focus:ring-slate-100/30 transition-all shadow-sm"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 p-2.5 rounded-full shadow-lg shadow-slate-900/20 group-focus-within:scale-110 transition-transform duration-300">
-                  <Search size={16} />
-                </div>
-              </div>
+        {/* ============ SEARCH & FILTERS SECTION ============ */}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm mb-8 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filter Teachers:</span>
+            </div>
+
+            {/* Search Box */}
+            <div className="relative w-full lg:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search by name or subject..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-slate-900/50 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              />
             </div>
           </div>
+
+          {/* Subject Filter Pills */}
+          {subjects.length > 1 && (
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 overflow-x-auto scrollbar-hide">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Subjects:</span>
+              {subjects.map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => setSelectedSubject(sub)}
+                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap capitalize transition-all ${
+                    selectedSubject === sub
+                      ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {sub === "all" ? "All Subjects" : sub}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* ============ CONTENT ============ */}
@@ -209,12 +238,12 @@ export default function StudentTeacherView() {
               <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto">
                 We couldn't find any teacher matching your search criteria. Try a different name or subject.
               </p>
-              {search && (
+              {(search || selectedSubject !== "all") && (
                 <button
-                  onClick={() => setSearch("")}
+                  onClick={() => { setSearch(""); setSelectedSubject("all"); }}
                   className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 dark:hover:bg-white transition-all hover:scale-105 active:scale-95"
                 >
-                  <X size={14} /> Clear search
+                  <X size={14} /> Clear filters
                 </button>
               )}
             </div>
@@ -259,7 +288,7 @@ export default function StudentTeacherView() {
                       </div>
                     )}
 
-                    {/* Glassmorphism Social Links Bar: Mobile shows 2 links (left-aligned), Desktop shows 3 links (centered) */}
+                    {/* Glassmorphism Social Links Bar */}
                     {allLinks.length > 0 && (
                       <div
                         className={`absolute bottom-4 inset-x-4 mx-auto max-w-[90%] bg-white/20 dark:bg-black/35 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-full px-4 py-2 flex items-center justify-start md:justify-center gap-2 shadow-xl z-10 transition-all duration-300 ease-out overflow-x-auto custom-scrollbar ${
@@ -268,7 +297,6 @@ export default function StudentTeacherView() {
                             : "opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0"
                         }`}
                       >
-                        {/* Mobile links (Max 2) */}
                         <div className="flex md:hidden items-center gap-2 shrink-0">
                           {allLinks.slice(0, 2).map((link, idx) => (
                             <a
@@ -285,7 +313,6 @@ export default function StudentTeacherView() {
                           ))}
                         </div>
 
-                        {/* Desktop links (Max 3) */}
                         <div className="hidden md:flex items-center gap-2 shrink-0">
                           {allLinks.slice(0, 3).map((link, idx) => (
                             <a
@@ -304,16 +331,15 @@ export default function StudentTeacherView() {
                       </div>
                     )}
 
-                    {/* Subject Badge — enlarged & neutral */}
+                    {/* Subject Badge */}
                     <div className="absolute top-4 left-4 bg-slate-900/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-slate-900 px-4 py-2 rounded-full text-sm font-extrabold shadow-lg shadow-black/20 flex items-center gap-2 tracking-wide">
                       <BookOpen size={15} />
                       {t.subject}
                     </div>
 
-                    {/* Inward corner mask */}
                     <div className="absolute bottom-0 right-0 w-20 h-20 bg-white dark:bg-slate-900 rounded-tl-[36px] pointer-events-none z-10" />
 
-                    {/* Action Button — neutral */}
+                    {/* Action Button */}
                     <button
                       onClick={() => toggleExpand(t._id)}
                       className="absolute right-3 bottom-3 w-12 h-12 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl shadow-slate-900/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 z-20"
@@ -326,7 +352,7 @@ export default function StudentTeacherView() {
                     </button>
                   </div>
 
-                  {/* Teacher Name Footer — email removed */}
+                  {/* Teacher Name Footer */}
                   <div className="p-4 flex items-center justify-between gap-3">
                     <div className="min-w-0">
                       <h3 className="font-extrabold text-xl text-slate-900 dark:text-white truncate group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors duration-300">
@@ -369,7 +395,6 @@ export default function StudentTeacherView() {
               {/* Modal Body */}
               <div className="p-5 sm:p-6 space-y-4 overflow-y-auto max-h-[55vh] custom-scrollbar bg-slate-50/50 dark:bg-slate-900">
 
-                {/* Contact Info Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">

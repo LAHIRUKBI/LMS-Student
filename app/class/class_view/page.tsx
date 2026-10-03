@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-import { Calendar, Clock, BookOpen, User, Loader2, ShieldAlert, Monitor, Search, CheckCircle, Send, ImageIcon, ExternalLink } from "lucide-react";
+import { Calendar, Clock, BookOpen, User, Loader2, ShieldAlert, Monitor, Search, CheckCircle, Send, ImageIcon, ExternalLink, X } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import RequestPopup from "@/app/components/RequestPopup";
 import AIChatWidget from "@/app/components/AIChatWidget";
@@ -17,6 +17,7 @@ export default function StudentClassViewPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState("all");
   const [message, setMessage] = useState({ type: "", text: "" });
   
   // Adding a state to control the popup
@@ -117,6 +118,55 @@ export default function StudentClassViewPage() {
     return `http://localhost:5000/profile_photos/${photoUrl}`;
   };
 
+  // ලබා ගත හැකි සියලුම විෂයයන් (Subjects) ස්වයංක්‍රීයව එකතු කරගැනීම
+  const allSubjects = Array.from(
+    new Set(groupedClasses.map((item) => item.teacher?.subject).filter(Boolean))
+  );
+  const subjects = ["all", ...allSubjects];
+
+  // Search සහ Subject Filter එක මත පදනම්ව ගුරුවරුන් සහ පන්ති පෙරහන් කිරීම
+  const filteredGroupedClasses = groupedClasses
+    .map((item) => {
+      const teacherName = item.teacher?.name?.toLowerCase() || "";
+      const teacherSubject = item.teacher?.subject?.toLowerCase() || "";
+      const query = search.toLowerCase();
+
+      // විෂය ෆිල්ටර් එකට අදාලද යන්න පරීක්ෂා කිරීම
+      const matchesSubject =
+        selectedSubject === "all" || item.teacher?.subject === selectedSubject;
+
+      // පන්ති හෝ ගුරුවරයා සෙවුම් පදය (search query) සමඟ ගැලපේද යන්න
+      const filteredClasses = item.classes.filter((cls: any) => {
+        const grade = cls.grade?.toLowerCase() || "";
+        const medium = cls.medium?.toLowerCase() || "";
+        const mode = cls.mode?.toLowerCase() || "";
+        const description = cls.description?.toLowerCase() || "";
+
+        const matchesQuery =
+          teacherName.includes(query) ||
+          teacherSubject.includes(query) ||
+          grade.includes(query) ||
+          medium.includes(query) ||
+          mode.includes(query) ||
+          description.includes(query);
+
+        return matchesQuery;
+      });
+
+      // ගුරුවරයාගේ නම/විෂය සෙවුමට ගැළපේ නම් හෝ ඔහුගේ පන්තියක් ගැළපේ නම් සහ විෂය ෆිල්ටර් එකට යටත් නම්
+      const teacherMatches = teacherName.includes(query) || teacherSubject.includes(query);
+      const finalClasses = teacherMatches ? item.classes : filteredClasses;
+
+      if (matchesSubject && (teacherMatches || finalClasses.length > 0)) {
+        return {
+          ...item,
+          classes: teacherMatches ? item.classes : finalClasses,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+
   if (!user) return null;
 
   return (
@@ -124,18 +174,73 @@ export default function StudentClassViewPage() {
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
       <main className="max-w-[95%] xl:max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-10 pt-28 pb-16 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
           <div>
             <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Available Classes</h1>
             <p className="text-slate-500 dark:text-slate-400 mt-2">Request to join classes and start your learning journey.</p>
           </div>
         </div>
 
+        {/* ============ SEARCH & FILTERS SECTION ============ */}
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-3xl border border-slate-200/80 dark:border-slate-800 shadow-xl mb-8 space-y-4">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Search & Filter Classes:</span>
+            </div>
+
+            {/* Search Box */}
+            <div className="relative w-full lg:w-80">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input 
+                type="text" 
+                placeholder="Search teacher, subject, grade..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400"
+              />
+            </div>
+          </div>
+
+          {/* Subject Filter Pills */}
+          {subjects.length > 1 && (
+            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 overflow-x-auto scrollbar-hide">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Subjects:</span>
+              {subjects.map((sub) => (
+                <button
+                  key={sub}
+                  onClick={() => setSelectedSubject(sub)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap capitalize transition-all ${
+                    selectedSubject === sub
+                      ? "bg-blue-600 text-white shadow-md"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+                >
+                  {sub === "all" ? "All Subjects" : sub}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {loading ? (
           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
+        ) : filteredGroupedClasses.length === 0 ? (
+          <div className="text-center py-20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl rounded-3xl border border-slate-200/60 dark:border-slate-800/80 p-8 shadow-xl">
+            <BookOpen size={48} className="mx-auto text-slate-400 mb-4" />
+            <h3 className="text-xl font-bold text-slate-800 dark:text-white">No Classes Found</h3>
+            <p className="text-slate-500 dark:text-slate-400 mt-2">We couldn't find any classes matching your search criteria.</p>
+            {(search || selectedSubject !== "all") && (
+              <button
+                onClick={() => { setSearch(""); setSelectedSubject("all"); }}
+                className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md hover:bg-blue-700 transition-all"
+              >
+                <X size={14} /> Clear filters
+              </button>
+            )}
+          </div>
         ) : (
           <div className="space-y-8">
-            {groupedClasses.map((item) => (
+            {filteredGroupedClasses.map((item: any) => (
               <div key={item.teacher._id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[32px] border border-white/40 dark:border-slate-800/80 p-6 sm:p-8 shadow-2xl flex flex-col lg:flex-row gap-8 items-start transition-all hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)]">
                 
                 {/* Left Side: Teacher Info Box */}
@@ -253,6 +358,5 @@ export default function StudentClassViewPage() {
       />
       <AIChatWidget />
     </div>
-    
   );
 }
