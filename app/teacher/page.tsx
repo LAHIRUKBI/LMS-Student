@@ -9,6 +9,7 @@ import {
   ChevronRight, X, Sparkles, BookOpen, Award, Link2, Phone, MapPin,
 } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
+import AIChatWidget from "@/app/components/AIChatWidget";
 
 interface Qualification {
   institution: string;
@@ -507,6 +508,7 @@ export default function StudentTeacherView() {
           background: rgba(100, 116, 139, 0.7);
         }
       `}</style>
+      <AIChatWidget />
     </div>
   );
 }

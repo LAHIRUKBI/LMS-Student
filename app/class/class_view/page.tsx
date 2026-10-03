@@ -8,6 +8,7 @@ import axios from "axios";
 import { Calendar, Clock, BookOpen, User, Loader2, ShieldAlert, Monitor, Search, CheckCircle, Send, ImageIcon, ExternalLink } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import RequestPopup from "@/app/components/RequestPopup";
+import AIChatWidget from "@/app/components/AIChatWidget";
 
 export default function StudentClassViewPage() {
   const router = useRouter();
@@ -250,6 +251,8 @@ export default function StudentClassViewPage() {
         message={message.text}
         onClose={() => setIsPopupOpen(false)}
       />
+      <AIChatWidget />
     </div>
+    
   );
 }
