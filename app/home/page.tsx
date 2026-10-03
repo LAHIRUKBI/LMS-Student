@@ -4,12 +4,16 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { auth } from "@/lib/firebase";
-import { PlayCircle, FileText, BookOpen, Download, User, Eye, Search, Loader2, CheckCircle, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, Clock, Users, GraduationCap, Video, Award, Layers, Layout, Code, Globe, MessageCircle, Send, Share2, X, Mail, Copy, Star, ChevronUp, ChevronDown } from "lucide-react";
+import { GraduationCap, Video, Award, Users, Globe, Star } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
-import AccordionGallery from "@/app/components/AccordionGallery";
-import HeroCarousel from "@/app/components/HeroCarousel";
-import FeatureCarousel from "@/app/components/FeatureCarousel";
-import ScrollRevealCards from "@/app/components/ScrollRevealCards";
+
+// Imported Components
+import HeroSection from "@/app/components/HeroSection";
+import FeaturesSection from "@/app/components/FeaturesSection";
+import AnnouncementsSection from "@/app/components/AnnouncementsSection";
+import TestimonialsSection from "@/app/components/TestimonialsSection";
+import GallerySection from "@/app/components/GallerySection";
+import AIChatWidget from "@/app/components/AIChatWidget";
 
 interface AdLink {
   label: string;
@@ -105,7 +109,6 @@ export default function StudentDashboard() {
   const [copied, setCopied] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(false);
 
-  // Announcement pagination state (Desktop: 3 per page, Mobile: 1 per page)
   const [announcementPage, setAnnouncementPage] = useState(0);
   const [fadeAnim, setFadeAnim] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -206,7 +209,6 @@ export default function StudentDashboard() {
     return matchesSearch && matchesAudience;
   });
 
-  // Items per page: 1 for mobile view, 3 for desktop view
   const itemsPerPage = isMobile ? 1 : 3;
   const totalPages = Math.ceil(filteredAds.length / itemsPerPage);
   const displayedAds = filteredAds.slice(announcementPage * itemsPerPage, (announcementPage + 1) * itemsPerPage);
@@ -301,434 +303,78 @@ export default function StudentDashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-32 pb-16">
         
-        {/* ================= Hero Section ================= */}
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8 mb-20 relative">
-          
-          <div className="flex-1 space-y-6 z-20 mt-4 lg:mt-0 lg:max-w-xl">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="inline-block bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold px-4 py-1.5 rounded-full text-xs tracking-wide shadow-sm">
-                {heroBadge}
-              </div>
+        {/* 1. Hero Section */}
+        <HeroSection
+          heroBadge={heroBadge}
+          badgeAvatars={badgeAvatars}
+          badgeText={badgeText}
+          titleColor1={titleColor1}
+          titleColor2={titleColor2}
+          highlightColor={highlightColor}
+          heroTitleLine1={heroTitleLine1}
+          heroTitleLine2={heroTitleLine2}
+          heroTitleHighlight={heroTitleHighlight}
+          heroDescription={heroDescription}
+          primaryBtnText={primaryBtnText}
+          socialLinks={socialLinks}
+          currentHeroImages={currentHeroImages}
+          isShareOpen={isShareOpen}
+          setIsShareOpen={setIsShareOpen}
+          currentUrl={currentUrl}
+          copied={copied}
+          handleCopyLink={handleCopyLink}
+          getMediaUrl={getMediaUrl}
+          getSocialIcon={getSocialIcon}
+        />
 
-              {badgeAvatars.length > 0 && (
-                <div className="flex items-center gap-3">
-                  <div className="flex -space-x-2 overflow-hidden">
-                    {badgeAvatars.map((av: any, i: number) => (
-                      av.image && (
-                        <img 
-                          key={i} 
-                          src={getMediaUrl(av.image)} 
-                          alt="Student" 
-                          className="inline-block h-8 w-8 rounded-full ring-2 ring-white dark:ring-slate-900 object-cover" 
-                        />
-                      )
-                    ))}
-                  </div>
-                  {badgeText && (
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                      {badgeText}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            <h1 className="text-4xl sm:text-5xl lg:text-[60px] font-extrabold leading-[1.1] tracking-tight">
-              <span style={{ color: titleColor1 }}>{heroTitleLine1}</span> <br className="hidden sm:block" />
-              <span style={{ color: titleColor2 }}>{heroTitleLine2}</span> <br className="hidden sm:block" />
-              <span style={{ color: highlightColor }}>{heroTitleHighlight}</span>
-            </h1>
-            
-            <p className="text-slate-600 dark:text-slate-400 max-w-lg text-base sm:text-lg leading-relaxed">
-              {heroDescription}
-            </p>
-            
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4">
-              <button 
-                onClick={() => router.push("/class/class_view")}
-                className="bg-[#00CBB8] hover:bg-[#00B5A4] text-white px-8 py-3.5 rounded-full font-bold transition-all shadow-lg shadow-teal-500/30 active:scale-95 flex items-center gap-2 cursor-pointer"
-              >
-                {primaryBtnText} <ChevronRight size={16} />
-              </button>
-              
-              <div className="relative inline-block">
-                <button
-                  onClick={() => setIsShareOpen(!isShareOpen)}
-                  title="Share Website"
-                  className="bg-orange-500 hover:bg-orange-600 text-white p-3.5 rounded-full transition-all shadow-xl hover:scale-110 flex items-center justify-center cursor-pointer active:scale-95 z-50 relative"
-                >
-                  {isShareOpen ? <X size={20} /> : <Share2 size={20} />}
-                </button>
+        {/* 2. Second Section (Features) */}
+        <FeaturesSection
+          featureBadge={featureBadge}
+          featureTitleLine1={featureTitleLine1}
+          featureTitleHighlight={featureTitleHighlight}
+          featureDescription={featureDescription}
+          currentFeatureItems={currentFeatureItems}
+        />
 
-                {isShareOpen && (
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 pointer-events-auto z-40 animate-in fade-in zoom-in duration-300 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-white/80 dark:bg-slate-950/90 backdrop-blur-md rounded-full shadow-2xl border border-white/30 dark:border-slate-800 -z-10"></div>
-                    <div className="relative w-full h-full">
-                      <a href={`https://api.whatsapp.com/send?text=${encodeURIComponent(currentUrl)}`} target="_blank" rel="noopener noreferrer" className="absolute left-1/2 top-3 -translate-x-1/2 bg-white dark:bg-slate-900 text-emerald-500 p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 hover:scale-125 transition-all flex items-center justify-center">
-                        <MessageCircle size={18} />
-                      </a>
-                      <a href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`} target="_blank" rel="noopener noreferrer" className="absolute left-5 top-14 bg-white dark:bg-slate-900 text-blue-600 p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 hover:scale-125 transition-all flex items-center justify-center">
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/></svg>
-                      </a>
-                      <a href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(currentUrl)}`} target="_blank" rel="noopener noreferrer" className="absolute left-5 bottom-12 bg-white dark:bg-slate-900 text-slate-900 dark:text-white p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 hover:scale-125 transition-all flex items-center justify-center">
-                        <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                      </a>
-                      <a href={`mailto:?subject=Check out this platform&body=${encodeURIComponent(currentUrl)}`} className="absolute right-5 top-14 bg-white dark:bg-slate-900 text-rose-500 p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 hover:scale-125 transition-all flex items-center justify-center">
-                        <Mail size={18} />
-                      </a>
-                      <button onClick={handleCopyLink} className="absolute right-5 bottom-12 bg-white dark:bg-slate-900 text-teal-500 p-3 rounded-full shadow-xl border border-slate-200 dark:border-slate-700 hover:scale-125 transition-all flex items-center justify-center">
-                        {copied ? <CheckCircle size={18} /> : <Copy size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+        {/* 3. Announcements */}
+        <AnnouncementsSection
+          search={search}
+          setSearch={setSearch}
+          setAnnouncementPage={setAnnouncementPage}
+          loading={loading}
+          filteredAds={filteredAds}
+          fadeAnim={fadeAnim}
+          isMobile={isMobile}
+          announcementsRef={announcementsRef}
+          announcementPage={announcementPage}
+          totalPages={totalPages}
+          displayedAds={displayedAds}
+          imageIndexes={imageIndexes}
+          prevImage={prevImage}
+          nextImage={nextImage}
+          handlePrevAnnouncements={handlePrevAnnouncements}
+          handleNextAnnouncements={handleNextAnnouncements}
+          getMediaUrl={getMediaUrl}
+        />
 
-            {socialLinks.length > 0 && (
-              <div className="pt-2 flex flex-wrap items-center gap-3 relative">
-                {socialLinks.map((social: { platform: string; url: string }, index: number) => (
-                  social.url && (
-                    <a key={index} href={social.url} target="_blank" rel="noopener noreferrer" title={social.platform} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-orange-500 dark:hover:border-orange-500 text-slate-700 dark:text-slate-200 hover:text-orange-500 dark:hover:text-orange-400 p-2.5 rounded-full transition-all shadow-sm hover:scale-110 flex items-center justify-center cursor-pointer">
-                      {getSocialIcon(social.platform)}
-                    </a>
-                  )
-                ))}
-              </div>
-            )}
-          </div>
+        {/* 4. Testimonials Section */}
+        <TestimonialsSection
+          testimonials={testimonials}
+          testimonialIndex={testimonialIndex}
+          prevTestimonials={prevTestimonials}
+          nextTestimonials={nextTestimonials}
+          dashboardSettings={dashboardSettings}
+          getMediaUrl={getMediaUrl}
+        />
 
-          <div className="flex-1 relative flex justify-center lg:justify-end items-center w-full max-w-md lg:max-w-none h-[400px] sm:h-[500px] lg:h-[600px] mt-10 lg:mt-0">
-            <div className="absolute w-[300px] sm:w-[450px] h-[300px] sm:h-[450px] bg-[#00CBB8]/20 rounded-bl-[150px] rounded-tr-[120px] rounded-tl-[40px] rounded-br-[40px] rotate-[15deg] -z-10 right-[-20px] lg:right-[-50px] top-1/2 -translate-y-1/2 opacity-90"></div>
-            <div className="absolute w-40 sm:w-64 h-40 sm:h-64 bg-orange-500/20 rounded-[40px] rotate-45 -z-20 right-[-40px] lg:right-[-80px] top-1/4 opacity-80"></div>
-            
-            <div className="relative z-10 w-full h-full flex justify-center lg:justify-end items-end">
-              <HeroCarousel items={currentHeroImages} baseWidth={600} autoplay={true} autoplayDelay={5000} pauseOnHover={true} loop={true} />
-            </div>
-
-            <div className="absolute top-16 left-4 sm:left-10 lg:left-0 bg-white dark:bg-slate-800 p-3 sm:p-4 rounded-2xl shadow-xl flex items-center justify-center animate-[bounce_4s_infinite] z-30">
-               <CheckCircle className="text-yellow-400" size={28} fill="currentColor" />
-            </div>
-            <div className="absolute bottom-20 right-4 lg:right-10 bg-white dark:bg-slate-800 p-3 rounded-2xl shadow-xl flex items-center justify-center z-30 border border-slate-100 dark:border-slate-700">
-               <span className="text-xs font-bold text-slate-700 dark:text-slate-200">⭐ 5.0 Rating</span>
-            </div>
-          </div>
-        </div>
-
-        {/* ================= Second Section (Features) ================= */}
-        <section className="py-16 mb-12 relative">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-orange-500/5 dark:bg-orange-500/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
-
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <div className="inline-block bg-teal-100 dark:bg-teal-500/20 text-teal-700 dark:text-teal-400 font-bold px-4 py-1.5 rounded-full text-xs mb-4 shadow-sm tracking-wide">
-              {featureBadge}
-            </div>
-            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900 dark:text-white mb-6 tracking-tight">
-              {featureTitleLine1} <span className="text-[#00CBB8]">{featureTitleHighlight}</span>
-            </h2>
-            <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">
-              {featureDescription}
-            </p>
-          </div>
-
-          <FeatureCarousel 
-            items={currentFeatureItems}
-            autoplay={true}
-            autoplayDelay={4000}
-            pauseOnHover={true}
-          />
-        </section>
-
-        {/* ================= Announcements ================= */}
-        <div className="py-12 mt-8" ref={announcementsRef}>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
-             <div>
-               <div className="inline-block bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 font-bold px-4 py-1.5 rounded-full text-xs mb-3 shadow-sm">
-                 Announcements & Promotions
-               </div>
-               <div className="flex items-center gap-3">
-                 <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Explore Latest Updates</h2>
-                 
-                 {/* Up/Down symbol-only Buttons (Shows on mobile if > 1, desktop if > 3) */}
-                 {filteredAds.length > (isMobile ? 1 : 3) && (
-                   <div className="flex items-center gap-1.5 ml-2">
-                     <button
-                       onClick={handlePrevAnnouncements}
-                       disabled={announcementPage === 0}
-                       className={`p-2 rounded-full shadow-md transition-all flex items-center justify-center ${
-                         announcementPage === 0 
-                           ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50" 
-                           : "bg-orange-500 hover:bg-orange-600 text-white cursor-pointer active:scale-95"
-                       }`}
-                       title="Previous Announcements"
-                     >
-                       <ChevronUp size={18} />
-                     </button>
-                     <button
-                       onClick={handleNextAnnouncements}
-                       disabled={announcementPage >= totalPages - 1}
-                       className={`p-2 rounded-full shadow-md transition-all flex items-center justify-center ${
-                         announcementPage >= totalPages - 1 
-                           ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50" 
-                           : "bg-orange-500 hover:bg-orange-600 text-white cursor-pointer active:scale-95"
-                       }`}
-                       title="Next Announcements"
-                     >
-                       <ChevronDown size={18} />
-                     </button>
-                   </div>
-                 )}
-               </div>
-             </div>
-            
-             <div className="relative w-full md:w-80 lg:w-96 group">
-               <input 
-                 type="text" 
-                 placeholder="Search announcements..." 
-                 value={search}
-                 onChange={(e) => {
-                   setSearch(e.target.value);
-                   setAnnouncementPage(0);
-                 }}
-                 className="w-full pl-6 pr-12 py-3.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm font-medium text-slate-800 dark:text-white outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all shadow-sm"
-               />
-               <div className="absolute right-2 top-1/2 -translate-y-1/2 bg-orange-500 text-white p-2 rounded-full shadow-md group-hover:scale-105 transition-transform">
-                  <Search size={16} />
-               </div>
-             </div>
-          </div>
-
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20">
-              <Loader2 className="animate-spin text-orange-500 mb-4" size={40} />
-              <p className="text-slate-500 dark:text-slate-400 font-medium">Loading announcements...</p>
-            </div>
-          ) : filteredAds.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl py-20 flex flex-col items-center justify-center text-center px-4 shadow-sm">
-              <div className="bg-slate-50 dark:bg-slate-800 p-5 rounded-full mb-5">
-                <Megaphone size={48} className="text-slate-300 dark:text-slate-600" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-700 dark:text-white mb-2">No announcements found</h3>
-              <p className="text-slate-500 dark:text-slate-400 max-w-md">There are no active announcements matching your search right now.</p>
-            </div>
-          ) : (
-            <div 
-              className={`transition-all duration-500 transform ${
-                fadeAnim ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
-              }`}
-            >
-              <div className={`grid grid-cols-1 ${isMobile ? 'max-w-md mx-auto' : 'sm:grid-cols-2 lg:grid-cols-3'} gap-8`}>
-                {displayedAds.map((ad) => {
-                  const validImages = ad.images && Array.isArray(ad.images) 
-                    ? ad.images.filter(img => img && img.trim() !== "") 
-                    : [];
-                  const currentImageIndex = imageIndexes[ad._id] || 0;
-
-                  return (
-                    <div key={ad._id} className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.2)] hover:-translate-y-1 hover:shadow-xl transition-all duration-300 group flex flex-col h-full">
-                      
-                      <div className="w-full h-60 relative bg-slate-900 overflow-hidden flex items-center justify-center">
-                        {((ad.mediaType as string) === "video" || ad.mediaType === "both") && ad.video ? (
-                          <video controls className="w-full h-full object-contain bg-black" src={getMediaUrl(ad.video)} />
-                        ) : null}
-
-                        {((ad.mediaType as string) === "image" || ad.mediaType === "both") && validImages.length > 0 && (ad.mediaType as string) !== "video" ? (
-                          <div className={`w-full h-full relative flex items-center justify-center bg-slate-100 dark:bg-slate-800 ${ad.mediaType === "both" && ad.video ? "absolute inset-0 bg-slate-900/90 hidden group-hover:flex transition-all" : ""}`}>
-                            <img src={getMediaUrl(validImages[currentImageIndex])} alt={ad.headline} className="w-full h-full object-contain" />
-
-                            {validImages.length > 1 && (
-                              <>
-                                <button onClick={() => prevImage(ad._id, validImages.length)} className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-sm z-10 cursor-pointer"><ChevronLeft size={18} /></button>
-                                <button onClick={() => nextImage(ad._id, validImages.length)} className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full bg-black/60 text-white hover:bg-black/80 transition-colors backdrop-blur-sm z-10 cursor-pointer"><ChevronRight size={18} /></button>
-                                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full z-10 tracking-wider">
-                                  {currentImageIndex + 1} / {validImages.length}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        ) : null}
-
-                        {(!ad.video && validImages.length === 0) && (
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-orange-500/10 to-teal-500/10 text-slate-400">
-                            <Megaphone size={40} className="mb-2 text-orange-500 opacity-80" />
-                            <span className="text-xs font-bold uppercase tracking-wider">Announcement</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="p-6 flex flex-col flex-1">
-                        <div className="flex items-center justify-between mb-3">
-                          <span className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full bg-orange-100 text-orange-700 dark:bg-orange-500/20 dark:text-orange-400">
-                            {ad.targetAudience === "all" ? "All Batches" : `${ad.targetAudience} Batch`}
-                          </span>
-                          <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
-                            <Clock size={12} /> {new Date(ad.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        
-                        <h3 className="font-extrabold text-xl text-slate-800 dark:text-white leading-tight mb-2 line-clamp-2 group-hover:text-orange-500 transition-colors">
-                          {ad.headline}
-                        </h3>
-                        <p className="text-sm font-medium text-slate-600 dark:text-slate-400 mb-6 line-clamp-3 leading-relaxed">
-                          {ad.description}
-                        </p>
-
-                        {ad.links && ad.links.length > 0 && (
-                          <div className="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-wrap gap-2">
-                            {ad.links.map((link: any, idx: number) => (
-                              <a key={idx} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-[#00CBB8]/10 text-[#00CBB8] hover:bg-[#00CBB8] hover:text-white transition-all shadow-sm">
-                                <LinkIcon size={12} /> {link.label}
-                              </a>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Bottom symbol-only navigation bar */}
-          {filteredAds.length > (isMobile ? 1 : 3) && (
-            <div className="flex justify-center items-center gap-3 mt-8">
-              <button
-                onClick={handlePrevAnnouncements}
-                disabled={announcementPage === 0}
-                className={`p-3 rounded-full shadow-md transition-all flex items-center justify-center ${
-                  announcementPage === 0 
-                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50" 
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer active:scale-95"
-                }`}
-                title="Previous Announcements"
-              >
-                <ChevronUp size={20} />
-              </button>
-              
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                {announcementPage + 1} / {totalPages}
-              </span>
-
-              <button
-                onClick={handleNextAnnouncements}
-                disabled={announcementPage >= totalPages - 1}
-                className={`p-3 rounded-full shadow-md transition-all flex items-center justify-center ${
-                  announcementPage >= totalPages - 1 
-                    ? "bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed opacity-50" 
-                    : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:text-orange-500 dark:hover:text-orange-400 cursor-pointer active:scale-95"
-                }`}
-                title="Next Announcements"
-              >
-                <ChevronDown size={20} />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* ================= Testimonials Section ================= */}
-        {testimonials.length > 0 && (
-          <section 
-            className="py-20 mb-20 relative rounded-3xl overflow-visible shadow-2xl bg-cover bg-center bg-no-repeat"
-            style={{
-              backgroundImage: dashboardSettings?.testimonialBgImage 
-                ? `url("${getMediaUrl(dashboardSettings.testimonialBgImage)}")` 
-                : `url("https://images.unsplash.com/photo-1513694203232-719a280e022f?w=1600&h=900&fit=crop")`
-            }}
-          >
-            <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] -z-10 rounded-3xl overflow-hidden"></div>
-
-            {testimonials.length > 2 && (
-              <button 
-                onClick={prevTestimonials}
-                className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
-                title="Previous"
-              >
-                <ChevronLeft size={22} />
-              </button>
-            )}
-
-            {testimonials.length > 2 && (
-              <button 
-                onClick={nextTestimonials}
-                className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 z-30 bg-teal-500 hover:bg-teal-600 text-white p-3.5 rounded-full shadow-2xl ring-4 ring-white/20 transition-all hover:scale-110 flex items-center justify-center cursor-pointer"
-                title="Next"
-              >
-                <ChevronRight size={22} />
-              </button>
-            )}
-
-            <div className="text-center max-w-3xl mx-auto mb-12 px-4 relative z-10">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white tracking-tight">
-                What our <span className="text-teal-400">clients</span> say
-              </h2>
-            </div>
-
-            <div className="relative max-w-5xl mx-auto px-6 md:px-10">
-              <ScrollRevealCards
-                maxTranslateX={180}
-                maxTranslateY={40}
-                maxScaleReduction={0.18}
-                maxRotate={6}
-                maxOpacityReduction={0.9}
-              >
-                {testimonials.slice(testimonialIndex, testimonialIndex + 2).map((test: any) => (
-                  <div 
-                    key={test.name + test.title}
-                    className="bg-white dark:bg-[#111827] p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col justify-between h-full"
-                  >
-                    <div>
-                      <div className="flex items-center gap-1 mb-6 text-yellow-400">
-                        {[...Array(Number(test.rating) || 5)].map((_, i) => (
-                          <Star key={i} size={18} fill="currentColor" />
-                        ))}
-                      </div>
-                      <p className="text-slate-700 dark:text-slate-300 text-sm md:text-base leading-relaxed mb-8 font-medium">
-                        "{test.idea}"
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4 pt-4 border-t border-slate-100 dark:border-slate-800/80">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700">
-                        {test.image ? (
-                          <img src={getMediaUrl(test.image)} alt={test.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <User className="w-full h-full p-2 text-slate-400" />
-                        )}
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-slate-900 dark:text-white text-base">{test.name}</h4>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{test.title}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </ScrollRevealCards>
-            </div>
-          </section>
-        )}
-
-        {/* ================= Gallery Section (Updated with Descriptions) ================= */}
-        <div className="w-full relative mt-20 pt-10 border-t border-slate-200 dark:border-slate-800">
-          <div className="text-center max-w-2xl mx-auto mb-10">
-            <h3 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3">Our Gallery</h3>
-            {galleryDescription && (
-              <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
-                {galleryDescription}
-              </p>
-            )}
-          </div>
-
-          <AccordionGallery 
-            items={currentGalleryItems} 
-            height={460}
-            accentColor="#00CBB8"
-            overlayColor="#0a0713"
-            textColor="#ffffff"
-            radius={16}
-          />
-        </div>
+        {/* 5. Gallery Section */}
+        <GallerySection
+          galleryDescription={galleryDescription}
+          currentGalleryItems={currentGalleryItems}
+        />
 
       </main>
+      <AIChatWidget />
     </div>
   );
 }

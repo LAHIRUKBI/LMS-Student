@@ -1,7 +1,9 @@
+// src/components/Navbar.tsx (or student navigation bar component)
+
 "use client";
 
 import { useState, useEffect } from "react";
-import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck, FileText } from "lucide-react";
+import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck, FileText, Gift } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
@@ -196,6 +198,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               >
                 <Users size={16} /> Class
               </Link>
+              {/* Resources Tab (Free Materials - Visible to everyone) */}
+              <Link
+                href="/class/free"
+                onClick={() => setIsDropdownOpen(false)}
+                className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/free' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                  }`}
+              >
+                <Gift size={16} /> Resources
+              </Link>
               {/* Notices Tab (Visible only if the student is logged in and user has a valid ID or name) */}
               {user && user.name !== "Guest Student" && (
                 <Link
@@ -216,7 +227,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           )}
         </div>
 
-        <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[400px] opacity-100'}`}>
+        <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[500px] opacity-100'}`}>
           <div className="h-6 w-px bg-slate-300/40 dark:bg-slate-700/40 mr-2"></div>
 
           {/* Teachers Tab (Visible to everyone) */}
@@ -235,6 +246,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               }`}
           >
             <Users size={16} /> Class
+          </Link>
+
+          {/* Resources Tab (Free Materials - Visible to everyone) */}
+          <Link
+            href="/class/free"
+            className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/free' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
+              }`}
+          >
+            <Gift size={16} /> Resources
           </Link>
 
           {/* Notices Tab (Visible only if the student is logged in and user has a valid ID or name) */}
