@@ -157,6 +157,7 @@ export default function ProfilePage() {
 
     const studentAnswers = result.answers instanceof Map ? Object.fromEntries(result.answers) : (result.answers || {});
     const teacherEssayMarks = result.essayMarks instanceof Map ? Object.fromEntries(result.essayMarks) : (result.essayMarks || {});
+    const teacherCorrections = result.teacherCorrections instanceof Map ? Object.fromEntries(result.teacherCorrections) : (result.teacherCorrections || {});
 
     let htmlContent = `
       <html>
@@ -177,6 +178,7 @@ export default function ProfilePage() {
             .ans-item { padding: 8px; border-radius: 6px; font-size: 12px; border: 1px solid #e2e8f0; background: #f8fafc; }
             .correct { color: #065f46; font-weight: bold; }
             .incorrect { color: #991b1b; font-weight: bold; }
+            .feedback-box { margin-top: 10px; padding: 10px; border-radius: 6px; background: #eef2ff; border: 1px solid #c7d2fe; font-size: 12px; color: #312e81; }
           </style>
         </head>
         <body>
@@ -192,10 +194,18 @@ export default function ProfilePage() {
 
       // නිවැරදි/වැරදි බව පරීක්ෂා කිරීම
       let isCorrect = false;
-      if (q.type === 'single' || q.type === 'short') {
+      if (q.type === 'single') {
         const cleanStudent = studentAns.toLowerCase().replace(/[^a-z0-9]/g, '');
         const cleanCorrect = correctAns.toLowerCase().replace(/[^a-z0-9]/g, '');
         isCorrect = cleanStudent === cleanCorrect && cleanStudent !== "";
+      } else if (q.type === 'short') {
+        if (correctAns) {
+          const cleanStudent = studentAns.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const cleanRef = correctAns.toLowerCase().replace(/[^a-z0-9]/g, '');
+          isCorrect = cleanStudent === cleanRef;
+        } else {
+          isCorrect = false;
+        }
       } else if (q.type === 'mcq') {
         const correctArr = Array.isArray(q.correctAnswer) ? q.correctAnswer : [q.correctAnswer];
         const studentAnsArr = studentAnswers[qId];
@@ -226,7 +236,27 @@ export default function ProfilePage() {
         }
       }
 
-      const displayStudentAns = Array.isArray(studentAnswers[qId]) ? studentAnswers[qId].join(', ') : (typeof studentAnswers[qId] === 'object' && studentAnswers[qId] !== null ? JSON.stringify(studentAnswers[qId]) : studentAns);
+      let displayStudentAns = "";
+      if (Array.isArray(studentAnswers[qId])) {
+        displayStudentAns = studentAnswers[qId].join(', ');
+      } else if (typeof studentAnswers[qId] === 'object' && studentAnswers[qId] !== null) {
+        displayStudentAns = Object.entries(studentAnswers[qId])
+          .map(([k, v]) => `Part (${Number(k) + 1}): ${v}`)
+          .join(' | ');
+      } else {
+        displayStudentAns = studentAns;
+      }
+
+      // Teacher's Correction / Feedback ලබා ගැනීම
+      let correctionText = "";
+      const tCorrections = result.teacherCorrections;
+      if (tCorrections) {
+        if (typeof tCorrections.get === 'function') {
+          correctionText = tCorrections.get(qId) || "";
+        } else if (typeof tCorrections === 'object') {
+          correctionText = tCorrections[qId] || "";
+        }
+      }
 
       htmlContent += `
         <div class="question-box">
@@ -235,7 +265,7 @@ export default function ProfilePage() {
             <span class="q-score">Score: ${earnedQMarks} / ${maxQMarks} Marks</span>
           </div>
       `;
-      if (q.type === 'mcq' && q.options && q.options.length > 0) {
+      if ((q.type === 'mcq' || q.type === 'single') && q.options && q.options.length > 0) {
         htmlContent += `<ul>`;
         q.options.forEach((opt: string, oIdx: number) => {
           htmlContent += `<li><strong>(${oIdx + 1})</strong> ${opt}</li>`;
@@ -246,14 +276,20 @@ export default function ProfilePage() {
           <div class="ans-grid">
             <div class="ans-item">
               <strong>Your Answer:</strong><br/>
-              <span class="${q.type !== 'essay' ? (isCorrect ? 'correct' : 'incorrect') : ''}">${displayStudentAns} ${q.type !== 'essay' ? (isCorrect ? '(Correct ✅)' : '(Incorrect ❌)') : ''}</span>
+              <span class="${q.type !== 'essay' && q.type !== 'short' ? (isCorrect ? 'correct' : 'incorrect') : ''}">${displayStudentAns} ${q.type !== 'essay' && q.type !== 'short' ? (isCorrect ? '(Correct ✅)' : '(Incorrect ❌)') : ''}</span>
             </div>
             ${q.type !== 'essay' ? `
             <div class="ans-item" style="background: #d1fae5; border-color: #a7f3d0;">
               <strong>Correct Answer Key:</strong><br/>
-              <span class="correct">${Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</span>
+              <span class="correct">${Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : (q.correctAnswer || 'None specified')}</span>
             </div>` : ''}
           </div>
+          
+          ${correctionText ? `
+          <div class="feedback-box">
+            <strong>Teacher's Correction / Feedback:</strong><br/>
+            <span>${correctionText}</span>
+          </div>` : ''}
         </div>
       `;
     });
