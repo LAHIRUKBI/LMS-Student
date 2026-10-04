@@ -20,12 +20,12 @@ export default function TakeQuizPage() {
   const [error, setError] = useState("");
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   
-  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  // answers state එක මඟින් MCQ (array), Single/Short (string), සහ Essay අනු ප්‍රශ්න (object) ගබඩා කරනු ලැබේ
+  const [answers, setAnswers] = useState<{ [key: string]: any }>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // New states for single question step view, summary review & popup
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [showSummary, setShowSummary] = useState(false);
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -88,8 +88,28 @@ export default function TakeQuizPage() {
     }
   };
 
-  const handleAnswerChange = (questionId: string, value: string) => {
+  const handleAnswerChange = (questionId: string, value: any) => {
     setAnswers({ ...answers, [questionId]: value });
+  };
+
+  // MCQ බහු නිවැරදි පිළිතුරු සඳහා Checkbox හැසිරවීම
+  const handleMCQCheckboxChange = (questionId: string, optionText: string) => {
+    const currentSelected: string[] = Array.isArray(answers[questionId]) ? [...answers[questionId]] : [];
+    if (currentSelected.includes(optionText)) {
+      const updated = currentSelected.filter(item => item !== optionText);
+      setAnswers({ ...answers, [questionId]: updated });
+    } else {
+      setAnswers({ ...answers, [questionId]: [...currentSelected, optionText] });
+    }
+  };
+
+  // Essay අනු ප්‍රශ්න (Sub-questions) සඳහා පිළිතුරු හැසිරවීම
+  const handleSubQuestionAnswerChange = (questionId: string, subIdx: number, text: string) => {
+    const currentSubAnswers = typeof answers[questionId] === 'object' && answers[questionId] !== null && !Array.isArray(answers[questionId])
+      ? { ...answers[questionId] } 
+      : {};
+    currentSubAnswers[subIdx] = text;
+    setAnswers({ ...answers, [questionId]: currentSubAnswers });
   };
 
   const handleSubmitQuiz = async (isAutoSubmit = false) => {
@@ -121,7 +141,6 @@ export default function TakeQuizPage() {
         alert("Time is up! Your answers have been submitted automatically.");
       }
       
-      // Show custom popup instead of browser alert
       setShowSuccessPopup(true);
     } catch (err: any) {
       alert(err.response?.data?.message || "Failed to submit quiz.");
@@ -138,7 +157,13 @@ export default function TakeQuizPage() {
 
   // Progress Calculations
   const totalQuestions = quiz?.questions?.length || 0;
-  const answeredCount = quiz?.questions ? quiz.questions.filter((q: any) => answers[q._id] && answers[q._id].trim() !== "").length : 0;
+  const answeredCount = quiz?.questions ? quiz.questions.filter((q: any) => {
+    const ans = answers[q._id];
+    if (ans === undefined || ans === null) return false;
+    if (Array.isArray(ans)) return ans.length > 0;
+    if (typeof ans === 'object') return Object.values(ans).some((val: any) => val && val.trim() !== "");
+    return String(ans).trim() !== "";
+  }).length : 0;
   const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
@@ -204,6 +229,11 @@ export default function TakeQuizPage() {
                 {/* Current Question */}
                 {(() => {
                   const q = quiz.questions[currentQuestionIndex];
+                  let totalQMarks = q.marks;
+                  if (q.type === 'essay' && q.subQuestions) {
+                    totalQMarks = q.subQuestions.reduce((s: number, sq: any) => s + sq.marks, 0);
+                  }
+
                   return (
                     <div className="space-y-6" key={q._id || currentQuestionIndex}>
                       <div className="flex justify-between items-start gap-4">
@@ -211,7 +241,7 @@ export default function TakeQuizPage() {
                           {currentQuestionIndex + 1}. {q.questionText}
                         </h3>
                         <span className="text-xs font-bold px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 shrink-0">
-                          {q.marks || 5} Marks ({q.type.toUpperCase()})
+                          {totalQMarks} Marks ({q.type.toUpperCase()})
                         </span>
                       </div>
 
@@ -221,19 +251,29 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
+                      {/* Multiple Choice (MCQ) - Checkboxes for multiple selections */}
                       {q.type === 'mcq' && (
                         <div className="space-y-3 pt-2">
+                          <p className="text-xs font-semibold text-indigo-400">Select all correct answers:</p>
                           {q.options.map((opt: string, optIdx: number) => {
-                            const isSelected = answers[q._id] === opt;
+                            const selectedArray = Array.isArray(answers[q._id]) ? answers[q._id] : [];
+                            const isSelected = selectedArray.includes(opt);
+
                             return (
                               <div 
                                 key={optIdx}
-                                onClick={() => handleAnswerChange(q._id, opt)}
+                                onClick={() => handleMCQCheckboxChange(q._id, opt)}
                                 className={`p-4 rounded-2xl border cursor-pointer text-sm font-medium transition-all flex items-center gap-3.5 ${
                                   isSelected ? "bg-blue-600 text-white border-blue-600 shadow-md scale-[1.01]" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-300"
                                 }`}
                               >
-                                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 ${isSelected ? "bg-white text-blue-600 border-white" : "border-slate-400"}`}>
+                                <input 
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  onChange={() => {}} // Handled by parent div click
+                                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                />
+                                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 bg-white/20">
                                   {optIdx + 1}
                                 </span>
                                 {opt}
@@ -243,15 +283,84 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
-                      {(q.type === 'essay' || q.type === 'short') && (
+                      {/* Single Choice - Radio buttons */}
+                      {q.type === 'single' && (
+                        <div className="space-y-3 pt-2">
+                          <p className="text-xs font-semibold text-indigo-400">Select 1 correct answer:</p>
+                          {q.options.map((opt: string, optIdx: number) => {
+                            const isSelected = answers[q._id] === opt;
+
+                            return (
+                              <div 
+                                key={optIdx}
+                                onClick={() => handleAnswerChange(q._id, opt)}
+                                className={`p-4 rounded-2xl border cursor-pointer text-sm font-medium transition-all flex items-center gap-3.5 ${
+                                  isSelected ? "bg-blue-600 text-white border-blue-600 shadow-md scale-[1.01]" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-300"
+                                }`}
+                              >
+                                <input 
+                                  type="radio"
+                                  name={`single-q-${q._id}`}
+                                  checked={isSelected}
+                                  onChange={() => {}}
+                                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                />
+                                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 bg-white/20">
+                                  {optIdx + 1}
+                                </span>
+                                {opt}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {/* Short Answer */}
+                      {q.type === 'short' && (
                         <div className="pt-2">
-                          <textarea
-                            rows={q.type === 'essay' ? 6 : 3}
+                          <input
+                            type="text"
                             value={answers[q._id] || ""}
                             onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                            placeholder="Type your answer here..."
+                            placeholder="Type your short answer here..."
                             className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
                           />
+                        </div>
+                      )}
+
+                      {/* Essay / Structured Sub-questions */}
+                      {q.type === 'essay' && (
+                        <div className="space-y-4 pt-2">
+                          {q.subQuestions && q.subQuestions.length > 0 ? (
+                            q.subQuestions.map((sq: any, sqIdx: number) => {
+                              const subAnswersObj = (typeof answers[q._id] === 'object' && answers[q._id] !== null && !Array.isArray(answers[q._id])) 
+                                ? answers[q._id] 
+                                : {};
+
+                              return (
+                                <div key={sq._id || sqIdx} className="p-4 rounded-2xl border bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
+                                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    ({sqIdx + 1}) {sq.subQuestionText} <span className="text-blue-500 font-normal">[{sq.marks} marks]</span>
+                                  </label>
+                                  <textarea
+                                    rows={3}
+                                    value={subAnswersObj[sqIdx] || ""}
+                                    onChange={(e) => handleSubQuestionAnswerChange(q._id, sqIdx, e.target.value)}
+                                    placeholder={`Write answer for part (${sqIdx + 1})...`}
+                                    className="w-full p-3 rounded-xl border bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-xs outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
+                                  />
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <textarea
+                              rows={6}
+                              value={answers[q._id] || ""}
+                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                              placeholder="Type your essay answer here..."
+                              className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
+                            />
+                          )}
                         </div>
                       )}
                     </div>
@@ -310,7 +419,14 @@ export default function TakeQuizPage() {
                   <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Question Palette (Click to Edit):</h4>
                   <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
                     {quiz.questions.map((q: any, idx: number) => {
-                      const isAnswered = answers[q._id] && answers[q._id].trim() !== "";
+                      const ans = answers[q._id];
+                      let isAnswered = false;
+                      if (ans !== undefined && ans !== null) {
+                        if (Array.isArray(ans)) isAnswered = ans.length > 0;
+                        else if (typeof ans === 'object') isAnswered = Object.values(ans).some((val: any) => val && val.trim() !== "");
+                        else isAnswered = String(ans).trim() !== "";
+                      }
+
                       return (
                         <button
                           key={q._id || idx}

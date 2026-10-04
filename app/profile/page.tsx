@@ -144,6 +144,7 @@ export default function ProfilePage() {
     localStorage.setItem("isEditProfileOpen", JSON.stringify(newState));
   };
 
+  // සිසුවාගේ පිළිතුරු පත්‍රය සහ එක් එක් ප්‍රශ්නයට ලැබුණු ලකුණු PDF එකක් ලෙස ඩවුන්ලෝඩ් කරගැනීම
   const handleDownloadStudentPaperPDF = (result: any) => {
     const quiz = result.quizId;
     if (!quiz) return;
@@ -155,6 +156,7 @@ export default function ProfilePage() {
     }
 
     const studentAnswers = result.answers instanceof Map ? Object.fromEntries(result.answers) : (result.answers || {});
+    const teacherEssayMarks = result.essayMarks instanceof Map ? Object.fromEntries(result.essayMarks) : (result.essayMarks || {});
 
     let htmlContent = `
       <html>
@@ -166,8 +168,9 @@ export default function ProfilePage() {
             p { font-size: 13px; color: #64748b; margin-bottom: 15px; }
             .score-box { background: #e0e7ff; color: #3730a3; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 25px; font-size: 14px; }
             .question-box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; }
-            .q-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; }
+            .q-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
             .badge { background: #f1f5f9; color: #475569; padding: 3px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
+            .q-score { background: #e0e7ff; color: #3730a3; padding: 2px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
             ul { margin: 8px 0; padding-left: 20px; font-size: 13px; }
             li { margin-bottom: 4px; }
             .ans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -186,11 +189,51 @@ export default function ProfilePage() {
       const qId = q._id.toString();
       const studentAns = String(studentAnswers[qId] || "No Answer Given").trim();
       const correctAns = String(q.correctAnswer || "").trim();
-      const isCorrect = studentAns.toLowerCase() === correctAns.toLowerCase();
+
+      // නිවැරදි/වැරදි බව පරීක්ෂා කිරීම
+      let isCorrect = false;
+      if (q.type === 'single' || q.type === 'short') {
+        const cleanStudent = studentAns.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const cleanCorrect = correctAns.toLowerCase().replace(/[^a-z0-9]/g, '');
+        isCorrect = cleanStudent === cleanCorrect && cleanStudent !== "";
+      } else if (q.type === 'mcq') {
+        const correctArr = Array.isArray(q.correctAnswer) ? q.correctAnswer : [q.correctAnswer];
+        const studentAnsArr = studentAnswers[qId];
+        if (Array.isArray(studentAnsArr)) {
+          isCorrect = correctArr.every((a: string) => studentAnsArr.includes(a)) && studentAnsArr.every((a: string) => correctArr.includes(a));
+        }
+      }
+
+      // ප්‍රශ්නයට ලැබුණු ලකුණු ගණනය කිරීම
+      let earnedQMarks = 0;
+      let maxQMarks = q.marks || 5;
+      if (q.type === 'essay' && q.subQuestions && q.subQuestions.length > 0) {
+        maxQMarks = q.subQuestions.reduce((s: number, sq: any) => s + sq.marks, 0);
+      }
+
+      if (q.type !== 'essay') {
+        if (isCorrect) earnedQMarks = q.marks;
+        else {
+          const mMark = teacherEssayMarks[qId];
+          earnedQMarks = mMark !== undefined ? Number(mMark) : 0;
+        }
+      } else {
+        const val = teacherEssayMarks[qId];
+        if (typeof val === 'object' && val !== null) {
+          earnedQMarks = Object.values(val).reduce((s: number, m: any) => s + (Number(m) || 0), 0);
+        } else {
+          earnedQMarks = Number(val) || 0;
+        }
+      }
+
+      const displayStudentAns = Array.isArray(studentAnswers[qId]) ? studentAnswers[qId].join(', ') : (typeof studentAnswers[qId] === 'object' && studentAnswers[qId] !== null ? JSON.stringify(studentAnswers[qId]) : studentAns);
 
       htmlContent += `
         <div class="question-box">
-          <div class="q-title">${idx + 1}. ${q.questionText} <span class="badge">${q.type.toUpperCase()} (${q.marks || 5} Marks)</span></div>
+          <div class="q-title">
+            <span>${idx + 1}. ${q.questionText} <span class="badge">${q.type.toUpperCase()}</span></span>
+            <span class="q-score">Score: ${earnedQMarks} / ${maxQMarks} Marks</span>
+          </div>
       `;
       if (q.type === 'mcq' && q.options && q.options.length > 0) {
         htmlContent += `<ul>`;
@@ -203,12 +246,12 @@ export default function ProfilePage() {
           <div class="ans-grid">
             <div class="ans-item">
               <strong>Your Answer:</strong><br/>
-              <span class="${q.type !== 'essay' ? (isCorrect ? 'correct' : 'incorrect') : ''}">${studentAns} ${q.type !== 'essay' ? (isCorrect ? '(Correct ✅)' : '(Incorrect ❌)') : ''}</span>
+              <span class="${q.type !== 'essay' ? (isCorrect ? 'correct' : 'incorrect') : ''}">${displayStudentAns} ${q.type !== 'essay' ? (isCorrect ? '(Correct ✅)' : '(Incorrect ❌)') : ''}</span>
             </div>
             ${q.type !== 'essay' ? `
             <div class="ans-item" style="background: #d1fae5; border-color: #a7f3d0;">
               <strong>Correct Answer Key:</strong><br/>
-              <span class="correct">${q.correctAnswer}</span>
+              <span class="correct">${Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : q.correctAnswer}</span>
             </div>` : ''}
           </div>
         </div>
@@ -404,7 +447,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Joined Classes Card (අලුතින් එකතු කරන ලද කාඩ් එක) */}
+            {/* Joined Classes Card */}
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
@@ -451,7 +494,7 @@ export default function ProfilePage() {
 
           </div>
 
-          {/* Column 2: Edit Form (ಹකුළා/දිගහැරීමට හැකි වන පරිදි සකසා ඇත) */}
+          {/* Column 2: Edit Form */}
           <div className="lg:col-span-8 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[2rem] p-6 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100 dark:border-slate-800/80 flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
