@@ -36,7 +36,7 @@ export default function StudentClassViewPage() {
     }
   }, [router]);
 
-  // Fetch all available classes and student requests (ලොග් වී ඇති විට)
+  // Fetch all available classes and student requests when logged in
   const fetchData = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
@@ -64,7 +64,7 @@ export default function StudentClassViewPage() {
     }
   };
 
-  // ලොග් වී නොමැති විට පන්ති ලැයිස්තුව පමණක් ලබා ගැනීමට
+  // Fetch only public classes list when not logged in
   const fetchPublicClasses = async () => {
     try {
       const classRes = await axios.get("http://localhost:5000/api/classes/all");
@@ -87,7 +87,7 @@ export default function StudentClassViewPage() {
     }
   };
 
-  // Handle sending request to join a class (ලොග් වී නැත්නම් දැනුම් දීම)
+  // Handle sending request to join a class (notify if not logged in)
   const handleRequestClass = async (classId: string, teacherId: string) => {
     const token = localStorage.getItem("token");
     if (!token) {
@@ -112,30 +112,49 @@ export default function StudentClassViewPage() {
     }
   };
 
+// Handle canceling a pending class request
+  const handleCancelRequest = async (requestId: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      // Changed from 'request' to 'requests' to match the backend route
+      const res = await axios.delete(`http://localhost:5000/api/classes/requests/${requestId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessage({ type: "success", text: res.data.message || "Request cancelled successfully." });
+      setIsPopupOpen(true);
+      fetchData(token);
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.response?.data?.message || "Failed to cancel the request." });
+      setIsPopupOpen(true);
+    }
+  };
+
   const getProfileImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     if (photoUrl.startsWith("http")) return photoUrl;
     return `http://localhost:5000/profile_photos/${photoUrl}`;
   };
 
-  // ලබා ගත හැකි සියලුම විෂයයන් (Subjects) ස්වයංක්‍රීයව එකතු කරගැනීම
+  // Automatically collect all available subjects
   const allSubjects = Array.from(
     new Set(groupedClasses.map((item) => item.teacher?.subject).filter(Boolean))
   );
   const subjects = ["all", ...allSubjects];
 
-  // Search සහ Subject Filter එක මත පදනම්ව ගුරුවරුන් සහ පන්ති පෙරහන් කිරීම
+  // Filter teachers and classes based on Search and Subject Filter
   const filteredGroupedClasses = groupedClasses
     .map((item) => {
       const teacherName = item.teacher?.name?.toLowerCase() || "";
       const teacherSubject = item.teacher?.subject?.toLowerCase() || "";
       const query = search.toLowerCase();
 
-      // විෂය ෆිල්ටර් එකට අදාලද යන්න පරීක්ෂා කිරීම
+      // Check whether it matches the subject filter
       const matchesSubject =
         selectedSubject === "all" || item.teacher?.subject === selectedSubject;
 
-      // පන්ති හෝ ගුරුවරයා සෙවුම් පදය (search query) සමඟ ගැලපේද යන්න
+      // Check whether classes or teacher match the search query
       const filteredClasses = item.classes.filter((cls: any) => {
         const grade = (cls.grade === 'Other' ? cls.customGradeName : cls.grade)?.toLowerCase() || "";
         const medium = cls.medium?.toLowerCase() || "";
@@ -153,7 +172,7 @@ export default function StudentClassViewPage() {
         return matchesQuery;
       });
 
-      // ගුරුවරයාගේ නම/විෂය සෙවුමට ගැළපේ නම් හෝ ඔහුගේ පන්තියක් ගැළපේ නම් සහ විෂය ෆිල්ටර් එකට යටත් නම්
+      // If teacher name/subject matches search query or any class matches and matches subject filter
       const teacherMatches = teacherName.includes(query) || teacherSubject.includes(query);
       const finalClasses = teacherMatches ? item.classes : filteredClasses;
 
@@ -285,6 +304,7 @@ export default function StudentClassViewPage() {
                     {item.classes.map((cls: any) => {
                       const req = requests.find((r) => r.classId === cls._id);
                       const status = req ? req.status : null;
+                      const requestId = req ? req._id : null;
 
                       return (
                         <div 
@@ -325,10 +345,17 @@ export default function StudentClassViewPage() {
                               </button>
                             )}
                             {status === 'Pending' && (
-                              <button disabled className="w-full py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed">
-                                <Loader2 size={15} className="animate-spin" />
-                                Request Pending...
-                              </button>
+                              <div className="flex flex-col gap-2">
+                                <button disabled className="w-full py-2.5 bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 cursor-not-allowed">
+                                  <Loader2 size={15} className="animate-spin" />
+                                  Request Pending...
+                                </button>
+                                {requestId && (
+                                  <button onClick={() => handleCancelRequest(requestId)} className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-all">
+                                    Cancel Request
+                                  </button>
+                                )}
+                              </div>
                             )}
                             {status === 'Approved' && (
                               <button onClick={() => router.push(`/class/class_join?classId=${cls._id}`)} className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 transition-all">
