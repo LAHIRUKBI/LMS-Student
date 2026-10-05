@@ -137,7 +137,7 @@ export default function StudentClassViewPage() {
 
       // පන්ති හෝ ගුරුවරයා සෙවුම් පදය (search query) සමඟ ගැලපේද යන්න
       const filteredClasses = item.classes.filter((cls: any) => {
-        const grade = cls.grade?.toLowerCase() || "";
+        const grade = (cls.grade === 'Other' ? cls.customGradeName : cls.grade)?.toLowerCase() || "";
         const medium = cls.medium?.toLowerCase() || "";
         const mode = cls.mode?.toLowerCase() || "";
         const description = cls.description?.toLowerCase() || "";
@@ -299,7 +299,10 @@ export default function StudentClassViewPage() {
                           )}
 
                           <div className="flex flex-wrap items-center gap-2">
-                            <span className="px-3 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-extrabold">{cls.grade}</span>
+                            {/* Displaying the custom grade name (customGradeName) or grade entered by the teacher instead of 'Other' */}
+                            <span className="px-3 py-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-extrabold">
+                              {cls.grade === 'Other' ? cls.customGradeName : cls.grade}
+                            </span>
                             <span className="px-3 py-1 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-xl text-xs font-extrabold">{cls.medium}</span>
                             <span className="px-3 py-1 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-xl text-xs font-extrabold">{cls.mode}</span>
                           </div>

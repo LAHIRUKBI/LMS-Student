@@ -5,18 +5,15 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award, AlertTriangle } from "lucide-react";
+import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award, AlertTriangle, Link as LinkIcon, VideoIcon } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
 // Quiz Card Item Component to handle start action and timer activation
 function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
-  // State to check whether the student has clicked 'Start Quiz Now'
   const [isStarted, setIsStarted] = useState<boolean>(false);
-  // Time left in seconds, initialized to quiz duration converted to seconds
   const [timeLeft, setTimeLeft] = useState<number>(quiz.duration * 60);
 
   useEffect(() => {
-    // Timer will only run if isStarted is true
     if (!isStarted) return;
 
     const timer = setInterval(() => {
@@ -34,15 +31,12 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
     return () => clearInterval(timer);
   }, [isStarted, quiz._id, router]);
 
-  // Convert remaining seconds to minutes and seconds format
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const formatTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-  // Check if time is near timeout (less than or equal to 5 minutes)
   const isNearTimeout = timeLeft <= 300 && timeLeft > 0;
 
-  // Handler when student clicks start quiz now
   const handleStartQuiz = () => {
     setIsStarted(true);
   };
@@ -57,7 +51,6 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
             <Clock size={12} /> Duration: {quiz.duration} Mins
           </span>
           <div className="flex items-center gap-2">
-            {/* Open Status Badge */}
             <span className="px-2.5 py-0.5 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-full text-[10px] font-extrabold uppercase">
               Open
             </span>
@@ -68,7 +61,6 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
         <h3 className="font-bold text-base text-slate-800 dark:text-white mb-1">{quiz.title}</h3>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">{quiz.description || "Test your knowledge with this quiz."}</p>
 
-        {/* Live Countdown Timer Display (Only runs after starting) */}
         <div className={`p-3 rounded-xl border flex items-center justify-between text-xs font-bold ${
           isNearTimeout 
             ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-300" 
@@ -84,7 +76,6 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
         </div>
       </div>
 
-      {/* Button to start timer or navigate if already started */}
       {!isStarted ? (
         <button 
           onClick={handleStartQuiz}
@@ -187,6 +178,17 @@ export default function ClassJoinPage() {
   const filteredVideos = materials.filter(m => m.type === 'video');
   const filteredPdfs = materials.filter(m => m.type === 'pdf' || m.type === 'paper');
 
+  // 🟢 The logic for checking whether the online link should be displayed in the student's class.
+  const now = new Date();
+  const isOnlineLinkActive = classDetails?.mode === 'Online' && 
+    classDetails?.onlineLink && 
+    !classDetails?.provideLater && (
+      classDetails?.linkDisplayMode === 'immediate' || 
+      (classDetails?.linkDisplayMode === 'scheduled' && 
+        (!classDetails?.linkStartDateTime || new Date(classDetails.linkStartDateTime) <= now) && 
+        (!classDetails?.linkEndDateTime || new Date(classDetails.linkEndDateTime) >= now))
+    );
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-500 relative font-sans">
       
@@ -230,7 +232,9 @@ export default function ClassJoinPage() {
 
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                    <span className="px-3 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-extrabold">Grade {classDetails.grade}</span>
+                    <span className="px-3 py-0.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-extrabold">
+                      {classDetails.grade === 'Other' ? classDetails.customGradeName : `Grade ${classDetails.grade}`}
+                    </span>
                     <span className="px-3 py-0.5 bg-teal-50 text-teal-600 rounded-lg text-xs font-extrabold">{classDetails.medium}</span>
                     <span className="px-3 py-0.5 bg-orange-50 text-orange-600 rounded-lg text-xs font-extrabold">{classDetails.mode}</span>
                   </div>
@@ -239,13 +243,37 @@ export default function ClassJoinPage() {
                 </div>
               </div>
 
-              <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border text-xs space-y-1.5 min-w-[220px]">
-                <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
-                  <Calendar size={14} className="text-blue-500" /> Day: <span className="font-medium text-slate-500">{classDetails.day}</span>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                
+                {/* An attractive 'Joining Banner' for the child that displays the active online link. */}
+                {classDetails.mode === 'Online' && (
+                  <div className="w-full sm:w-auto">
+                    {isOnlineLinkActive ? (
+                      <a
+                        href={classDetails.onlineLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 px-6 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-2xl font-bold text-xs shadow-lg shadow-emerald-600/30 transition-all animate-pulse"
+                      >
+                        <VideoIcon size={18} /> Join Live Class Now
+                      </a>
+                    ) : (
+                      <div className="px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl border text-center text-xs font-semibold">
+                        🔒 Online Class Link Not Active Yet
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl border text-xs space-y-1.5 min-w-[200px]">
+                  <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
+                    <Calendar size={14} className="text-blue-500" /> Day: <span className="font-medium text-slate-500">{classDetails.day}</span>
+                  </div>
+                  <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
+                    <Clock size={14} className="text-orange-500" /> Time: <span className="font-medium text-slate-500">{classDetails.startTime} - {classDetails.endTime}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 font-bold text-slate-700 dark:text-slate-300">
-                  <Clock size={14} className="text-orange-500" /> Time: <span className="font-medium text-slate-500">{classDetails.startTime} - {classDetails.endTime}</span>
-                </div>
+
               </div>
 
             </div>

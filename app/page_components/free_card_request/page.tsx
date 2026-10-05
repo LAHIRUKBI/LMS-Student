@@ -119,6 +119,12 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
       return;
     }
 
+    // Validation for mandatory supporting documents
+    if (selectedFiles.length === 0) {
+      setFreeCardMsg({ type: "error", text: "Please upload at least one supporting document (PDF or Image)." });
+      return;
+    }
+
     setFreeCardSubmitting(true);
     setFreeCardMsg({ type: "", text: "" });
 
@@ -199,7 +205,7 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
 
         <form onSubmit={handleFreeCardSubmit} className="space-y-3 max-h-[75vh] overflow-y-auto pr-1">
           
-          {/* Student Phone Number & Address (Profile එකෙන් ඇතොත් read-only, නැතහොත් ඇතුළත් කළ හැක) */}
+          {/* Student Phone Number & Address (Read-only if available in the profile; otherwise, can be entered) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
@@ -365,6 +371,8 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
               ) : (
                 availableClasses.map((cls) => {
                   const isSelected = selectedClassIds.includes(cls._id);
+                  const displayGrade = cls.grade === 'Other' ? cls.customGradeName : cls.grade;
+
                   return (
                     <div
                       key={cls._id}
@@ -376,7 +384,7 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
                       }`}
                     >
                       <div>
-                        <p className="font-bold">{cls.grade} - {cls.medium} ({cls.mode})</p>
+                        <p className="font-bold">{displayGrade} - {cls.medium} ({cls.mode})</p>
                         <p className="text-[10px] text-slate-400">Teacher: {cls.teacherId?.name || "N/A"} | {cls.day} at {cls.startTime}</p>
                       </div>
                       <div className={`w-4 h-4 rounded-md flex items-center justify-center border ${isSelected ? "bg-amber-500 border-amber-500 text-white" : "border-slate-300 dark:border-slate-600"}`}>
@@ -390,11 +398,13 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
           </div>
 
           <div>
-            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 block">Upload Supporting Documents (PDFs or Images)</label>
+            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center justify-between">
+              <span>Upload Supporting Documents (PDFs or Images) <span className="text-red-500">* (Required)</span></span>
+            </label>
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-4 cursor-pointer hover:border-amber-500 dark:hover:border-amber-500 transition-colors bg-slate-50/50 dark:bg-slate-800/30">
               <Upload size={24} className="text-amber-500 mb-1" />
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Click to browse files</span>
-              <span className="text-[10px] text-slate-400">Supports PDF, PNG, JPG (Multiple allowed)</span>
+              <span className="text-[10px] text-slate-400">Supports PDF, PNG, JPG (At least 1 required)</span>
               <input
                 type="file"
                 multiple
