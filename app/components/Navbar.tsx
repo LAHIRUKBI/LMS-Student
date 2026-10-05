@@ -7,6 +7,7 @@ import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Me
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
+import { io } from "socket.io-client";
 
 interface NavbarProps {
   user: any;
@@ -147,6 +148,39 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
     if (!newExpandState) {
       setIsDropdownOpen(false);
+    }
+  };
+
+
+// Correctly notifying that the child is logging out via the socket and the API.
+  const handleNavbarLogout = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const userData = localStorage.getItem("user");
+      
+      let studentId = user?._id;
+      if (!studentId && userData) {
+        const parsedUser = JSON.parse(userData);
+        studentId = parsedUser?._id;
+      }
+
+      if (studentId) {
+        // The socket has been connected here to call the IO correctly.
+        const socket = io("http://localhost:5000");
+        socket.emit("student_logout", studentId);
+
+        if (token) {
+          await axios.post(
+            "http://localhost:5000/api/auth/student/logout",
+            { studentId: studentId },
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Navbar logout error:", err);
+    } finally {
+      onLogout();
     }
   };
 
@@ -411,8 +445,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </span>
         </Link>
 
+        {/* Logout Button */}
         <button
-          onClick={onLogout}
+          onClick={handleNavbarLogout}
           className={`flex items-center text-sm font-medium text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-500/10 hover:bg-red-100/70 dark:hover:bg-red-500/20 rounded-full transition-all duration-500 shrink-0 border border-red-200/30 dark:border-red-500/20
             ${isExpanded ? 'p-2' : 'px-3.5 py-1.5'}
           `}

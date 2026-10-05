@@ -8,6 +8,7 @@ import axios from "axios";
 import Navbar from "@/app/components/Navbar";
 import FreeCardRequestModal from "@/app/page_components/free_card_request/page"; 
 import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
+import { io } from "socket.io-client";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -103,7 +104,32 @@ export default function ProfilePage() {
     setLoading(false);
   }, [router]);
 
-  // ලියාපදිංචි වී අනුමත වී ඇති classes ගණන ලබා ගැනීම
+  // Student Real-time Online Socket Effect
+  useEffect(() => {
+    const userData = localStorage.getItem("user");
+    if (userData) {
+      const parsedUser = JSON.parse(userData);
+      if (parsedUser && parsedUser._id) {
+        const socket = io("http://localhost:5000");
+
+        // Notifying the backend that the student has joined.
+        socket.emit("student_connected", parsedUser._id);
+
+        const handleBeforeUnload = () => {
+          socket.emit("student_logout", parsedUser._id);
+        };
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+          socket.emit("student_logout", parsedUser._id);
+          socket.disconnect();
+          window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+      }
+    }
+  }, []);
+
+  // Obtaining the number of registered and approved classes
   const fetchJoinedClassesCount = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
@@ -192,7 +218,7 @@ export default function ProfilePage() {
       const studentAns = String(studentAnswers[qId] || "No Answer Given").trim();
       const correctAns = String(q.correctAnswer || "").trim();
 
-      // නිවැරදි/වැරදි බව පරීක්ෂා කිරීම
+      // Verifying correctness/incorrectness
       let isCorrect = false;
       if (q.type === 'single') {
         const cleanStudent = studentAns.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -214,7 +240,7 @@ export default function ProfilePage() {
         }
       }
 
-      // ප්‍රශ්නයට ලැබුණු ලකුණු ගණනය කිරීම
+      // Calculation of marks obtained for the question
       let earnedQMarks = 0;
       let maxQMarks = q.marks || 5;
       if (q.type === 'essay' && q.subQuestions && q.subQuestions.length > 0) {
@@ -247,7 +273,7 @@ export default function ProfilePage() {
         displayStudentAns = studentAns;
       }
 
-      // Teacher's Correction / Feedback ලබා ගැනීම
+      // Receiving Teacher's Corrections / Feedback
       let correctionText = "";
       const tCorrections = result.teacherCorrections;
       if (tCorrections) {
@@ -381,10 +407,35 @@ export default function ProfilePage() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    router.push("/login");
+const handleLogout = async () => {
+    try {
+      const userData = localStorage.getItem("user");
+      const token = localStorage.getItem("token");
+      
+      if (userData) {
+        const parsedUser = JSON.parse(userData);
+        if (parsedUser && parsedUser._id) {
+          // 1. Sending notification via socket
+          const socket = io("http://localhost:5000");
+          socket.emit("student_logout", parsedUser._id);
+
+          if (token) {
+            await axios.post(
+              "http://localhost:5000/api/auth/student/logout",
+              { studentId: parsedUser._id },
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Logout error:", err);
+    } finally {
+      // Clearing LocalStorage and redirecting to the login page
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      router.push("/login");
+    }
   };
 
   if (loading) {
