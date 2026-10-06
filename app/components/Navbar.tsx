@@ -26,45 +26,69 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   // State for student notices count
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
 
-  // Notification dropdown එකෙන් පිටත ක්ලික් කළ විට එය වසා දැමීමට Ref එකක්
+  //A ref to close the notification dropdown when clicking outside of it.
   const notificationRef = useRef<HTMLDivElement>(null);
 
   const pathname = usePathname();
 
-  useEffect(() => {
-    const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
-    const savedDarkMode = localStorage.getItem("darkMode") === "true";
+useEffect(() => {
+  const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
+  const savedDarkMode = localStorage.getItem("darkMode") === "true";
 
-    setIsExpanded(savedExpandState);
-    setIsDarkMode(savedDarkMode);
+  setIsExpanded(savedExpandState);
+  setIsDarkMode(savedDarkMode);
 
-    if (savedDarkMode) {
-      document.documentElement.classList.add('dark');
+  if (savedDarkMode) {
+    document.documentElement.classList.add('dark');
+  }
+
+  setIsMounted(true);
+  fetchNotifications();
+  fetchStudentNoticesCount();
+
+  // Global Heartbeat & Socket Connection
+  const userData = localStorage.getItem("user");
+  let socket: any = null;
+  let heartbeatInterval: any = null;
+  let parsedUser: any = null;
+
+  if (userData) {
+    parsedUser = JSON.parse(userData);
+    if (parsedUser && parsedUser._id) {
+      socket = io("http://localhost:5000", { transports: ["websocket"] });
+      
+      // Going online immediately upon connecting
+      socket.emit("student_connected", parsedUser._id);
+
+      // Sending a heartbeat every 10 seconds to indicate an active status.
+      heartbeatInterval = setInterval(() => {
+        socket.emit("student_heartbeat", parsedUser._id);
+      }, 10000);
     }
+  }
 
-    setIsMounted(true);
+  const handleClickOutside = (event: MouseEvent) => {
+    if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+      setIsNotificationOpen(false);
+    }
+  };
+
+  document.addEventListener("mousedown", handleClickOutside);
+
+  const interval = setInterval(() => {
     fetchNotifications();
     fetchStudentNoticesCount();
+  }, 10000);
 
-    // Notification dropdown එකෙන් පිටත ක්ලික් කිරීම හඳුනා ගැනීමට Event Listener එකක්
-    const handleClickOutside = (event: MouseEvent) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
-        setIsNotificationOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    const interval = setInterval(() => {
-      fetchNotifications();
-      fetchStudentNoticesCount();
-    }, 10000);
-
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  return () => {
+    clearInterval(interval);
+    clearInterval(heartbeatInterval);
+    if (socket) {
+      socket.disconnect();
+    }
+    document.removeEventListener("mousedown", handleClickOutside);
+  };
+}, []);
 
   const fetchNotifications = async () => {
     try {
