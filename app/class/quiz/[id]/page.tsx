@@ -5,7 +5,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { Loader2, Clock, CheckCircle2, ArrowLeft, ArrowRight, AlertCircle, HelpCircle, Send } from "lucide-react";
+import { Loader2, Clock, CheckCircle2, ArrowLeft, ArrowRight, AlertCircle, HelpCircle, Send, Camera, Upload, X, Image as ImageIcon } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import QuizSubmitSuccessPopup from "@/app/components/QuizSubmitSuccessPopup";
 
@@ -20,8 +20,10 @@ export default function TakeQuizPage() {
   const [error, setError] = useState("");
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
   
-  // answers state එක මඟින් MCQ (array), Single/Short (string), සහ Essay අනු ප්‍රශ්න (object) ගබඩා කරනු ලැබේ
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
+  // Essay සහ Short ප්‍රශ්න සඳහා ළමයා ලබාදෙන පිළිතුරු කොළවල පින්තූර ගබඩා කිරීමට (Files state එක)
+  const [answerSheets, setAnswerSheets] = useState<{ [key: string]: File[] }>({});
+  
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -92,7 +94,6 @@ export default function TakeQuizPage() {
     setAnswers({ ...answers, [questionId]: value });
   };
 
-  // MCQ බහු නිවැරදි පිළිතුරු සඳහා Checkbox හැසිරවීම
   const handleMCQCheckboxChange = (questionId: string, optionText: string) => {
     const currentSelected: string[] = Array.isArray(answers[questionId]) ? [...answers[questionId]] : [];
     if (currentSelected.includes(optionText)) {
@@ -103,13 +104,31 @@ export default function TakeQuizPage() {
     }
   };
 
-  // Essay අනු ප්‍රශ්න (Sub-questions) සඳහා පිළිතුරු හැසිරවීම
   const handleSubQuestionAnswerChange = (questionId: string, subIdx: number, text: string) => {
     const currentSubAnswers = typeof answers[questionId] === 'object' && answers[questionId] !== null && !Array.isArray(answers[questionId])
       ? { ...answers[questionId] } 
       : {};
     currentSubAnswers[subIdx] = text;
     setAnswers({ ...answers, [questionId]: currentSubAnswers });
+  };
+
+  // පිළිතුරු කොළ (පින්තූර) එකතු කිරීම (කැමරාවෙන් හෝ ගැලරියෙන්)
+  const handleAnswerSheetAdd = (questionKey: string, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const newFiles = Array.from(files);
+    setAnswerSheets(prev => {
+      const existing = prev[questionKey] || [];
+      return { ...prev, [questionKey]: [...existing, ...newFiles] };
+    });
+  };
+
+  // එකතු කළ පිළිතුරු කොළයක පින්තූරයක් ඉවත් කිරීම
+  const handleRemoveAnswerSheet = (questionKey: string, fileIdx: number) => {
+    setAnswerSheets(prev => {
+      const existing = prev[questionKey] || [];
+      const updated = existing.filter((_, idx) => idx !== fileIdx);
+      return { ...prev, [questionKey]: updated };
+    });
   };
 
   const handleSubmitQuiz = async (isAutoSubmit = false) => {
@@ -130,11 +149,22 @@ export default function TakeQuizPage() {
     }
 
     try {
-      await axios.post(`http://localhost:5000/api/quiz/${quizId}/submit`, {
-        answers,
-        timeTaken: timeTakenStr
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
+      const formData = new FormData();
+      formData.append("answers", JSON.stringify(answers));
+      formData.append("timeTaken", timeTakenStr);
+
+      // Short සහ Essay ප්‍රශ්නවල පිළිතුරු කොළ FormData එකට ඇතුළත් කිරීම
+      Object.keys(answerSheets).forEach((qKey) => {
+        answerSheets[qKey].forEach((file) => {
+          formData.append(`answerSheets_${qKey}`, file);
+        });
+      });
+
+      await axios.post(`http://localhost:5000/api/quiz/${quizId}/submit`, formData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data"
+        }
       });
 
       if (isAutoSubmit) {
@@ -155,10 +185,13 @@ export default function TakeQuizPage() {
   const formatTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   const isNearTimeout = timeLeft <= 300 && timeLeft > 0;
 
-  // Progress Calculations
   const totalQuestions = quiz?.questions?.length || 0;
   const answeredCount = quiz?.questions ? quiz.questions.filter((q: any) => {
     const ans = answers[q._id];
+    const sheets = answerSheets[q._id];
+    const hasSheets = sheets && sheets.length > 0;
+
+    if (hasSheets) return true;
     if (ans === undefined || ans === null) return false;
     if (Array.isArray(ans)) return ans.length > 0;
     if (typeof ans === 'object') return Object.values(ans).some((val: any) => val && val.trim() !== "");
@@ -193,7 +226,6 @@ export default function TakeQuizPage() {
         ) : (
           <div className="space-y-6">
             
-            {/* Top Bar: Title & Timer */}
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-20 z-20">
               <div>
                 <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">{quiz.title}</h1>
@@ -209,7 +241,6 @@ export default function TakeQuizPage() {
               )}
             </div>
 
-            {/* Progress Bar & Status */}
             {!showSummary && (
               <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-400">
@@ -222,11 +253,9 @@ export default function TakeQuizPage() {
               </div>
             )}
 
-            {/* Main Question View or Summary View */}
             {!showSummary ? (
               <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
                 
-                {/* Current Question */}
                 {(() => {
                   const q = quiz.questions[currentQuestionIndex];
                   let totalQMarks = q.marks;
@@ -251,7 +280,6 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
-                      {/* Multiple Choice (MCQ) - Checkboxes for multiple selections */}
                       {q.type === 'mcq' && (
                         <div className="space-y-3 pt-2">
                           <p className="text-xs font-semibold text-indigo-400">Select all correct answers:</p>
@@ -270,7 +298,7 @@ export default function TakeQuizPage() {
                                 <input 
                                   type="checkbox"
                                   checked={isSelected}
-                                  onChange={() => {}} // Handled by parent div click
+                                  onChange={() => {}} 
                                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                                 />
                                 <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 bg-white/20">
@@ -283,7 +311,6 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
-                      {/* Single Choice - Radio buttons */}
                       {q.type === 'single' && (
                         <div className="space-y-3 pt-2">
                           <p className="text-xs font-semibold text-indigo-400">Select 1 correct answer:</p>
@@ -315,9 +342,9 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
-                      {/* Short Answer */}
+                      {/* Short Answer (Text input සහ Answer Sheet Upload එකතු කර ඇත) */}
                       {q.type === 'short' && (
-                        <div className="pt-2">
+                        <div className="space-y-4 pt-2">
                           <input
                             type="text"
                             value={answers[q._id] || ""}
@@ -325,10 +352,71 @@ export default function TakeQuizPage() {
                             placeholder="Type your short answer here..."
                             className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
                           />
+
+                          {/* Short ප්‍රශ්න සඳහාද කොළයක ලියා ෆොටෝ/ගැලරියෙන් එකතු කිරීමට ඇති UI කොටස */}
+                          <div className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+                              <div>
+                                <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                                  <Camera size={16} /> Upload Written Paper / Answer Sheet (Optional)
+                                </h4>
+                                <p className="text-[11px] text-slate-500">Take a photo using your camera or choose existing photos if you wrote on paper.</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <label className="cursor-pointer px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                  <Camera size={14} /> Open Camera
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    multiple 
+                                    className="hidden" 
+                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
+                                  />
+                                </label>
+
+                                <label className="cursor-pointer px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                  <Upload size={14} /> Choose File
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    multiple 
+                                    className="hidden" 
+                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            {answerSheets[q._id] && answerSheets[q._id].length > 0 && (
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
+                                {answerSheets[q._id].map((file, fIdx) => (
+                                  <div key={fIdx} className="relative group rounded-xl overflow-hidden border bg-white dark:bg-slate-900 aspect-square">
+                                    <img 
+                                      src={URL.createObjectURL(file)} 
+                                      alt={`Answer sheet ${fIdx + 1}`} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveAnswerSheet(q._id, fIdx)}
+                                      className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">
+                                      Page {fIdx + 1}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
 
-                      {/* Essay / Structured Sub-questions */}
+                      {/* Essay / Structured Sub-questions & Answer Sheet Upload Section */}
                       {q.type === 'essay' && (
                         <div className="space-y-4 pt-2">
                           {q.subQuestions && q.subQuestions.length > 0 ? (
@@ -361,13 +449,73 @@ export default function TakeQuizPage() {
                               className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
                             />
                           )}
+
+                          {/* ළමයාට කොළයක ලියා ෆොටෝ/ගැලරියෙන් එකතු කිරීමට ඇති UI කොටස */}
+                          <div className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
+                            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
+                              <div>
+                                <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
+                                  <Camera size={16} /> Upload Answer Sheets (Optional)
+                                </h4>
+                                <p className="text-[11px] text-slate-500">Take a photo using your camera or choose existing paper photos (Multiple pages allowed).</p>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <label className="cursor-pointer px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                  <Camera size={14} /> Open Camera
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    capture="environment" 
+                                    multiple 
+                                    className="hidden" 
+                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
+                                  />
+                                </label>
+
+                                <label className="cursor-pointer px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
+                                  <Upload size={14} /> Choose File
+                                  <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    multiple 
+                                    className="hidden" 
+                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+
+                            {answerSheets[q._id] && answerSheets[q._id].length > 0 && (
+                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
+                                {answerSheets[q._id].map((file, fIdx) => (
+                                  <div key={fIdx} className="relative group rounded-xl overflow-hidden border bg-white dark:bg-slate-900 aspect-square">
+                                    <img 
+                                      src={URL.createObjectURL(file)} 
+                                      alt={`Answer sheet ${fIdx + 1}`} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveAnswerSheet(q._id, fIdx)}
+                                      className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">
+                                      Page {fIdx + 1}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
                     </div>
                   );
                 })()}
 
-                {/* Navigation Buttons */}
                 <div className="flex justify-between items-center pt-6 border-t border-slate-100 dark:border-slate-800">
                   <button
                     onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
@@ -396,7 +544,6 @@ export default function TakeQuizPage() {
 
               </div>
             ) : (
-              /* Summary & Review Screen */
               <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
                 <div className="text-center space-y-2 border-b pb-4 dark:border-slate-800">
                   <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Quiz Summary</h2>
@@ -414,17 +561,18 @@ export default function TakeQuizPage() {
                   </div>
                 </div>
 
-                {/* Question Status Grid for Quick Jump */}
                 <div className="space-y-3">
                   <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Question Palette (Click to Edit):</h4>
                   <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
                     {quiz.questions.map((q: any, idx: number) => {
                       const ans = answers[q._id];
+                      const sheets = answerSheets[q._id];
                       let isAnswered = false;
-                      if (ans !== undefined && ans !== null) {
+                      if ((sheets && sheets.length > 0) || (ans !== undefined && ans !== null)) {
                         if (Array.isArray(ans)) isAnswered = ans.length > 0;
                         else if (typeof ans === 'object') isAnswered = Object.values(ans).some((val: any) => val && val.trim() !== "");
                         else isAnswered = String(ans).trim() !== "";
+                        if (sheets && sheets.length > 0) isAnswered = true;
                       }
 
                       return (
@@ -448,7 +596,6 @@ export default function TakeQuizPage() {
                   </div>
                 </div>
 
-                {/* Final Actions */}
                 <div className="flex justify-between items-center pt-4 border-t dark:border-slate-800">
                   <button
                     onClick={() => setShowSummary(false)}
@@ -471,7 +618,6 @@ export default function TakeQuizPage() {
         )}
       </main>
 
-      {/* Success Popup Component */}
       <QuizSubmitSuccessPopup 
         isOpen={showSuccessPopup}
         onClose={() => router.back()}
