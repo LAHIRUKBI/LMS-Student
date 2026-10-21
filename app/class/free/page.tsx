@@ -1,3 +1,4 @@
+// src/app/class/free/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -10,17 +11,32 @@ import {
   Download, 
   Eye, 
   Search, 
-  FileText,
-  Calendar,
-  Gift,
-  User,
-  PlayCircle,
-  Film,
-  Sparkles,
-  GraduationCap
+  FileText, 
+  Calendar, 
+  User, 
+  PlayCircle, 
+  Film 
 } from "lucide-react"; 
 import Navbar from "@/app/components/Navbar";
 import AIChatWidget from "@/app/components/AIChatWidget";
+
+// 1. Cover Image Helper Function (Supports both Object and String)
+const getCoverImageUrl = (coverImage: any) => {
+  if (!coverImage) return null;
+  const rawUrl = typeof coverImage === "object" && coverImage !== null 
+    ? coverImage.url 
+    : coverImage;
+
+  if (!rawUrl || typeof rawUrl !== "string") return null;
+  return rawUrl.startsWith("http") ? rawUrl : `http://localhost:5000${rawUrl}`;
+};
+
+// 2. Helper function for retrieving the YouTube Video ID
+const getYouTubeVideoId = (url: string) => {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+};
 
 export default function FreeMaterialsPage() {
   const router = useRouter();
@@ -54,22 +70,67 @@ export default function FreeMaterialsPage() {
     }
   };
 
-  // Subjects list එක ලබාගැනීම සඳහා
+  // 3. PDF Preview Function (Opening files safely)
+  const handleViewPdf = (fileUrl: string) => {
+    if (!fileUrl) {
+      alert("The PDF link cannot be found!");
+      return;
+    }
+    const cleanUrl = fileUrl.startsWith('http') 
+      ? fileUrl 
+      : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+
+    window.open(cleanUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // 4. PDF Download Function (via Cloudinary Direct Attachment or Fetch Blob)
+  const handleDownloadPdf = async (fileUrl: string, title: string) => {
+    if (!fileUrl) return;
+    try {
+      const cleanUrl = fileUrl.startsWith('http') 
+        ? fileUrl 
+        : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+
+      // If it is a Cloudinary URL, 'fl_attachment' causes the browser to download it directly.
+      if (cleanUrl.includes('cloudinary.com')) {
+        const downloadUrl = cleanUrl.replace('/upload/', '/upload/fl_attachment/');
+        window.location.href = downloadUrl;
+        return;
+      }
+
+      // Blob Download Method for Local Server Files
+      const response = await fetch(cleanUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title || 'material'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      window.open(fileUrl, '_blank');
+    }
+  };
+
+  // To obtain the list of subjects
   const subjects = useMemo(() => {
     const subs = materials.map((m) => m.subject).filter(Boolean);
     return ["all", ...Array.from(new Set(subs))];
   }, [materials]);
 
-  // Search, Subject සහ Content Type අනුව Filter කිරීම
+  // Filtering by Search, Subject, and Content Type
   const filteredMaterials = useMemo(() => {
     return materials.filter((item) => {
       const matchesSearch = 
         item.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
         item.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
         (item.teacherId?.name && item.teacherId.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        
+
       const matchesSubject = selectedSubject === "all" || item.subject === selectedSubject;
-      
+
       let matchesType = true;
       if (contentTypeTab === "pdf") matchesType = item.type === "pdf" || item.type === "paper";
       else if (contentTypeTab === "video") matchesType = item.type === "video";
@@ -88,7 +149,7 @@ export default function FreeMaterialsPage() {
         {/* Controls Section: Search & Filters */}
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm mb-8 space-y-4">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
+
             {/* Content Type Tabs (All / PDFs / Videos) */}
             <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-slate-950 p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide">
               <button
@@ -175,6 +236,8 @@ export default function FreeMaterialsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredMaterials.map((item) => {
               const isVideo = item.type === "video";
+              const coverSrc = getCoverImageUrl(item.coverImage);
+              const ytId = item.youtubeVideoId || getYouTubeVideoId(item.fileUrl);
 
               return (
                 <div 
@@ -185,32 +248,44 @@ export default function FreeMaterialsPage() {
                     {/* Media Preview Header */}
                     {isVideo ? (
                       <div className="relative w-full aspect-video bg-slate-950 overflow-hidden">
-                        <video 
-                          src={`http://localhost:5000${item.fileUrl}#t=0.1`} 
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
-                          preload="metadata"
-                          muted
-                          playsInline
-                        />
-                        <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 flex items-center justify-center transition-colors">
-                          <a 
-                            href={`http://localhost:5000${item.fileUrl}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="w-12 h-12 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-white group-hover:bg-emerald-600 group-hover:scale-110 transition-all shadow-lg"
-                          >
-                            <PlayCircle size={24} className="ml-0.5" />
-                          </a>
-                        </div>
-                        <span className="absolute top-3 left-3 bg-indigo-600/90 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-md font-bold tracking-wider uppercase">
+                        {ytId ? (
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1`}
+                            title={item.title}
+                            className="w-full h-full"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          ></iframe>
+                        ) : (
+                          <>
+                            <video 
+                              src={item.fileUrl?.startsWith('http') ? item.fileUrl : `http://localhost:5000${item.fileUrl}#t=0.1`} 
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
+                              preload="metadata"
+                              muted
+                              playsInline
+                            />
+                            <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 flex items-center justify-center transition-colors">
+                              <a 
+                                href={item.fileUrl?.startsWith('http') ? item.fileUrl : `http://localhost:5000${item.fileUrl}`} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="w-12 h-12 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-white group-hover:bg-emerald-600 group-hover:scale-110 transition-all shadow-lg"
+                              >
+                                <PlayCircle size={24} className="ml-0.5" />
+                              </a>
+                            </div>
+                          </>
+                        )}
+                        <span className="absolute top-3 left-3 bg-indigo-600/90 backdrop-blur-md text-white text-[10px] px-2.5 py-1 rounded-md font-bold tracking-wider uppercase pointer-events-none">
                           Video Lesson
                         </span>
                       </div>
                     ) : (
                       <div className="relative h-44 bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center overflow-hidden border-b border-slate-100 dark:border-slate-800">
-                        {item.coverImage ? (
+                        {coverSrc ? (
                           <img 
-                            src={item.coverImage.startsWith('http') ? item.coverImage : `http://localhost:5000${item.coverImage}`} 
+                            src={coverSrc} 
                             alt={item.title} 
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
@@ -265,33 +340,28 @@ export default function FreeMaterialsPage() {
                     <div className="flex items-center gap-2">
                       {isVideo ? (
                         <a 
-                          href={`http://localhost:5000${item.fileUrl}`} 
+                          href={item.fileUrl?.startsWith('http') ? item.fileUrl : `http://localhost:5000${item.fileUrl}`} 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all"
                         >
-                          <PlayCircle size={15} /> Watch Now
+                          <PlayCircle size={15} /> Watch Full
                         </a>
                       ) : (
                         <>
-                          <a 
-                            href={`http://localhost:5000${item.fileUrl}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <button 
+                            onClick={() => handleViewPdf(item.fileUrl)}
                             className="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all"
                           >
                             <Eye size={14} /> View
-                          </a>
+                          </button>
 
-                          <a 
-                            href={`http://localhost:5000${item.fileUrl}`} 
-                            download 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
+                          <button 
+                            onClick={() => handleDownloadPdf(item.fileUrl, item.title)}
                             className="flex-1 py-2.5 px-3 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-md shadow-emerald-600/20 transition-all"
                           >
                             <Download size={14} /> Download
-                          </a>
+                          </button>
                         </>
                       )}
                     </div>

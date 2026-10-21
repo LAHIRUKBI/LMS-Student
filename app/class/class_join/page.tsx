@@ -5,13 +5,37 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
-import { Calendar, Clock, BookOpen, User, Loader2, Video, FileText, ArrowLeft, Download, Eye, PlayCircle, CheckCircle, Award, AlertTriangle, Link as LinkIcon, VideoIcon } from "lucide-react";
+import { 
+  Calendar, 
+  Clock, 
+  BookOpen, 
+  User, 
+  Loader2, 
+  Video, 
+  FileText, 
+  ArrowLeft, 
+  Download, 
+  Eye, 
+  PlayCircle, 
+  CheckCircle, 
+  Award, 
+  AlertTriangle, 
+  Link as LinkIcon, 
+  VideoIcon 
+} from "lucide-react";
 import Navbar from "@/app/components/Navbar";
+
+// Helper function to retrieve the YouTube Video ID
+const getYouTubeVideoId = (url: string) => {
+  if (!url) return null;
+  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+  return match ? match[1] : null;
+};
 
 // Quiz Card Item Component to handle start action and timer activation
 function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
   const [isStarted, setIsStarted] = useState<boolean>(false);
-  const [timeLeft, setTimeLeft] = useState<number>(quiz.duration * 60);
+  const [timeLeft, setTimeLeft] = useState<number>((quiz.duration || 10) * 60);
 
   useEffect(() => {
     if (!isStarted) return;
@@ -133,7 +157,7 @@ export default function ClassJoinPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       const foundClass = classRes.data.find((c: any) => c._id === id);
-      
+
       if (!foundClass) {
         setError("The requested class was not found in the system.");
         setLoading(false);
@@ -167,10 +191,57 @@ export default function ClassJoinPage() {
     }
   };
 
-  const getProfileImageUrl = (photoUrl: string) => {
+  const getProfileImageUrl = (photoUrl: any) => {
     if (!photoUrl) return null;
-    if (photoUrl.startsWith("http")) return photoUrl;
-    return `http://localhost:5000/profile_photos/${photoUrl}`;
+    const rawUrl = typeof photoUrl === "object" ? photoUrl.url : photoUrl;
+    if (!rawUrl || typeof rawUrl !== "string") return null;
+    if (rawUrl.startsWith("http")) return rawUrl;
+    return `http://localhost:5000/profile_photos/${rawUrl}`;
+  };
+
+  // 1. PDF Preview Function (Opening files safely)
+  const handleViewPdf = (fileUrl: string) => {
+    if (!fileUrl) {
+      alert("The PDF link cannot be found!");
+      return;
+    }
+    const cleanUrl = fileUrl.startsWith('http') 
+      ? fileUrl 
+      : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+
+    window.open(cleanUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  // 2. PDF Download Function (via Cloudinary Direct Attachment or Fetch Blob)
+  const handleDownloadPdf = async (fileUrl: string, title: string) => {
+    if (!fileUrl) return;
+    try {
+      const cleanUrl = fileUrl.startsWith('http') 
+        ? fileUrl 
+        : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+
+      // If it is a Cloudinary URL, 'fl_attachment' causes the browser to download it directly.
+      if (cleanUrl.includes('cloudinary.com')) {
+        const downloadUrl = cleanUrl.replace('/upload/', '/upload/fl_attachment/');
+        window.location.href = downloadUrl;
+        return;
+      }
+
+      // Blob Download Method for Local Server Files
+      const response = await fetch(cleanUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${title || 'document'}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Download failed:', error);
+      window.open(fileUrl, '_blank');
+    }
   };
 
   if (!user) return null;
@@ -178,7 +249,6 @@ export default function ClassJoinPage() {
   const filteredVideos = materials.filter(m => m.type === 'video');
   const filteredPdfs = materials.filter(m => m.type === 'pdf' || m.type === 'paper');
 
-  // 🟢 The logic for checking whether the online link should be displayed in the student's class.
   const now = new Date();
   const isOnlineLinkActive = classDetails?.mode === 'Online' && 
     classDetails?.onlineLink && 
@@ -191,19 +261,19 @@ export default function ClassJoinPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-500 relative font-sans">
-      
+
       <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/10 dark:bg-blue-600/10 blur-[120px] rounded-full"></div>
       <div className="pointer-events-none absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-400/10 dark:bg-teal-600/10 blur-[120px] rounded-full"></div>
 
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 relative z-10">
-        
+
         <button 
-          onClick={() => router.push("/class/class_view")}
+          onClick={() => router.push("/class/myclass")}
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white mb-6 transition-colors"
         >
-          <ArrowLeft size={18} /> Back to Classes
+          <ArrowLeft size={18} /> Back to My Classes
         </button>
 
         {loading ? (
@@ -217,10 +287,10 @@ export default function ClassJoinPage() {
           </div>
         ) : (
           <div className="space-y-8">
-            
+
             {/* Class Banner / Header Card */}
             <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-              
+
               <div className="flex items-center gap-5">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center shadow-md">
                   {classDetails.teacherId?.profilePhoto ? (
@@ -244,8 +314,8 @@ export default function ClassJoinPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                
-                {/* An attractive 'Joining Banner' for the child that displays the active online link. */}
+
+                {/* Online Class Joining Banner */}
                 {classDetails.mode === 'Online' && (
                   <div className="w-full sm:w-auto">
                     {isOnlineLinkActive ? (
@@ -306,10 +376,10 @@ export default function ClassJoinPage() {
               </button>
             </div>
 
-            {/* Published Content Display Sections */}
+            {/* Content Sections */}
             <div className="space-y-10">
-              
-              {/* Videos */}
+
+              {/* Videos Section (YouTube Embed Support) */}
               {(activeTab === "all" || activeTab === "videos") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -322,31 +392,54 @@ export default function ClassJoinPage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                      {filteredVideos.map((video) => (
-                        <div key={video._id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm flex flex-col">
-                          <div className="relative aspect-video bg-black">
-                            <video src={`http://localhost:5000${video.fileUrl}`} controls className="w-full h-full object-cover" />
-                          </div>
-                          <div className="p-4 flex-1 flex flex-col justify-between">
-                            <div>
-                              <h3 className="font-bold text-sm text-slate-800 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{video.description || "No description provided."}</p>
+                      {filteredVideos.map((video) => {
+                        const ytId = video.youtubeVideoId || getYouTubeVideoId(video.fileUrl);
+
+                        return (
+                          <div key={video._id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-sm flex flex-col">
+                            <div className="relative aspect-video bg-black">
+                              {ytId ? (
+                                <iframe
+                                  src={`https://www.youtube-nocookie.com/embed/${ytId}?rel=0&modestbranding=1`}
+                                  title={video.title}
+                                  className="w-full h-full"
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                  allowFullScreen
+                                ></iframe>
+                              ) : (
+                                <video 
+                                  src={video.fileUrl?.startsWith('http') ? video.fileUrl : `http://localhost:5000${video.fileUrl}`} 
+                                  controls 
+                                  className="w-full h-full object-cover" 
+                                />
+                              )}
                             </div>
-                            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
-                              <span>{new Date(video.createdAt).toLocaleDateString()}</span>
-                              <a href={`http://localhost:5000${video.fileUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">
-                                <PlayCircle size={14} /> Watch Full
-                              </a>
+                            <div className="p-4 flex-1 flex flex-col justify-between">
+                              <div>
+                                <h3 className="font-bold text-sm text-slate-800 dark:text-white mb-1 line-clamp-1">{video.title}</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">{video.description || "No description provided."}</p>
+                              </div>
+                              <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
+                                <span>{new Date(video.createdAt).toLocaleDateString()}</span>
+                                <a 
+                                  href={video.fileUrl?.startsWith('http') ? video.fileUrl : `http://localhost:5000${video.fileUrl}`} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer" 
+                                  className="text-blue-600 hover:underline flex items-center gap-1"
+                                >
+                                  <PlayCircle size={14} /> Watch Full
+                                </a>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               )}
 
-              {/* PDFs */}
+              {/* PDFs Section (Cloudinary & Local PDF Safe View/Download) */}
               {(activeTab === "all" || activeTab === "pdfs") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -373,12 +466,23 @@ export default function ClassJoinPage() {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            <a href={`http://localhost:5000${pdf.fileUrl}`} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors" title="View Document">
+                            {/* Safe View Button */}
+                            <button
+                              onClick={() => handleViewPdf(pdf.fileUrl)}
+                              className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"
+                              title="View Document"
+                            >
                               <Eye size={16} />
-                            </a>
-                            <a href={`http://localhost:5000${pdf.fileUrl}`} download className="p-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors shadow-sm" title="Download Document">
+                            </button>
+
+                            {/* Safe Download Button */}
+                            <button
+                              onClick={() => handleDownloadPdf(pdf.fileUrl, pdf.title)}
+                              className="p-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors shadow-sm"
+                              title="Download Document"
+                            >
                               <Download size={16} />
-                            </a>
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -387,7 +491,7 @@ export default function ClassJoinPage() {
                 </div>
               )}
 
-              {/* Quizzes */}
+              {/* Quizzes Section */}
               {(activeTab === "all" || activeTab === "quizzes") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
