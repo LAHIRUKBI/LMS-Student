@@ -10,11 +10,18 @@ import FreeCardRequestModal from "@/app/page_components/free_card_request/page";
 import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
 import { io } from "socket.io-client";
 
-// Cloudinary HTTPS URL හෝ Local Backend URL ලබා දෙන Helper ශ්‍රිතය
+// Helper function that provides a Cloudinary HTTPS URL or a Local Backend URL
 const getStudentProfileImageUrl = (photoUrl?: string) => {
   if (!photoUrl) return null;
   if (photoUrl.startsWith("http")) return photoUrl;
   return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+};
+
+// A helper function that correctly provides the Answer Sheet image URL
+const getAnswerSheetUrl = (url?: string) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 export default function ProfilePage() {
@@ -173,7 +180,7 @@ export default function ProfilePage() {
     localStorage.setItem("isEditProfileOpen", JSON.stringify(newState));
   };
 
-  // සිසුවාගේ පිළිතුරු පත්‍රය සහ එක් එක් ප්‍රශ්නයට ලැබුණු ලකුණු මුල් PDF සැකැස්ම අනුවම ඩවුන්ලෝඩ් කරගැනීම
+  // Downloading the student's answer script and the marks obtained for each question, in the original PDF format.
   const handleDownloadStudentPaperPDF = (result: any) => {
     const quiz = result.quizId;
     if (!quiz) return;
@@ -187,20 +194,21 @@ export default function ProfilePage() {
     const studentAnswers = result.answers instanceof Map ? Object.fromEntries(result.answers) : (result.answers || {});
     const teacherEssayMarks = result.essayMarks instanceof Map ? Object.fromEntries(result.essayMarks) : (result.essayMarks || {});
     const teacherCorrections = result.teacherCorrections instanceof Map ? Object.fromEntries(result.teacherCorrections) : (result.teacherCorrections || {});
+    const answerSheetsObj = result.answerSheets instanceof Map ? Object.fromEntries(result.answerSheets) : (result.answerSheets || {});
 
     let htmlContent = `
       <html>
         <head>
           <title>${quiz.title} - My Submission & Results</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 30px; color: #1e293b; }
-            h1 { font-size: 22px; color: #0f172a; margin-bottom: 5px; }
+            body { font-family: Arial, sans-serif; padding: 30px; color: #1e293b; background: #ffffff; }
+            h1 { font-size: 22px; color: #0f172a; margin-bottom: 5px; font-weight: 800; }
             p { font-size: 13px; color: #64748b; margin-bottom: 15px; }
-            .score-box { background: #e0e7ff; color: #3730a3; padding: 12px; border-radius: 8px; font-weight: bold; margin-bottom: 25px; font-size: 14px; }
+            .score-box { color: #3730a3; padding: 12px 0; font-weight: bold; margin-bottom: 25px; font-size: 14px; }
             .question-box { border: 1px solid #cbd5e1; border-radius: 8px; padding: 15px; margin-bottom: 15px; page-break-inside: avoid; }
             .q-title { font-weight: bold; font-size: 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
             .badge { background: #f1f5f9; color: #475569; padding: 3px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
-            .q-score { background: #e0e7ff; color: #3730a3; padding: 2px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
+            .q-score { color: #3730a3; padding: 2px 8px; font-size: 11px; border-radius: 4px; font-weight: bold; }
             ul { margin: 8px 0; padding-left: 20px; font-size: 13px; }
             li { margin-bottom: 4px; }
             .ans-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
@@ -208,6 +216,14 @@ export default function ProfilePage() {
             .correct { color: #065f46; font-weight: bold; }
             .incorrect { color: #991b1b; font-weight: bold; }
             .feedback-box { margin-top: 10px; padding: 10px; border-radius: 6px; background: #eef2ff; border: 1px solid #c7d2fe; font-size: 12px; color: #312e81; }
+
+            /* Written Answer Sheets ලොකුවට පැහැදිලිව පෙන්වීමේ Styles */
+            .sheets-container { margin-top: 15px; padding: 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
+            .sheets-header { font-size: 12px; font-weight: bold; color: #1e293b; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+            .sheets-wrapper { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+            .sheet-card { width: 100%; max-width: 650px; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #0f172a; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+            .sheet-image { width: 100%; height: auto; display: block; object-fit: contain; }
+            .sheet-footer { background: #0f172a; color: #ffffff; font-size: 11px; font-weight: bold; padding: 6px 12px; text-align: right; }
           </style>
         </head>
         <body>
@@ -228,7 +244,7 @@ export default function ProfilePage() {
         correctAnswerStr = String(q.correctAnswer || '').trim();
       }
 
-      // සිංහල අකුරු සුරැකෙන පරිදි whitespace පමණක් ඉවත් කර සංසන්දනය කිරීම
+      // Comparing by removing only whitespace while preserving Sinhala characters
       const cleanStudent = studentAns.toLowerCase().replace(/\s+/g, '');
       const cleanCorrect = correctAnswerStr.toLowerCase().replace(/\s+/g, '');
 
@@ -305,6 +321,9 @@ export default function ProfilePage() {
         }
       }
 
+      // Retrieving the answer sheets uploaded by the child in relation to this question
+      const sheets: string[] = answerSheetsObj[qId] || answerSheetsObj[String(idx)] || [];
+
       htmlContent += `
         <div class="question-box">
           <div class="q-title">
@@ -337,6 +356,27 @@ export default function ProfilePage() {
             <strong>Teacher's Correction / Feedback:</strong><br/>
             <span>${correctionText}</span>
           </div>` : ''}
+
+          <!-- The student's written answer sheets, clearly visible and in large view -->
+          ${sheets && sheets.length > 0 ? `
+          <div class="sheets-container">
+            <div class="sheets-header">
+              📎 Student's Written Answer Sheets (${sheets.length} Page${sheets.length > 1 ? 's' : ''}):
+            </div>
+            <div class="sheets-wrapper">
+              ${sheets.map((sUrl: string, sIdx: number) => {
+                const fullSheetUrl = getAnswerSheetUrl(sUrl);
+                return `
+                  <div class="sheet-card">
+                    <img src="${fullSheetUrl}" class="sheet-image" alt="Answer Sheet Page ${sIdx + 1}" />
+                    <div class="sheet-footer">Page ${sIdx + 1}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+          ` : ''}
+
         </div>
       `;
     });
@@ -351,7 +391,7 @@ export default function ProfilePage() {
     printWindow.focus();
     setTimeout(() => {
       printWindow.print();
-    }, 500);
+    }, 700);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
