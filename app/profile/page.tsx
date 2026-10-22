@@ -10,6 +10,13 @@ import FreeCardRequestModal from "@/app/page_components/free_card_request/page";
 import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
 import { io } from "socket.io-client";
 
+// Cloudinary HTTPS URL හෝ Local Backend URL ලබා දෙන Helper ශ්‍රිතය
+const getStudentProfileImageUrl = (photoUrl?: string) => {
+  if (!photoUrl) return null;
+  if (photoUrl.startsWith("http")) return photoUrl;
+  return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+};
+
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -18,7 +25,7 @@ export default function ProfilePage() {
   const [myResults, setMyResults] = useState<any[]>([]);
   const [joinedClassesCount, setJoinedClassesCount] = useState(0);
 
-  // Edit Profile Section Collapse State (localStorage මඟින් මතක තබා ගනී)
+  // Edit Profile Section Collapse State
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(() => {
     if (typeof window !== "undefined") {
       const savedState = localStorage.getItem("isEditProfileOpen");
@@ -94,10 +101,7 @@ export default function ProfilePage() {
     });
 
     if (parsedUser.profileImage) {
-      const imgUrl = parsedUser.profileImage.startsWith("http")
-        ? parsedUser.profileImage
-        : `http://localhost:5000${parsedUser.profileImage}`;
-      setImagePreview(imgUrl);
+      setImagePreview(getStudentProfileImageUrl(parsedUser.profileImage));
     }
 
     fetchJoinedClassesCount(token);
@@ -112,7 +116,6 @@ export default function ProfilePage() {
       if (parsedUser && parsedUser._id) {
         const socket = io("http://localhost:5000");
 
-        // Notifying the backend that the student has joined.
         socket.emit("student_connected", parsedUser._id);
 
         const handleBeforeUnload = () => {
@@ -170,7 +173,7 @@ export default function ProfilePage() {
     localStorage.setItem("isEditProfileOpen", JSON.stringify(newState));
   };
 
-  // සිසුවාගේ පිළිතුරු පත්‍රය සහ එක් එක් ප්‍රශ්නයට ලැබුණු ලකුණු PDF එකක් ලෙස ඩවුන්ලෝඩ් කරගැනීම
+  // සිසුවාගේ පිළිතුරු පත්‍රය සහ එක් එක් ප්‍රශ්නයට ලැබුණු ලකුණු මුල් PDF සැකැස්ම අනුවම ඩවුන්ලෝඩ් කරගැනීම
   const handleDownloadStudentPaperPDF = (result: any) => {
     const quiz = result.quizId;
     if (!quiz) return;
@@ -215,65 +218,83 @@ export default function ProfilePage() {
 
     quiz.questions.forEach((q: any, idx: number) => {
       const qId = q._id.toString();
-      const studentAns = String(studentAnswers[qId] || "No Answer Given").trim();
-      const correctAns = String(q.correctAnswer || "").trim();
+      const rawStudent = studentAnswers[qId];
+      const studentAns = String(rawStudent || "No Answer Given").trim();
 
-      // Verifying correctness/incorrectness
+      let correctAnswerStr = '';
+      if (Array.isArray(q.correctAnswer)) {
+        correctAnswerStr = q.correctAnswer.join(', ');
+      } else {
+        correctAnswerStr = String(q.correctAnswer || '').trim();
+      }
+
+      // සිංහල අකුරු සුරැකෙන පරිදි whitespace පමණක් ඉවත් කර සංසන්දනය කිරීම
+      const cleanStudent = studentAns.toLowerCase().replace(/\s+/g, '');
+      const cleanCorrect = correctAnswerStr.toLowerCase().replace(/\s+/g, '');
+
       let isCorrect = false;
       if (q.type === 'single') {
-        const cleanStudent = studentAns.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const cleanCorrect = correctAns.toLowerCase().replace(/[^a-z0-9]/g, '');
-        isCorrect = cleanStudent === cleanCorrect && cleanStudent !== "";
+        if (cleanCorrect && cleanStudent && cleanStudent !== "noanswergiven") {
+          isCorrect = (cleanStudent === cleanCorrect || cleanStudent.includes(cleanCorrect) || cleanCorrect.includes(cleanStudent));
+        }
       } else if (q.type === 'short') {
-        if (correctAns) {
-          const cleanStudent = studentAns.toLowerCase().replace(/[^a-z0-9]/g, '');
-          const cleanRef = correctAns.toLowerCase().replace(/[^a-z0-9]/g, '');
-          isCorrect = cleanStudent === cleanRef;
-        } else {
-          isCorrect = false;
+        if (cleanCorrect && cleanStudent && cleanStudent !== "noanswergiven") {
+          isCorrect = (cleanStudent === cleanCorrect || cleanStudent.includes(cleanCorrect) || cleanCorrect.includes(cleanStudent));
         }
       } else if (q.type === 'mcq') {
         const correctArr = Array.isArray(q.correctAnswer) ? q.correctAnswer : [q.correctAnswer];
-        const studentAnsArr = studentAnswers[qId];
-        if (Array.isArray(studentAnsArr)) {
-          isCorrect = correctArr.every((a: string) => studentAnsArr.includes(a)) && studentAnsArr.every((a: string) => correctArr.includes(a));
+        if (Array.isArray(rawStudent)) {
+          const cleanCorrectArr = correctArr.map((c: any) => String(c).toLowerCase().replace(/\s+/g, ''));
+          const cleanStudentArr = rawStudent.map((s: any) => String(s).toLowerCase().replace(/\s+/g, ''));
+          isCorrect = cleanCorrectArr.every((a: any) => cleanStudentArr.includes(a)) && cleanStudentArr.every((a: any) => cleanCorrectArr.includes(a));
+        } else if (typeof rawStudent === 'string') {
+          isCorrect = (cleanStudent === cleanCorrect && cleanStudent !== "noanswergiven");
         }
       }
 
       // Calculation of marks obtained for the question
       let earnedQMarks = 0;
       let maxQMarks = q.marks || 5;
-      if (q.type === 'essay' && q.subQuestions && q.subQuestions.length > 0) {
-        maxQMarks = q.subQuestions.reduce((s: number, sq: any) => s + sq.marks, 0);
-      }
+      const hasSubQ = q.subQuestions && Array.isArray(q.subQuestions) && q.subQuestions.length > 0;
 
-      if (q.type !== 'essay') {
-        if (isCorrect) earnedQMarks = q.marks;
-        else {
-          const mMark = teacherEssayMarks[qId];
-          earnedQMarks = mMark !== undefined ? Number(mMark) : 0;
+      if (hasSubQ) {
+        maxQMarks = q.subQuestions.reduce((s: number, sq: any) => s + (Number(sq.marks) || 0), 0);
+        const subMarksObj = teacherEssayMarks[qId] || {};
+        if (typeof subMarksObj === 'object' && subMarksObj !== null) {
+          earnedQMarks = Object.values(subMarksObj).reduce((sum: number, m: any) => sum + (Number(m) || 0), 0);
+        }
+      } else if (q.type === 'essay' || q.type === 'short') {
+        const savedM = teacherEssayMarks[qId];
+        if (savedM !== undefined && savedM !== null) {
+          earnedQMarks = Number(savedM) || 0;
+        } else if (isCorrect) {
+          earnedQMarks = maxQMarks;
         }
       } else {
-        const val = teacherEssayMarks[qId];
-        if (typeof val === 'object' && val !== null) {
-          earnedQMarks = Object.values(val).reduce((s: number, m: any) => s + (Number(m) || 0), 0);
+        if (isCorrect) {
+          earnedQMarks = q.marks || 1;
         } else {
-          earnedQMarks = Number(val) || 0;
+          const savedM = teacherEssayMarks[qId];
+          earnedQMarks = savedM !== undefined && savedM !== null ? Number(savedM) || 0 : 0;
         }
+      }
+
+      // ගුරුවරයා විසින් ලකුණු ලබා දී ඇත්නම් isCorrect තහවුරු කිරීම
+      if (earnedQMarks > 0 && (q.type === 'single' || q.type === 'mcq' || q.type === 'short')) {
+        isCorrect = true;
       }
 
       let displayStudentAns = "";
-      if (Array.isArray(studentAnswers[qId])) {
-        displayStudentAns = studentAnswers[qId].join(', ');
-      } else if (typeof studentAnswers[qId] === 'object' && studentAnswers[qId] !== null) {
-        displayStudentAns = Object.entries(studentAnswers[qId])
+      if (Array.isArray(rawStudent)) {
+        displayStudentAns = rawStudent.join(', ');
+      } else if (typeof rawStudent === 'object' && rawStudent !== null) {
+        displayStudentAns = Object.entries(rawStudent)
           .map(([k, v]) => `Part (${Number(k) + 1}): ${v}`)
           .join(' | ');
       } else {
         displayStudentAns = studentAns;
       }
 
-      // Receiving Teacher's Corrections / Feedback
       let correctionText = "";
       const tCorrections = result.teacherCorrections;
       if (tCorrections) {
@@ -310,7 +331,7 @@ export default function ProfilePage() {
               <span class="correct">${Array.isArray(q.correctAnswer) ? q.correctAnswer.join(', ') : (q.correctAnswer || 'None specified')}</span>
             </div>` : ''}
           </div>
-          
+
           ${correctionText ? `
           <div class="feedback-box">
             <strong>Teacher's Correction / Feedback:</strong><br/>
@@ -364,7 +385,7 @@ export default function ProfilePage() {
       formDataToSend.append("country", formData.country);
       formDataToSend.append("timeZone", formData.timeZone);
       formDataToSend.append("medium", formData.medium);
-      
+
       formDataToSend.append("fatherName", formData.fatherName);
       formDataToSend.append("fatherOccupation", formData.fatherOccupation);
       formDataToSend.append("fatherPhone", formData.fatherPhone);
@@ -391,10 +412,7 @@ export default function ProfilePage() {
       setCurrentUser(res.data);
 
       if (res.data.profileImage) {
-        const imgUrl = res.data.profileImage.startsWith("http")
-          ? res.data.profileImage
-          : `http://localhost:5000${res.data.profileImage}`;
-        setImagePreview(imgUrl);
+        setImagePreview(getStudentProfileImageUrl(res.data.profileImage));
       }
       setImageFile(null);
 
@@ -407,15 +425,14 @@ export default function ProfilePage() {
     }
   };
 
-const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       const userData = localStorage.getItem("user");
       const token = localStorage.getItem("token");
-      
+
       if (userData) {
         const parsedUser = JSON.parse(userData);
         if (parsedUser && parsedUser._id) {
-          // 1. Sending notification via socket
           const socket = io("http://localhost:5000");
           socket.emit("student_logout", parsedUser._id);
 
@@ -431,7 +448,6 @@ const handleLogout = async () => {
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
-      // Clearing LocalStorage and redirecting to the login page
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       router.push("/login");
@@ -586,7 +602,6 @@ const handleLogout = async () => {
             <div>
               <div className="flex items-center justify-between mb-4 border-b border-slate-100 dark:border-slate-800/80 pb-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
                   <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Edit Profile Information</h3>
                 </div>
                 <div className="flex items-center gap-2">
@@ -602,7 +617,6 @@ const handleLogout = async () => {
                 </div>
               </div>
 
-              {/* Collapsible Form Container */}
               {isEditProfileOpen && (
                 <form onSubmit={handleSubmit} id="profile-form" className="space-y-4 animate-fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -922,7 +936,7 @@ const handleLogout = async () => {
 
       </main>
 
-      {/* ===== Free Card Request Modal Component Render ===== */}
+      {/* Free Card Request Modal */}
       <FreeCardRequestModal 
         isOpen={isFreeCardModalOpen} 
         onClose={() => setIsFreeCardModalOpen(false)} 

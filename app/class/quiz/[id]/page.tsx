@@ -9,6 +9,13 @@ import { Loader2, Clock, CheckCircle2, ArrowLeft, ArrowRight, AlertCircle, HelpC
 import Navbar from "@/app/components/Navbar";
 import QuizSubmitSuccessPopup from "@/app/components/QuizSubmitSuccessPopup";
 
+// Cloudinary සහ Local Backend URLs දෙකටම ගැලපෙන Helper ශ්‍රිතය
+const getQuestionImageUrl = (url?: string) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 export default function TakeQuizPage() {
   const router = useRouter();
   const params = useParams();
@@ -19,11 +26,11 @@ export default function TakeQuizPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [alreadySubmitted, setAlreadySubmitted] = useState(false);
-  
+
   const [answers, setAnswers] = useState<{ [key: string]: any }>({});
   // Essay සහ Short ප්‍රශ්න සඳහා ළමයා ලබාදෙන පිළිතුරු කොළවල පින්තූර ගබඩා කිරීමට (Files state එක)
   const [answerSheets, setAnswerSheets] = useState<{ [key: string]: File[] }>({});
-  
+
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [startTime, setStartTime] = useState<number>(Date.now());
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -81,7 +88,7 @@ export default function TakeQuizPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setQuiz(res.data);
-      setTimeLeft(res.data.duration * 60);
+      setTimeLeft((res.data.duration || 30) * 60);
       setStartTime(Date.now());
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to fetch quiz data.");
@@ -112,7 +119,7 @@ export default function TakeQuizPage() {
     setAnswers({ ...answers, [questionId]: currentSubAnswers });
   };
 
-  // පිළිතුරු කොළ (පින්තූර) එකතු කිරීම (කැමරාවෙන් හෝ ගැලරියෙන්)
+  // පිළිතුරු කොළ (පින්තූර) එකතු කිරීම
   const handleAnswerSheetAdd = (questionKey: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
     const newFiles = Array.from(files);
@@ -136,7 +143,7 @@ export default function TakeQuizPage() {
     setIsSubmitted(true);
 
     const token = localStorage.getItem("token");
-    const totalDurationSec = quiz.duration * 60;
+    const totalDurationSec = (quiz?.duration || 30) * 60;
     const elapsedSec = Math.floor((Date.now() - startTime) / 1000);
     const remainingSec = totalDurationSec - elapsedSec;
 
@@ -153,7 +160,6 @@ export default function TakeQuizPage() {
       formData.append("answers", JSON.stringify(answers));
       formData.append("timeTaken", timeTakenStr);
 
-      // Short සහ Essay ප්‍රශ්නවල පිළිතුරු කොළ FormData එකට ඇතුළත් කිරීම
       Object.keys(answerSheets).forEach((qKey) => {
         answerSheets[qKey].forEach((file) => {
           formData.append(`answerSheets_${qKey}`, file);
@@ -170,7 +176,7 @@ export default function TakeQuizPage() {
       if (isAutoSubmit) {
         alert("Time is up! Your answers have been submitted automatically.");
       }
-      
+
       setShowSuccessPopup(true);
     } catch (err: any) {
       alert(err.response?.data?.message || "Failed to submit quiz.");
@@ -225,7 +231,7 @@ export default function TakeQuizPage() {
           </div>
         ) : (
           <div className="space-y-6">
-            
+
             <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-20 z-20">
               <div>
                 <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">{quiz.title}</h1>
@@ -255,13 +261,15 @@ export default function TakeQuizPage() {
 
             {!showSummary ? (
               <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-                
+
                 {(() => {
                   const q = quiz.questions[currentQuestionIndex];
                   let totalQMarks = q.marks;
                   if (q.type === 'essay' && q.subQuestions) {
                     totalQMarks = q.subQuestions.reduce((s: number, sq: any) => s + sq.marks, 0);
                   }
+
+                  const questionImageSrc = getQuestionImageUrl(q.imageUrl);
 
                   return (
                     <div className="space-y-6" key={q._id || currentQuestionIndex}>
@@ -274,9 +282,14 @@ export default function TakeQuizPage() {
                         </span>
                       </div>
 
-                      {q.imageUrl && (
-                        <div className="flex justify-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border">
-                          <img src={`http://localhost:5000${q.imageUrl}`} alt="Question visual" className="max-h-64 rounded-xl object-contain" />
+                      {/* Question Image (Cloudinary or Local) */}
+                      {questionImageSrc && (
+                        <div className="flex justify-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
+                          <img 
+                            src={questionImageSrc} 
+                            alt="Question visual" 
+                            className="max-h-64 rounded-xl object-contain shadow-sm" 
+                          />
                         </div>
                       )}
 
@@ -296,7 +309,7 @@ export default function TakeQuizPage() {
                                 }`}
                               >
                                 <input 
-                                  type="checkbox"
+                                  type="checkbox" 
                                   checked={isSelected}
                                   onChange={() => {}} 
                                   className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
@@ -342,7 +355,7 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
-                      {/* Short Answer (Text input සහ Answer Sheet Upload එකතු කර ඇත) */}
+                      {/* Short Answer */}
                       {q.type === 'short' && (
                         <div className="space-y-4 pt-2">
                           <input
@@ -353,7 +366,6 @@ export default function TakeQuizPage() {
                             className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
                           />
 
-                          {/* Short ප්‍රශ්න සඳහාද කොළයක ලියා ෆොටෝ/ගැලරියෙන් එකතු කිරීමට ඇති UI කොටස */}
                           <div className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                               <div>
@@ -396,7 +408,7 @@ export default function TakeQuizPage() {
                                     <img 
                                       src={URL.createObjectURL(file)} 
                                       alt={`Answer sheet ${fIdx + 1}`} 
-                                      className="w-full h-full object-cover"
+                                      className="w-full h-full object-cover" 
                                     />
                                     <button
                                       type="button"
@@ -416,7 +428,7 @@ export default function TakeQuizPage() {
                         </div>
                       )}
 
-                      {/* Essay / Structured Sub-questions & Answer Sheet Upload Section */}
+                      {/* Essay / Structured Sub-questions */}
                       {q.type === 'essay' && (
                         <div className="space-y-4 pt-2">
                           {q.subQuestions && q.subQuestions.length > 0 ? (
@@ -450,7 +462,6 @@ export default function TakeQuizPage() {
                             />
                           )}
 
-                          {/* ළමයාට කොළයක ලියා ෆොටෝ/ගැලරියෙන් එකතු කිරීමට ඇති UI කොටස */}
                           <div className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
                               <div>
@@ -493,7 +504,7 @@ export default function TakeQuizPage() {
                                     <img 
                                       src={URL.createObjectURL(file)} 
                                       alt={`Answer sheet ${fIdx + 1}`} 
-                                      className="w-full h-full object-cover"
+                                      className="w-full h-full object-cover" 
                                     />
                                     <button
                                       type="button"
