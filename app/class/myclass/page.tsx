@@ -9,6 +9,13 @@ import { Calendar, Clock, BookOpen, Loader2, CheckCircle, User } from "lucide-re
 import Navbar from "@/app/components/Navbar";
 import AIChatWidget from "@/app/components/AIChatWidget";
 
+// Cloudinary HTTPS URLs සහ Local backend paths දෙකටම ගැලපෙන Helper ශ්‍රිතය
+const getClassCoverImageUrl = (photoUrl?: string) => {
+  if (!photoUrl) return null;
+  if (photoUrl.startsWith("http")) return photoUrl;
+  return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+};
+
 export default function StudentMyClassesPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -88,6 +95,7 @@ export default function StudentMyClassesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {approvedClasses.map((cls: any) => {
               const teacherPhoto = cls.teacherId?.profilePhoto ? getProfileImageUrl(cls.teacherId.profilePhoto) : null;
+              const coverImageUrl = getClassCoverImageUrl(cls.coverImage);
 
               return (
                 <div 
@@ -116,15 +124,17 @@ export default function StudentMyClassesPage() {
                   </div>
 
                   {/* Class Cover Image (Cute & Small Size) */}
-                  {cls.coverImage && (
+                  {coverImageUrl && (
                     <div className="w-full h-36 rounded-xl overflow-hidden border border-slate-200/70 dark:border-slate-700/70 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                      <img src={`http://localhost:5000${cls.coverImage}`} alt={cls.grade} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
+                      <img src={coverImageUrl} alt={cls.grade} className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500" />
                     </div>
                   )}
 
                   {/* Badges */}
                   <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="px-2.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-[11px] font-extrabold">{cls.grade}</span>
+                    <span className="px-2.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-lg text-[11px] font-extrabold">
+                      {cls.grade === 'Other' ? cls.customGradeName : cls.grade}
+                    </span>
                     <span className="px-2.5 py-0.5 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 rounded-lg text-[11px] font-extrabold">{cls.medium}</span>
                     <span className="px-2.5 py-0.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 rounded-lg text-[11px] font-extrabold">{cls.mode}</span>
                   </div>

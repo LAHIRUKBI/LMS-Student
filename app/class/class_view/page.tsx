@@ -10,6 +10,13 @@ import Navbar from "@/app/components/Navbar";
 import RequestPopup from "@/app/components/RequestPopup";
 import AIChatWidget from "@/app/components/AIChatWidget";
 
+// Cloudinary HTTPS URLs සහ Local backend paths දෙකටම ගැලපෙන Helper ශ්‍රිතය
+const getClassCoverImageUrl = (photoUrl?: string) => {
+  if (!photoUrl) return null;
+  if (photoUrl.startsWith("http")) return photoUrl;
+  return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+};
+
 export default function StudentClassViewPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
@@ -19,7 +26,7 @@ export default function StudentClassViewPage() {
   const [search, setSearch] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("all");
   const [message, setMessage] = useState({ type: "", text: "" });
-  
+
   // Adding a state to control the popup
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
@@ -43,7 +50,7 @@ export default function StudentClassViewPage() {
         axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${authToken}` } }),
         axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${authToken}` } })
       ]);
-      
+
       setRequests(reqRes.data);
 
       const teacherMap: { [key: string]: any } = {};
@@ -112,13 +119,12 @@ export default function StudentClassViewPage() {
     }
   };
 
-// Handle canceling a pending class request
+  // Handle canceling a pending class request
   const handleCancelRequest = async (requestId: string) => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
     try {
-      // Changed from 'request' to 'requests' to match the backend route
       const res = await axios.delete(`http://localhost:5000/api/classes/requests/${requestId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -134,7 +140,7 @@ export default function StudentClassViewPage() {
   const getProfileImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     if (photoUrl.startsWith("http")) return photoUrl;
-    return `http://localhost:5000/profile_photos/${photoUrl}`;
+    return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
   };
 
   // Automatically collect all available subjects
@@ -213,8 +219,8 @@ export default function StudentClassViewPage() {
               <input 
                 type="text" 
                 placeholder="Search teacher, subject, grade..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/50 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400"
               />
             </div>
@@ -261,7 +267,7 @@ export default function StudentClassViewPage() {
           <div className="space-y-8">
             {filteredGroupedClasses.map((item: any) => (
               <div key={item.teacher._id} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-[32px] border border-white/40 dark:border-slate-800/80 p-6 sm:p-8 shadow-2xl flex flex-col lg:flex-row gap-8 items-start transition-all hover:shadow-[0_20px_50px_rgba(8,_112,_184,_0.1)]">
-                
+
                 {/* Left Side: Teacher Info Box */}
                 <div className="w-full lg:w-80 shrink-0 flex flex-col items-center justify-center bg-slate-50/70 dark:bg-slate-800/50 backdrop-blur-md rounded-3xl p-6 text-center lg:sticky lg:top-28 space-y-4 border border-slate-200/50 dark:border-slate-700/40">
                   <div className="w-full px-4 py-2.5 bg-gradient-to-r from-teal-500/15 to-emerald-500/15 dark:from-teal-500/20 dark:to-emerald-500/20 text-teal-700 dark:text-teal-300 rounded-2xl border border-teal-500/30 shadow-sm flex items-center justify-center gap-2">
@@ -280,7 +286,7 @@ export default function StudentClassViewPage() {
                       </div>
                     )}
                   </div>
-                  
+
                   {/* Teacher Name linked to Teacher Profile */}
                   <div className="w-full space-y-2">
                     <h3 
@@ -305,16 +311,17 @@ export default function StudentClassViewPage() {
                       const req = requests.find((r) => r.classId === cls._id);
                       const status = req ? req.status : null;
                       const requestId = req ? req._id : null;
+                      const coverImageUrl = getClassCoverImageUrl(cls.coverImage);
 
                       return (
                         <div 
                           key={cls._id} 
                           className="bg-white/60 dark:bg-slate-800/40 backdrop-blur-xl p-5 rounded-2xl border border-white/80 dark:border-slate-700/60 shadow-lg shadow-slate-200/40 dark:shadow-none flex flex-col justify-between gap-3 transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-blue-500/40"
                         >
-                          
-                          {cls.coverImage && (
+
+                          {coverImageUrl && (
                             <div className="w-full h-44 rounded-xl overflow-hidden border border-slate-200/80 dark:border-slate-700/80 bg-slate-100 dark:bg-slate-900 flex items-center justify-center">
-                              <img src={`http://localhost:5000${cls.coverImage}`} alt={cls.grade} className="w-full h-full object-cover object-center" />
+                              <img src={coverImageUrl} alt={cls.grade} className="w-full h-full object-cover object-center" />
                             </div>
                           )}
 
