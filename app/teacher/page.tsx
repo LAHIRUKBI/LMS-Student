@@ -65,7 +65,7 @@ export default function StudentTeacherView() {
 
   const fetchPublicTeachers = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/teachers");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/teachers`);
       setTeachers(res.data);
     } catch (err) {
       console.error("Error fetching teachers:", err);
@@ -84,7 +84,7 @@ export default function StudentTeacherView() {
   const getProfileImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     if (photoUrl.startsWith("http")) return photoUrl;
-    return `http://localhost:5000/profile_photos/${photoUrl}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/profile_photos/${photoUrl}`;
   };
 
   // ලබා ගත හැකි සියලුම විෂයයන් (Subjects) ස්වයංක්‍රීයව ලබා ගැනීම

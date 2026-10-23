@@ -57,7 +57,7 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
 
     const fetchClasses = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/classes/all");
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/all`);
         setAvailableClasses(res.data);
       } catch (err) {
         console.error("Error fetching classes:", err);
@@ -152,7 +152,7 @@ export default function FreeCardRequestModal({ isOpen, onClose, currentUser }: F
         data.append("files", file);
       });
 
-      await axios.post("http://localhost:5000/api/free-card/student/free-card-request", data, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/free-card/student/free-card-request`, data, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"

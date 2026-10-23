@@ -91,7 +91,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     if (userData) {
       parsedUser = JSON.parse(userData);
       if (parsedUser && parsedUser._id) {
-        socket = io("http://localhost:5000", { transports: ["websocket"] });
+        socket = io(`${process.env.NEXT_PUBLIC_API_URL}`, { transports: ["websocket"] });
         
         socket.emit("student_connected", parsedUser._id);
 
@@ -144,7 +144,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await axios.get("http://localhost:5000/api/notifications/student", {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/student`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(res.data);
@@ -157,7 +157,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await axios.get("http://localhost:5000/api/student/notices", {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/student/notices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const unread = res.data.filter((n: any) => !n.isRead).length;
@@ -171,7 +171,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      await axios.put("http://localhost:5000/api/notifications/student/mark-read", {}, {
+      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/student/mark-read`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(notifications.map(n => ({ ...n, isRead: true })));
@@ -185,7 +185,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      await axios.delete(`http://localhost:5000/api/notifications/student/${id}`, {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/notifications/student/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotifications(notifications.filter(n => n._id !== id));
@@ -199,7 +199,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const profileImgUrl = user?.profileImage
     ? (user.profileImage.startsWith("http")
       ? user.profileImage
-      : `http://localhost:5000${user.profileImage}`)
+      : `${process.env.NEXT_PUBLIC_API_URL}${user.profileImage}`)
     : null;
 
   const toggleDarkMode = () => {
@@ -236,12 +236,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       }
 
       if (studentId) {
-        const socket = io("http://localhost:5000");
+        const socket = io(`${process.env.NEXT_PUBLIC_API_URL}`);
         socket.emit("student_logout", studentId);
 
         if (token) {
           await axios.post(
-            "http://localhost:5000/api/auth/student/logout",
+            `${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/logout`,
             { studentId: studentId },
             { headers: { Authorization: `Bearer ${token}` } }
           );

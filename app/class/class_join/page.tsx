@@ -154,7 +154,7 @@ function ClassJoinContent() {
 
   const fetchClassRoomData = async (token: string, id: string) => {
     try {
-      const classRes = await axios.get(`http://localhost:5000/api/classes/all`, {
+      const classRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/all`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const foundClass = classRes.data.find((c: any) => c._id === id);
@@ -167,7 +167,7 @@ function ClassJoinContent() {
       setClassDetails(foundClass);
 
       try {
-        const matRes = await axios.get(`http://localhost:5000/api/materials/class/${id}`, {
+        const matRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/materials/class/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMaterials(matRes.data);
@@ -176,7 +176,7 @@ function ClassJoinContent() {
       }
 
       try {
-        const quizRes = await axios.get(`http://localhost:5000/api/quiz/class/${id}`, {
+        const quizRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/class/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setQuizzes(quizRes.data);
@@ -197,7 +197,7 @@ function ClassJoinContent() {
     const rawUrl = typeof photoUrl === "object" ? photoUrl.url : photoUrl;
     if (!rawUrl || typeof rawUrl !== "string") return null;
     if (rawUrl.startsWith("http")) return rawUrl;
-    return `http://localhost:5000/profile_photos/${rawUrl}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/profile_photos/${rawUrl}`;
   };
 
   // 1. PDF Preview Function (Opening files safely)
@@ -208,7 +208,7 @@ function ClassJoinContent() {
     }
     const cleanUrl = fileUrl.startsWith('http') 
       ? fileUrl 
-      : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+      : `${process.env.NEXT_PUBLIC_API_URL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
 
     window.open(cleanUrl, '_blank', 'noopener,noreferrer');
   };
@@ -219,7 +219,7 @@ function ClassJoinContent() {
     try {
       const cleanUrl = fileUrl.startsWith('http') 
         ? fileUrl 
-        : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+        : `${process.env.NEXT_PUBLIC_API_URL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
 
       if (cleanUrl.includes('cloudinary.com')) {
         const downloadUrl = cleanUrl.replace('/upload/', '/upload/fl_attachment/');
@@ -399,7 +399,7 @@ function ClassJoinContent() {
                                 ></iframe>
                               ) : (
                                 <video 
-                                  src={video.fileUrl?.startsWith('http') ? video.fileUrl : `http://localhost:5000${video.fileUrl}`} 
+                                  src={video.fileUrl?.startsWith('http') ? video.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${video.fileUrl}`} 
                                   controls 
                                   className="w-full h-full object-cover" 
                                 />
@@ -413,7 +413,7 @@ function ClassJoinContent() {
                               <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400">
                                 <span>{new Date(video.createdAt).toLocaleDateString()}</span>
                                 <a 
-                                  href={video.fileUrl?.startsWith('http') ? video.fileUrl : `http://localhost:5000${video.fileUrl}`} 
+                                  href={video.fileUrl?.startsWith('http') ? video.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${video.fileUrl}`} 
                                   target="_blank" 
                                   rel="noopener noreferrer" 
                                   className="text-blue-600 hover:underline flex items-center gap-1"

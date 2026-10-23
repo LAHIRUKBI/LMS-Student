@@ -156,7 +156,7 @@ export default function StudentDashboard() {
   const fetchActiveAds = async (authToken: string | null) => {
     try {
       const headers = authToken ? { Authorization: `Bearer ${authToken}` } : {};
-      const res = await axios.get("http://localhost:5000/api/ads/active", { headers });
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ads/active`, { headers });
       setAds(res.data);
     } catch (err) {
       console.error("Error fetching advertisements:", err);
@@ -167,7 +167,7 @@ export default function StudentDashboard() {
 
   const fetchDashboardSettings = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/dashboard/settings");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/dashboard/settings`);
       setDashboardSettings(res.data);
     } catch (err) {
       console.error("Error fetching dashboard settings:", err);
@@ -185,7 +185,7 @@ export default function StudentDashboard() {
     if (!mediaPath) return "";
     if (mediaPath.startsWith("http") || mediaPath.startsWith("blob:")) return mediaPath;
     const cleanPath = mediaPath.startsWith("/") ? mediaPath : `/${mediaPath}`;
-    return `http://localhost:5000${cleanPath}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}${cleanPath}`;
   };
 
   const nextImage = (adId: string, maxImages: number) => {

@@ -14,7 +14,7 @@ import AIChatWidget from "@/app/components/AIChatWidget";
 const getClassCoverImageUrl = (photoUrl?: string) => {
   if (!photoUrl) return null;
   if (photoUrl.startsWith("http")) return photoUrl;
-  return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+  return `${process.env.NEXT_PUBLIC_API_URL}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
 };
 
 export default function StudentClassViewPage() {
@@ -47,8 +47,8 @@ export default function StudentClassViewPage() {
   const fetchData = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${authToken}` } }),
-        axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${authToken}` } })
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/all`, { headers: { Authorization: `Bearer ${authToken}` } }),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student-requests`, { headers: { Authorization: `Bearer ${authToken}` } })
       ]);
 
       setRequests(reqRes.data);
@@ -74,7 +74,7 @@ export default function StudentClassViewPage() {
   // Fetch only public classes list when not logged in
   const fetchPublicClasses = async () => {
     try {
-      const classRes = await axios.get("http://localhost:5000/api/classes/all");
+      const classRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/all`);
 
       const teacherMap: { [key: string]: any } = {};
       classRes.data.forEach((cls: any) => {
@@ -107,7 +107,7 @@ export default function StudentClassViewPage() {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/classes/request", { classId, teacherId }, {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/request`, { classId, teacherId }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: "success", text: res.data.message });
@@ -125,7 +125,7 @@ export default function StudentClassViewPage() {
     if (!token) return;
 
     try {
-      const res = await axios.delete(`http://localhost:5000/api/classes/requests/${requestId}`, {
+      const res = await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/requests/${requestId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setMessage({ type: "success", text: res.data.message || "Request cancelled successfully." });
@@ -140,7 +140,7 @@ export default function StudentClassViewPage() {
   const getProfileImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     if (photoUrl.startsWith("http")) return photoUrl;
-    return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
   };
 
   // Automatically collect all available subjects

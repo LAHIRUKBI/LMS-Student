@@ -14,14 +14,14 @@ import { io } from "socket.io-client";
 const getStudentProfileImageUrl = (photoUrl?: string) => {
   if (!photoUrl) return null;
   if (photoUrl.startsWith("http")) return photoUrl;
-  return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+  return `${process.env.NEXT_PUBLIC_API_URL}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
 };
 
 // A helper function that correctly provides the Answer Sheet image URL
 const getAnswerSheetUrl = (url?: string) => {
   if (!url) return "";
   if (url.startsWith("http")) return url;
-  return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${process.env.NEXT_PUBLIC_API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 export default function ProfilePage() {
@@ -121,7 +121,7 @@ export default function ProfilePage() {
     if (userData) {
       const parsedUser = JSON.parse(userData);
       if (parsedUser && parsedUser._id) {
-        const socket = io("http://localhost:5000");
+        const socket = io(`${process.env.NEXT_PUBLIC_API_URL}`);
 
         socket.emit("student_connected", parsedUser._id);
 
@@ -143,8 +143,8 @@ export default function ProfilePage() {
   const fetchJoinedClassesCount = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${authToken}` } }),
-        axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${authToken}` } })
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/all`, { headers: { Authorization: `Bearer ${authToken}` } }),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student-requests`, { headers: { Authorization: `Bearer ${authToken}` } })
       ]);
 
       const requests = reqRes.data;
@@ -163,7 +163,7 @@ export default function ProfilePage() {
     const fetchMyResults = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/quiz/student/my-results", {
+        const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/student/my-results`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setMyResults(res.data);
@@ -441,7 +441,7 @@ export default function ProfilePage() {
         formDataToSend.append("profileImage", imageFile);
       }
 
-      const res = await axios.put("http://localhost:5000/api/auth/student/profile", formDataToSend, {
+      const res = await axios.put(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/profile`, formDataToSend, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"
@@ -473,12 +473,12 @@ export default function ProfilePage() {
       if (userData) {
         const parsedUser = JSON.parse(userData);
         if (parsedUser && parsedUser._id) {
-          const socket = io("http://localhost:5000");
+          const socket = io(`${process.env.NEXT_PUBLIC_API_URL}`);
           socket.emit("student_logout", parsedUser._id);
 
           if (token) {
             await axios.post(
-              "http://localhost:5000/api/auth/student/logout",
+              `${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/logout`,
               { studentId: parsedUser._id },
               { headers: { Authorization: `Bearer ${token}` } }
             );

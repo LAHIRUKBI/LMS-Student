@@ -44,7 +44,7 @@ export default function NoticeViewPage() {
       const token = localStorage.getItem("token");
       if (!token) return;
       
-      const res = await axios.get("http://localhost:5000/api/admin/student/notices", {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/student/notices`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -60,7 +60,7 @@ export default function NoticeViewPage() {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      await axios.delete(`http://localhost:5000/api/admin/notices/${id}`, {
+      await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/notices/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setNotices(notices.filter(n => n._id !== id));
@@ -120,7 +120,7 @@ export default function NoticeViewPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {notices.map((notice) => {
-              const imgUrl = notice.image ? (notice.image.startsWith("http") ? notice.image : `http://localhost:5000${notice.image}`) : null;
+              const imgUrl = notice.image ? (notice.image.startsWith("http") ? notice.image : `${process.env.NEXT_PUBLIC_API_URL}${notice.image}`) : null;
               
               return (
                 <div 
@@ -191,7 +191,7 @@ export default function NoticeViewPage() {
               {selectedNotice.image && (
                 <div className="w-full flex items-center justify-center flex-shrink-0 border-b bg-slate-100 border-slate-200 dark:bg-slate-950 dark:border-slate-800">
                   <img 
-                    src={selectedNotice.image.startsWith("http") ? selectedNotice.image : `http://localhost:5000${selectedNotice.image}`} 
+                    src={selectedNotice.image.startsWith("http") ? selectedNotice.image : `${process.env.NEXT_PUBLIC_API_URL}${selectedNotice.image}`} 
                     alt={selectedNotice.title} 
                     className="w-full h-auto max-h-[60vh] object-contain" 
                   />
