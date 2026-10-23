@@ -28,7 +28,7 @@ const getCoverImageUrl = (coverImage: any) => {
     : coverImage;
 
   if (!rawUrl || typeof rawUrl !== "string") return null;
-  return rawUrl.startsWith("http") ? rawUrl : `http://localhost:5000${rawUrl}`;
+  return rawUrl.startsWith("http") ? rawUrl : `${process.env.NEXT_PUBLIC_API_URL}${rawUrl}`;
 };
 
 // 2. Helper function for retrieving the YouTube Video ID
@@ -61,7 +61,7 @@ export default function FreeMaterialsPage() {
   // Fetch approved free materials
   const fetchFreeMaterials = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/materials/free/all");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/materials/free/all`);
       setMaterials(res.data);
     } catch (err) {
       console.error("Error fetching free materials:", err);
@@ -78,7 +78,7 @@ export default function FreeMaterialsPage() {
     }
     const cleanUrl = fileUrl.startsWith('http') 
       ? fileUrl 
-      : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+      : `${process.env.NEXT_PUBLIC_API_URL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
 
     window.open(cleanUrl, '_blank', 'noopener,noreferrer');
   };
@@ -89,7 +89,7 @@ export default function FreeMaterialsPage() {
     try {
       const cleanUrl = fileUrl.startsWith('http') 
         ? fileUrl 
-        : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
+        : `${process.env.NEXT_PUBLIC_API_URL}${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
 
       // If it is a Cloudinary URL, 'fl_attachment' causes the browser to download it directly.
       if (cleanUrl.includes('cloudinary.com')) {
@@ -259,7 +259,7 @@ export default function FreeMaterialsPage() {
                         ) : (
                           <>
                             <video 
-                              src={item.fileUrl?.startsWith('http') ? item.fileUrl : `http://localhost:5000${item.fileUrl}#t=0.1`} 
+                              src={item.fileUrl?.startsWith('http') ? item.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${item.fileUrl}#t=0.1`} 
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90"
                               preload="metadata"
                               muted
@@ -267,7 +267,7 @@ export default function FreeMaterialsPage() {
                             />
                             <div className="absolute inset-0 bg-black/30 group-hover:bg-black/50 flex items-center justify-center transition-colors">
                               <a 
-                                href={item.fileUrl?.startsWith('http') ? item.fileUrl : `http://localhost:5000${item.fileUrl}`} 
+                                href={item.fileUrl?.startsWith('http') ? item.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${item.fileUrl}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer" 
                                 className="w-12 h-12 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md border border-white/40 text-white group-hover:bg-emerald-600 group-hover:scale-110 transition-all shadow-lg"
@@ -340,7 +340,7 @@ export default function FreeMaterialsPage() {
                     <div className="flex items-center gap-2">
                       {isVideo ? (
                         <a 
-                          href={item.fileUrl?.startsWith('http') ? item.fileUrl : `http://localhost:5000${item.fileUrl}`} 
+                          href={item.fileUrl?.startsWith('http') ? item.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${item.fileUrl}`} 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="w-full py-2.5 px-4 rounded-xl font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 transition-all"

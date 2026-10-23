@@ -41,7 +41,7 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/student/register", formData);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/register`, formData);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       
@@ -65,7 +65,7 @@ export default function RegisterPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const res = await axios.post("http://localhost:5000/api/auth/student/google", {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/google`, {
         name: user.displayName,
         email: user.email,
         googleId: user.uid,

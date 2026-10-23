@@ -13,7 +13,7 @@ import AIChatWidget from "@/app/components/AIChatWidget";
 const getClassCoverImageUrl = (photoUrl?: string) => {
   if (!photoUrl) return null;
   if (photoUrl.startsWith("http")) return photoUrl;
-  return `http://localhost:5000${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
+  return `${process.env.NEXT_PUBLIC_API_URL}${photoUrl.startsWith('/') ? '' : '/'}${photoUrl}`;
 };
 
 export default function StudentMyClassesPage() {
@@ -38,8 +38,8 @@ export default function StudentMyClassesPage() {
   const fetchApprovedClasses = async (authToken: string) => {
     try {
       const [classRes, reqRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/classes/all", { headers: { Authorization: `Bearer ${authToken}` } }),
-        axios.get("http://localhost:5000/api/classes/student-requests", { headers: { Authorization: `Bearer ${authToken}` } })
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/all`, { headers: { Authorization: `Bearer ${authToken}` } }),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes/student-requests`, { headers: { Authorization: `Bearer ${authToken}` } })
       ]);
 
       const requests = reqRes.data;
@@ -60,7 +60,7 @@ export default function StudentMyClassesPage() {
   const getProfileImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     if (photoUrl.startsWith("http")) return photoUrl;
-    return `http://localhost:5000/profile_photos/${photoUrl}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/profile_photos/${photoUrl}`;
   };
 
   if (!user) return null;

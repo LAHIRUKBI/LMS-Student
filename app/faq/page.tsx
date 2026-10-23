@@ -41,7 +41,7 @@ export default function FAQPage() {
   const formatImageUrl = (path: string) => {
     if (!path) return "";
     const cleanPath = path.replace(/\\/g, '/');
-    return `http://localhost:5000/${cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/${cleanPath.startsWith('/') ? cleanPath.substring(1) : cleanPath}`;
   };
 
   useEffect(() => {
@@ -60,7 +60,7 @@ export default function FAQPage() {
 
   const fetchFAQs = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/faqs");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/faqs`);
       setFaqs(res.data);
     } catch (err) {
       console.error("Error fetching FAQs:", err);
@@ -70,7 +70,7 @@ export default function FAQPage() {
   const fetchAdmins = async () => {
     try {
       // /api/admin/admins වෙනුවට /api/faqs/public-admins භාවිතා කරයි
-      const res = await axios.get("http://localhost:5000/api/faqs/public-admins");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/faqs/public-admins`);
       setAdmins(res.data);
     } catch (err) {
       console.error("Error fetching admins:", err);
@@ -84,7 +84,7 @@ export default function FAQPage() {
     setSuccess("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/faqs/send-email", messageData);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/faqs/send-email`, messageData);
       setSuccess(res.data.message || "Message sent successfully!");
       setTimeout(() => {
         setIsModalOpen(false);

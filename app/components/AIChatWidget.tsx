@@ -132,7 +132,7 @@ export default function AIChatWidget() {
 
   const fetchClassesForChat = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/classes");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/classes`);
       return res.data || [];
     } catch (err) {
       return [
@@ -145,7 +145,7 @@ export default function AIChatWidget() {
 
   const fetchTeachersForChat = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/teachers");
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/teachers`);
       return res.data || [];
     } catch (err) {
       return [
@@ -158,7 +158,7 @@ export default function AIChatWidget() {
   const getProfileImageUrl = (photoUrl: string) => {
     if (!photoUrl) return null;
     if (photoUrl.startsWith("http")) return photoUrl;
-    return `http://localhost:5000/profile_photos/${photoUrl}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/profile_photos/${photoUrl}`;
   };
 
   const handleOptionClick = async (action: string, label: string) => {

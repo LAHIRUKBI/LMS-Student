@@ -13,7 +13,7 @@ import QuizSubmitSuccessPopup from "@/app/components/QuizSubmitSuccessPopup";
 const getQuestionImageUrl = (url?: string) => {
   if (!url) return null;
   if (url.startsWith("http")) return url;
-  return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+  return `${process.env.NEXT_PUBLIC_API_URL}${url.startsWith('/') ? '' : '/'}${url}`;
 };
 
 export default function TakeQuizPage() {
@@ -74,7 +74,7 @@ export default function TakeQuizPage() {
 
   const checkAndFetchQuiz = async (token: string, id: string) => {
     try {
-      const checkRes = await axios.get(`http://localhost:5000/api/quiz/${id}/check-submission`, {
+      const checkRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/${id}/check-submission`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -84,7 +84,7 @@ export default function TakeQuizPage() {
         return;
       }
 
-      const res = await axios.get(`http://localhost:5000/api/quiz/${id}`, {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setQuiz(res.data);
@@ -166,7 +166,7 @@ export default function TakeQuizPage() {
         });
       });
 
-      await axios.post(`http://localhost:5000/api/quiz/${quizId}/submit`, formData, {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/${quizId}/submit`, formData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"

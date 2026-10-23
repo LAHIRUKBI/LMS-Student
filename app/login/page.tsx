@@ -29,7 +29,7 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/student/login", credentials);
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/login`, credentials);
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
       router.push("/profile");
@@ -47,7 +47,7 @@ export default function LoginPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
-      const res = await axios.post("http://localhost:5000/api/auth/student/google", {
+      const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/google`, {
         name: user.displayName,
         email: user.email,
         googleId: user.uid,
