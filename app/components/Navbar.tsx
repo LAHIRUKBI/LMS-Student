@@ -37,10 +37,20 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
-    const savedDarkMode = localStorage.getItem("darkMode") === "true";
+    // මොබයිල් තිර සඳහා ස්වයංක්‍රීයව හැකිලී (isExpanded=true) තැබීම
+    const handleScreenResize = () => {
+      if (window.innerWidth < 768) {
+        setIsExpanded(true);
+      } else {
+        const savedExpandState = localStorage.getItem("navbarExpanded") === "true";
+        setIsExpanded(savedExpandState);
+      }
+    };
 
-    setIsExpanded(savedExpandState);
+    handleScreenResize();
+    window.addEventListener("resize", handleScreenResize);
+
+    const savedDarkMode = localStorage.getItem("darkMode") === "true";
     setIsDarkMode(savedDarkMode);
 
     if (savedDarkMode) {
@@ -121,6 +131,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         socket.disconnect();
       }
       document.removeEventListener("mousedown", handleClickOutside);
+      window.removeEventListener("resize", handleScreenResize);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
     };
@@ -215,6 +226,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   };
 
   const toggleExpand = () => {
+    // මොබයිල් තිරවලදී දිගහැරීම වැළැක්වීම
+    if (typeof window !== "undefined" && window.innerWidth < 768) return;
+
     const newExpandState = !isExpanded;
     setIsExpanded(newExpandState);
     localStorage.setItem("navbarExpanded", String(newExpandState));
@@ -299,7 +313,21 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </Link>
 
             {isExpanded && isDropdownOpen && (
-              <div className="absolute top-full left-0 mt-4 w-48 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
+              <div className="absolute top-full left-0 mt-4 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
+                
+                {/* Mobile සඳහා Get App බොත්තම Menu එක තුළට */}
+                {!isStandalone && (
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false);
+                      handleInstallClick();
+                    }}
+                    className="md:hidden px-4 py-2 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md mb-1"
+                  >
+                    <Download size={16} /> Get App
+                  </button>
+                )}
+
                 <Link
                   href="/teacher"
                   onClick={() => setIsDropdownOpen(false)}
@@ -338,12 +366,12 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   <Link
                     href="/notice_view"
                     onClick={() => setIsDropdownOpen(false)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors flex items-center gap-1.5 relative ${pathname === '/notice_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between mx-2 ${pathname === '/notice_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
                       }`}
                   >
-                    <FileText size={16} /> Notices
+                    <span className="flex items-center gap-2.5"><FileText size={16} /> Notices</span>
                     {unreadNoticeCount > 0 && (
-                      <span className="ml-1 bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                      <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
                         {unreadNoticeCount}
                       </span>
                     )}
@@ -417,11 +445,11 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             }
           `}
         >
-          {/* Get App Button (Standalone නොවන සෑම විටකම දිස්වේ) */}
+          {/* Get App Button - Desktop සහ Tablet වල පමණක් පිටතින් දිස්වේ */}
           {!isStandalone && (
             <button
               onClick={handleInstallClick}
-              className={`flex items-center text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-full shadow-md transition-all duration-500 shrink-0 border border-blue-400/30
+              className={`hidden md:flex items-center text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-full shadow-md transition-all duration-500 shrink-0 border border-blue-400/30
                 ${isExpanded ? 'p-2' : 'px-3 py-1.5'}
               `}
               title="Install App"
@@ -449,7 +477,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </button>
 
             {isNotificationOpen && (
-              <div className="absolute right-[-100px] sm:right-0 mt-3 w-[270px] sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-3 sm:p-4 z-50">
+              <div className="absolute right-0 sm:right-0 mt-3 w-[270px] sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-3 sm:p-4 z-50">
                 <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/50 dark:border-slate-800/50">
                   <h3 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Notifications</h3>
                   <div className="flex items-center gap-2">
@@ -535,9 +563,10 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             </span>
           </button>
 
+          {/* Expand/Collapse Button - Mobile වලදී සැඟවී Desktop/Tablet වලදී පමණක් දිස්වේ */}
           <button
             onClick={toggleExpand}
-            className="flex items-center justify-center w-8 h-8 rounded-full bg-white/40 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-700/60 transition-all duration-300 shrink-0 border border-white/20 dark:border-slate-700/30"
+            className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/40 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-700/60 transition-all duration-300 shrink-0 border border-white/20 dark:border-slate-700/30"
           >
             {isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
           </button>
