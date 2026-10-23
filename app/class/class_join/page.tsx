@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { 
@@ -119,7 +119,8 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
   );
 }
 
-export default function ClassJoinPage() {
+// Internal component containing search params and state logic
+function ClassJoinContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const classId = searchParams.get("classId");
@@ -220,14 +221,12 @@ export default function ClassJoinPage() {
         ? fileUrl 
         : `http://localhost:5000${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
 
-      // If it is a Cloudinary URL, 'fl_attachment' causes the browser to download it directly.
       if (cleanUrl.includes('cloudinary.com')) {
         const downloadUrl = cleanUrl.replace('/upload/', '/upload/fl_attachment/');
         window.location.href = downloadUrl;
         return;
       }
 
-      // Blob Download Method for Local Server Files
       const response = await fetch(cleanUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
@@ -261,14 +260,12 @@ export default function ClassJoinPage() {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 transition-colors duration-500 relative font-sans">
-
       <div className="pointer-events-none absolute top-0 right-0 w-[500px] h-[500px] bg-blue-400/10 dark:bg-blue-600/10 blur-[120px] rounded-full"></div>
       <div className="pointer-events-none absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-400/10 dark:bg-teal-600/10 blur-[120px] rounded-full"></div>
 
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-16 relative z-10">
-
         <button 
           onClick={() => router.push("/class/myclass")}
           className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white mb-6 transition-colors"
@@ -287,10 +284,8 @@ export default function ClassJoinPage() {
           </div>
         ) : (
           <div className="space-y-8">
-
             {/* Class Banner / Header Card */}
             <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
-
               <div className="flex items-center gap-5">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center shadow-md">
                   {classDetails.teacherId?.profilePhoto ? (
@@ -314,7 +309,6 @@ export default function ClassJoinPage() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4">
-
                 {/* Online Class Joining Banner */}
                 {classDetails.mode === 'Online' && (
                   <div className="w-full sm:w-auto">
@@ -343,9 +337,7 @@ export default function ClassJoinPage() {
                     <Clock size={14} className="text-orange-500" /> Time: <span className="font-medium text-slate-500">{classDetails.startTime} - {classDetails.endTime}</span>
                   </div>
                 </div>
-
               </div>
-
             </div>
 
             {/* Navigation Tabs */}
@@ -378,8 +370,7 @@ export default function ClassJoinPage() {
 
             {/* Content Sections */}
             <div className="space-y-10">
-
-              {/* Videos Section (YouTube Embed Support) */}
+              {/* Videos Section */}
               {(activeTab === "all" || activeTab === "videos") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -439,7 +430,7 @@ export default function ClassJoinPage() {
                 </div>
               )}
 
-              {/* PDFs Section (Cloudinary & Local PDF Safe View/Download) */}
+              {/* PDFs Section */}
               {(activeTab === "all" || activeTab === "pdfs") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -466,7 +457,6 @@ export default function ClassJoinPage() {
                           </div>
 
                           <div className="flex items-center gap-2 shrink-0">
-                            {/* Safe View Button */}
                             <button
                               onClick={() => handleViewPdf(pdf.fileUrl)}
                               className="p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 rounded-xl text-slate-700 dark:text-slate-300 transition-colors"
@@ -475,7 +465,6 @@ export default function ClassJoinPage() {
                               <Eye size={16} />
                             </button>
 
-                            {/* Safe Download Button */}
                             <button
                               onClick={() => handleDownloadPdf(pdf.fileUrl, pdf.title)}
                               className="p-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-xl transition-colors shadow-sm"
@@ -511,13 +500,26 @@ export default function ClassJoinPage() {
                   )}
                 </div>
               )}
-
             </div>
-
           </div>
         )}
-
       </main>
     </div>
+  );
+}
+
+// Default export wrapping the content in Suspense for Netlify/Next.js static export
+export default function ClassJoinPage() {
+  return (
+    <Suspense 
+      fallback={
+        <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col items-center justify-center">
+          <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Loading classroom...</p>
+        </div>
+      }
+    >
+      <ClassJoinContent />
+    </Suspense>
   );
 }
