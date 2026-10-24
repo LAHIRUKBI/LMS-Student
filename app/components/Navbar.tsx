@@ -329,6 +329,15 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 )}
 
                 <Link
+                  href="/home"
+                  onClick={() => setIsDropdownOpen(false)}
+                  className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/home' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                    }`}
+                >
+                  <Users size={16} /> Home
+                </Link>
+
+                <Link
                   href="/teacher"
                   onClick={() => setIsDropdownOpen(false)}
                   className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/teacher' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
