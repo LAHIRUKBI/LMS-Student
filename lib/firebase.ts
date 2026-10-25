@@ -1,6 +1,13 @@
+// @/lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAnalytics, isSupported } from "firebase/analytics";
-import { getAuth, GoogleAuthProvider } from "firebase/auth";
+import { 
+  getAuth, 
+  GoogleAuthProvider, 
+  setPersistence, 
+  browserLocalPersistence, 
+  indexedDBLocalPersistence 
+} from "firebase/auth";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAtkxZ_nEZoawnRtVyMk9joOZiny1DMxgs",
@@ -12,10 +19,8 @@ const firebaseConfig = {
   measurementId: "G-X9LKH8CM8R"
 };
 
-// Initialize Firebase (checking if it already exists to prevent Next.js SSR errors)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Initialize Analytics safely for Next.js (Analytics only runs in the browser)
 let analytics;
 if (typeof window !== "undefined") {
   isSupported().then((supported) => {
@@ -25,9 +30,18 @@ if (typeof window !== "undefined") {
   });
 }
 
-// Initialize Auth and Google Provider
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
 
-// Export them so your RegisterPage can use them
+// Safari / iOS සඳහා Local Persistence සකස් කිරීම
+if (typeof window !== "undefined") {
+  setPersistence(auth, indexedDBLocalPersistence).catch(() => {
+    setPersistence(auth, browserLocalPersistence);
+  });
+}
+
+const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({
+  prompt: "select_account"
+});
+
 export { app, auth, googleProvider };

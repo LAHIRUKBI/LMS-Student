@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import { Mail, Lock, LogIn, Loader2, GraduationCap } from "lucide-react";
 import TorchToggle from "@/app/components/TorchToggle";
@@ -16,39 +16,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isRoomLightOn, setIsRoomLightOn] = useState(false);
-
-  // iOS / Safari redirect result check on page load
-  useEffect(() => {
-    const handleRedirectData = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          setLoading(true);
-          const user = result.user;
-          const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/google`, {
-            name: user.displayName,
-            email: user.email,
-            googleId: user.uid,
-            isRegister: false,
-          });
-
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("user", JSON.stringify(res.data.user));
-          router.push("/home");
-        }
-      } catch (err: any) {
-        if (auth.currentUser) {
-          await auth.signOut();
-        }
-        const errorMessage = err.response?.data?.message || "Google Login process failed. Please register first.";
-        setError(errorMessage);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleRedirectData();
-  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setCredentials({ ...credentials, [e.target.name]: e.target.value });
@@ -72,19 +39,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
+    // ⚠️ iOS Safari Fix: කිසිදු async state එකකට පෙර සෘජුවම Popup එක trigger කළ යුතුය
     setError("");
+    
     try {
-      // iOS / WebKit detection
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                    (navigator.userAgent.includes("Mac") && "ontouchend" in document);
-
-      if (isIOS) {
-        await signInWithRedirect(auth, googleProvider);
-        return;
-      }
-
-      // Android and Desktop
+      setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
@@ -99,20 +58,18 @@ export default function LoginPage() {
       localStorage.setItem("user", JSON.stringify(res.data.user));
       router.push("/home");
     } catch (err: any) {
-      if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
-        try {
-          await signInWithRedirect(auth, googleProvider);
-          return;
-        } catch (redirectErr: any) {
-          setError(redirectErr.message);
-        }
-      }
-
+      console.error("Google Login Error:", err);
       if (auth.currentUser) {
         await auth.signOut();
       }
-      const errorMessage = err.response?.data?.message || "Google Login process failed. Please register first.";
-      setError(errorMessage);
+      
+      // Safari Popup Blocked වීම හඳුනාගැනීම
+      if (err.code === "auth/popup-blocked" || err.message?.includes("popup")) {
+        setError("iOS Safari blocked the popup. Please enable 'Allow Pop-ups' in Safari settings or use Chrome.");
+      } else {
+        const errorMessage = err.response?.data?.message || "Google Login process failed. Please register first.";
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -165,7 +122,6 @@ export default function LoginPage() {
         }}
       />
 
-      {/* Main Content Wrapper - Compact on Mobile */}
       <div className="relative z-10 flex w-full max-w-[390px] sm:max-w-md flex-col items-center my-auto">
         <div
           className={`w-full rounded-2xl sm:rounded-3xl border p-5 sm:p-8 transition-all duration-1000 ${theme.formBg}`}
