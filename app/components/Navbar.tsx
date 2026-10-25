@@ -3,7 +3,29 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, User, LogOut, ChevronLeft, ChevronRight, Moon, Sun, Users, Menu, Bell, Trash2, CheckCheck, FileText, Gift, GraduationCap, Download, X, Smartphone, Monitor } from "lucide-react";
+import { 
+  BookOpen, 
+  User, 
+  LogOut, 
+  ChevronLeft, 
+  ChevronRight, 
+  Moon, 
+  Sun, 
+  Menu, 
+  Bell, 
+  Trash2, 
+  CheckCheck, 
+  FileText, 
+  GraduationCap, 
+  Download, 
+  X, 
+  Smartphone, 
+  Monitor,
+  Home,
+  UserCheck,
+  Tv,
+  BookOpenCheck
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import axios from "axios";
@@ -31,8 +53,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   const [isStandalone, setIsStandalone] = useState(false);
   const [showInstallGuide, setShowInstallGuide] = useState(false);
 
-  // A ref to close the notification dropdown when clicking outside of it.
+  // Refs for closing dropdowns when clicking outside
   const notificationRef = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const pathname = usePathname();
 
@@ -66,7 +89,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
 
-    // 2. Standalone (දැනටමත් App එකක් ලෙස Install කර විවෘත කර ඇත්දැයි) පරීක්ෂා කිරීම
+    // 2. Standalone පරීක්ෂා කිරීම
     const checkStandalone = () => {
       const standalone =
         window.matchMedia("(display-mode: standalone)").matches ||
@@ -76,7 +99,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
     };
     checkStandalone();
 
-    // 3. බ්‍රවුසරයෙන් Install Prompt එක සූදානම් වූ විට ගබඩා කරගැනීම
+    // 3. Install Prompt එක සූදානම් වූ විට ගබඩා කරගැනීම
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
@@ -111,13 +134,18 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
       }
     }
 
-    const handleClickOutside = (event: MouseEvent) => {
+    // Notification dropdown සහ Mobile menu එකෙන් පිටත ක්ලික් කළ විට වැසීම
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
       if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
         setIsNotificationOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
 
     const interval = setInterval(() => {
       fetchNotifications();
@@ -131,6 +159,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
         socket.disconnect();
       }
       document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
       window.removeEventListener("resize", handleScreenResize);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", handleAppInstalled);
@@ -226,7 +255,6 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
   };
 
   const toggleExpand = () => {
-    // මොබයිල් තිරවලදී දිගහැරීම වැළැක්වීම
     if (typeof window !== "undefined" && window.innerWidth < 768) return;
 
     const newExpandState = !isExpanded;
@@ -272,317 +300,473 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
   return (
     <>
-      <nav
-        className={`fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-between transition-all duration-700 ease-in-out h-14 sm:h-16
-          ${isExpanded
-            ? 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-full pointer-events-none'
-            : 'w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-7xl bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-4 sm:px-6 pointer-events-auto'
-          }
-        `}
-      >
-        {/* Left Part: Logo Area & Navigation Tabs */}
-        <div
-          className={`flex items-center h-full transition-all duration-700 pointer-events-auto relative
+      {/* Wrapper Bar */}
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center gap-3 w-full px-4 max-w-7xl pointer-events-none">
+        
+        {/* Main Navbar */}
+        <nav
+          className={`flex items-center justify-between transition-all duration-700 ease-in-out h-14 sm:h-16 pointer-events-auto
             ${isExpanded
-              ? 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-3 sm:px-6'
-              : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
+              ? 'w-full max-w-full bg-transparent border-transparent shadow-none px-0'
+              : 'w-full bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-4 sm:px-6'
             }
           `}
         >
-          <div className="relative flex items-center">
-            <Link
-              href="/home"
-              className="flex items-center"
-              onClick={(e) => {
-                if (isExpanded) {
-                  e.preventDefault();
-                  setIsDropdownOpen(!isDropdownOpen);
-                }
-              }}
-            >
-              <div className="bg-blue-600 p-1.5 sm:p-2 rounded-full text-white shadow-sm transition-transform hover:scale-105 shrink-0">
-                {isExpanded ? <Menu size={20} /> : <BookOpen size={20} />}
-              </div>
-              <span
-                className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
-                  ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-2 sm:ml-3 text-[15px] sm:text-xl'}
-                `}
+          {/* Left Part: Logo Area & Compact Icon Tabs */}
+          <div
+            className={`flex items-center h-full transition-all duration-700 pointer-events-auto relative
+              ${isExpanded
+                ? 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-3 sm:px-6'
+                : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
+              }
+            `}
+          >
+            <div className="relative flex items-center" ref={menuRef}>
+              <button
+                type="button"
+                className="flex items-center focus:outline-none"
+                onClick={(e) => {
+                  if (isExpanded) {
+                    e.preventDefault();
+                    setIsDropdownOpen(!isDropdownOpen);
+                  }
+                }}
               >
-                NovaSkill
-              </span>
-            </Link>
+                <div className="bg-blue-600 p-1.5 sm:p-2 rounded-full text-white shadow-sm transition-transform hover:scale-105 shrink-0">
+                  {isExpanded ? <Menu size={20} /> : <BookOpen size={20} />}
+                </div>
+                <span
+                  className={`font-bold text-slate-800 dark:text-white tracking-tight transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis
+                    ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[110px] sm:max-w-[180px] opacity-100 ml-2 sm:ml-3 text-[15px] sm:text-xl'}
+                  `}
+                >
+                  NovaSkill
+                </span>
+              </button>
 
-            {isExpanded && isDropdownOpen && (
-              <div className="absolute top-full left-0 mt-4 w-52 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl py-2.5 flex flex-col gap-1 z-50">
-                
-                {/* Mobile සඳහා Get App බොත්තම Menu එක තුළට */}
-                {!isStandalone && (
-                  <button
-                    onClick={() => {
-                      setIsDropdownOpen(false);
-                      handleInstallClick();
-                    }}
-                    className="md:hidden px-4 py-2 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow-md mb-1"
-                  >
-                    <Download size={16} /> Get App
-                  </button>
-                )}
+              {/* Mobile / Compact Dropdown Menu */}
+              {isExpanded && isDropdownOpen && (
+                <div className="absolute top-full left-0 mt-4 w-60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-2.5 flex flex-col gap-1.5 z-50">
+                  
+                  {/* Navbar එක හැකිලී ඇති විට (isExpanded=true) ඉරි තුන Menu එක තුළට Get App බොත්තම */}
+                  {!isStandalone && (
+                    <div className="pb-1 border-b border-slate-200/50 dark:border-slate-800/50 mb-1">
+                      <button
+                        onClick={() => {
+                          setIsDropdownOpen(false);
+                          handleInstallClick();
+                        }}
+                        className="w-full py-2.5 px-3 text-sm font-bold transition-all flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md active:scale-95"
+                      >
+                        <Download size={16} /> Get App
+                      </button>
+                    </div>
+                  )}
 
-                <Link
-                  href="/home"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/home' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                    }`}
-                >
-                  <Users size={16} /> Home
-                </Link>
-
-                <Link
-                  href="/teacher"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/teacher' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                    }`}
-                >
-                  <Users size={16} /> Teachers
-                </Link>
-                <Link
-                  href="/class/class_view"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/class_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                    }`}
-                >
-                  <Users size={16} /> Class
-                </Link>
-                <Link
-                  href="/class/free"
-                  onClick={() => setIsDropdownOpen(false)}
-                  className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/free' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                    }`}
-                >
-                  <Gift size={16} /> Resources
-                </Link>
-                {user && user.name !== "Guest Student" && (
                   <Link
-                    href="/class/myclass"
+                    href="/home"
                     onClick={() => setIsDropdownOpen(false)}
-                    className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 mx-2 rounded-xl ${pathname === '/class/myclass' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                      }`}
+                    className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-3 rounded-xl ${
+                      pathname === '/home' 
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                    }`}
                   >
-                    <GraduationCap size={16} /> My classes
+                    <Home size={16} className="shrink-0" /> Home
                   </Link>
-                )}
-                {user && user.name !== "Guest Student" && (
+
                   <Link
-                    href="/notice_view"
+                    href="/teacher"
                     onClick={() => setIsDropdownOpen(false)}
-                    className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between mx-2 ${pathname === '/notice_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
-                      }`}
+                    className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-3 rounded-xl ${
+                      pathname === '/teacher' 
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                    }`}
                   >
-                    <span className="flex items-center gap-2.5"><FileText size={16} /> Notices</span>
-                    {unreadNoticeCount > 0 && (
-                      <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
-                        {unreadNoticeCount}
-                      </span>
-                    )}
+                    <UserCheck size={16} className="shrink-0" /> Teachers
                   </Link>
-                )}
-              </div>
-            )}
-          </div>
 
-          <div className={`hidden md:flex items-center ml-6 gap-2 transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0' : 'max-w-[650px] opacity-100'}`}>
-            <div className="h-6 w-px bg-slate-300/40 dark:bg-slate-700/40 mr-2"></div>
+                  <Link
+                    href="/class/class_view"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-3 rounded-xl ${
+                      pathname === '/class/class_view' 
+                        ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <Tv size={16} className="shrink-0" /> Class
+                  </Link>
 
-            <Link
-              href="/teacher"
-              className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/teacher' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
-                }`}
-            >
-              <Users size={16} /> Teachers
-            </Link>
+                  <Link
+                    href="/class/free"
+                    onClick={() => setIsDropdownOpen(false)}
+                    className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-3 rounded-xl ${
+                      pathname === '/class/free' 
+                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' 
+                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                    }`}
+                  >
+                    <BookOpenCheck size={16} className="shrink-0" /> Resources
+                  </Link>
 
-            <Link
-              href="/class/class_view"
-              className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/class_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
-                }`}
-            >
-              <Users size={16} /> Class
-            </Link>
+                  {user && user.name !== "Guest Student" && (
+                    <Link
+                      href="/class/myclass"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className={`px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-3 rounded-xl ${
+                        pathname === '/class/myclass' 
+                          ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' 
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <GraduationCap size={16} className="shrink-0" /> My classes
+                    </Link>
+                  )}
 
-            <Link
-              href="/class/free"
-              className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/free' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
-                }`}
-            >
-              <Gift size={16} /> Resources
-            </Link>
+                  {user && user.name !== "Guest Student" && (
+                    <Link
+                      href="/notice_view"
+                      onClick={() => setIsDropdownOpen(false)}
+                      className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-colors flex items-center justify-between ${
+                        pathname === '/notice_view' 
+                          ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' 
+                          : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/50 dark:hover:bg-slate-800/50'
+                      }`}
+                    >
+                      <span className="flex items-center gap-3"><FileText size={16} className="shrink-0" /> Notices</span>
+                      {unreadNoticeCount > 0 && (
+                        <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full font-bold animate-pulse">
+                          {unreadNoticeCount}
+                        </span>
+                      )}
+                    </Link>
+                  )}
 
-            {user && user.name !== "Guest Student" && (
-              <Link
-                href="/class/myclass"
-                className={`px-3 py-1.5 rounded-full text-sm font-bold transition-colors flex items-center gap-1.5 ${pathname === '/class/myclass' ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
-                  }`}
-              >
-                <GraduationCap size={16} /> My classes
-              </Link>
-            )}
-
-            {user && user.name !== "Guest Student" && (
-              <Link
-                href="/notice_view"
-                onClick={() => setIsDropdownOpen(false)}
-                className={`px-4 py-2 text-sm font-bold transition-colors flex items-center justify-between mx-2 rounded-full ${pathname === '/notice_view' ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-400 hover:bg-white/40 dark:hover:bg-slate-800/40'
-                  }`}
-              >
-                <span className="flex items-center gap-2"><FileText size={16} /> Notices</span>
-                {unreadNoticeCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1.5">
-                    {unreadNoticeCount}
-                  </span>
-                )}
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Right Part: Actions & Notification Bell */}
-        <div
-          className={`flex items-center gap-1.5 sm:gap-3 h-full transition-all duration-700 pointer-events-auto
-            ${isExpanded
-              ? 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-3 sm:px-6'
-              : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
-            }
-          `}
-        >
-          {/* Get App Button - Desktop සහ Tablet වල පමණක් පිටතින් දිස්වේ */}
-          {!isStandalone && (
-            <button
-              onClick={handleInstallClick}
-              className={`hidden md:flex items-center text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-full shadow-md transition-all duration-500 shrink-0 border border-blue-400/30
-                ${isExpanded ? 'p-2' : 'px-3 py-1.5'}
-              `}
-              title="Install App"
-            >
-              <Download size={16} className="shrink-0" />
-              <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[70px] opacity-100 ml-1.5'}`}>
-                Get App
-              </span>
-            </button>
-          )}
-
-          {/* Notification Bell Icon & Responsive Dropdown */}
-          <div className="relative" ref={notificationRef}>
-            <button
-              onClick={() => {
-                setIsNotificationOpen(!isNotificationOpen);
-                if (!isNotificationOpen) fetchNotifications();
-              }}
-              className="p-2 rounded-full text-slate-600 hover:bg-white/50 dark:text-slate-300 dark:hover:bg-slate-800/50 transition-colors relative shrink-0"
-            >
-              <Bell size={18} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
-              )}
-            </button>
-
-            {isNotificationOpen && (
-              <div className="absolute right-0 sm:right-0 mt-3 w-[270px] sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-3 sm:p-4 z-50">
-                <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/50 dark:border-slate-800/50">
-                  <h3 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Notifications</h3>
-                  <div className="flex items-center gap-2">
-                    <button onClick={markAllAsRead} className="text-[11px] sm:text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
-                      <CheckCheck size={13} /> Mark all read
+                  <div className="pt-1 border-t border-slate-200/50 dark:border-slate-800/50 mt-1">
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        handleNavbarLogout();
+                      }}
+                      className="w-full px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10"
+                    >
+                      <LogOut size={16} className="shrink-0" /> Logout
                     </button>
                   </div>
                 </div>
+              )}
+            </div>
 
-                <div className="max-h-72 overflow-y-auto mt-2 space-y-2 custom-scrollbar">
-                  {notifications.length === 0 ? (
-                    <p className="text-center text-xs text-slate-400 py-6">No notifications found.</p>
-                  ) : (
-                    notifications.map((notif) => (
-                      <div
-                        key={notif._id}
-                        onClick={() => {
-                          if (notif.classId) {
-                            window.location.href = `/class/class_join?classId=${notif.classId}`;
-                            setIsNotificationOpen(false);
-                          }
-                        }}
-                        className={`p-2.5 sm:p-3 rounded-xl border transition-all flex items-start justify-between gap-2 cursor-pointer ${notif.isRead
-                            ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40 hover:bg-slate-100/50'
-                            : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50 hover:bg-blue-100/50'
-                          }`}
-                      >
-                        <div>
-                          <h4 className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200">{notif.title}</h4>
-                          <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 mt-0.5">{notif.message}</p>
-                          <span className="text-[9px] sm:text-[10px] text-slate-400 mt-1 block">
-                            {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-                        <button
-                          onClick={(e) => deleteNotification(notif._id, e)}
-                          className="text-slate-400 hover:text-red-500 transition-colors p-1"
-                          title="Delete notification"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    ))
-                  )}
+            {/* Desktop View: Icon-Only Navigation with Hover Tooltips */}
+            <div className={`hidden md:flex items-center ml-5 gap-1.5 transition-all duration-500 ease-in-out ${isExpanded ? 'max-w-0 opacity-0 overflow-hidden' : 'max-w-[500px] opacity-100'}`}>
+              <div className="h-6 w-px bg-slate-300/40 dark:bg-slate-700/40 mr-1.5"></div>
+
+              {/* Home */}
+              <div className="relative group flex items-center justify-center">
+                <Link
+                  href="/home"
+                  className={`p-2 sm:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center ${
+                    pathname === '/home' 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                  }`}
+                  aria-label="Home"
+                >
+                  <Home size={19} />
+                </Link>
+                <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:flex flex-col items-center z-50">
+                  <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45 mb-[-4px]"></div>
+                  <span className="bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                    Home
+                  </span>
                 </div>
               </div>
-            )}
+
+              {/* Teachers */}
+              <div className="relative group flex items-center justify-center">
+                <Link
+                  href="/teacher"
+                  className={`p-2 sm:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center ${
+                    pathname === '/teacher' 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                  }`}
+                  aria-label="Teachers"
+                >
+                  <UserCheck size={19} />
+                </Link>
+                <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:flex flex-col items-center z-50">
+                  <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45 mb-[-4px]"></div>
+                  <span className="bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                    Teachers
+                  </span>
+                </div>
+              </div>
+
+              {/* Class */}
+              <div className="relative group flex items-center justify-center">
+                <Link
+                  href="/class/class_view"
+                  className={`p-2 sm:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center ${
+                    pathname === '/class/class_view' 
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                  }`}
+                  aria-label="Class"
+                >
+                  <Tv size={19} />
+                </Link>
+                <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:flex flex-col items-center z-50">
+                  <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45 mb-[-4px]"></div>
+                  <span className="bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                    Class
+                  </span>
+                </div>
+              </div>
+
+              {/* Resources */}
+              <div className="relative group flex items-center justify-center">
+                <Link
+                  href="/class/free"
+                  className={`p-2 sm:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center ${
+                    pathname === '/class/free' 
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/30' 
+                      : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                  }`}
+                  aria-label="Resources"
+                >
+                  <BookOpenCheck size={19} />
+                </Link>
+                <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:flex flex-col items-center z-50">
+                  <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45 mb-[-4px]"></div>
+                  <span className="bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                    Resources
+                  </span>
+                </div>
+              </div>
+
+              {/* My Classes */}
+              {user && user.name !== "Guest Student" && (
+                <div className="relative group flex items-center justify-center">
+                  <Link
+                    href="/class/myclass"
+                    className={`p-2 sm:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center ${
+                      pathname === '/class/myclass' 
+                        ? 'bg-purple-600 text-white shadow-md shadow-purple-500/30' 
+                        : 'text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                    }`}
+                    aria-label="My Classes"
+                  >
+                    <GraduationCap size={19} />
+                  </Link>
+                  <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:flex flex-col items-center z-50">
+                    <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45 mb-[-4px]"></div>
+                    <span className="bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap animate-in fade-in zoom-in-95 duration-150">
+                      My classes
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Notices */}
+              {user && user.name !== "Guest Student" && (
+                <div className="relative group flex items-center justify-center">
+                  <Link
+                    href="/notice_view"
+                    className={`relative p-2 sm:p-2.5 rounded-full transition-all duration-300 flex items-center justify-center ${
+                      pathname === '/notice_view' 
+                        ? 'bg-blue-600 text-white shadow-md shadow-blue-500/30' 
+                        : 'text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-slate-800/50'
+                    }`}
+                    aria-label="Notices"
+                  >
+                    <FileText size={19} />
+                    {unreadNoticeCount > 0 && (
+                      <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse border-2 border-white dark:border-slate-900"></span>
+                    )}
+                  </Link>
+                  <div className="pointer-events-none absolute top-full left-1/2 -translate-x-1/2 mt-2 hidden group-hover:flex flex-col items-center z-50">
+                    <div className="w-2 h-2 bg-slate-900 dark:bg-slate-800 rotate-45 mb-[-4px]"></div>
+                    <span className="bg-slate-900 dark:bg-slate-800 text-white text-[11px] font-semibold px-2.5 py-1 rounded-lg shadow-xl whitespace-nowrap flex items-center gap-1.5 animate-in fade-in zoom-in-95 duration-150">
+                      Notices
+                      {unreadNoticeCount > 0 && (
+                        <span className="bg-red-500 text-white text-[9px] px-1.5 py-0.2 rounded-full font-bold">
+                          {unreadNoticeCount}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full text-slate-600 hover:bg-white/50 dark:text-slate-300 dark:hover:bg-slate-800/50 transition-colors shrink-0"
-          >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          <Link
-            href="/profile"
-            className={`flex items-center text-sm font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 hover:bg-white/70 dark:hover:bg-slate-700/60 rounded-full transition-all duration-500 cursor-pointer border border-white/20 dark:border-slate-700/30
-              ${isExpanded ? 'p-1.5' : 'px-3 py-1.5'}
+          {/* Right Part: Controls & Profile */}
+          <div
+            className={`flex items-center gap-1.5 sm:gap-2.5 h-full transition-all duration-700 pointer-events-auto shrink-0
+              ${isExpanded
+                ? 'bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full px-3 sm:px-4'
+                : 'px-0 border-transparent bg-transparent shadow-none rounded-none'
+              }
             `}
           >
-            {profileImgUrl ? (
-              <img src={profileImgUrl} alt={user?.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-slate-300/50 dark:border-slate-600/50 shrink-0" />
-            ) : (
-              <User size={16} className="text-blue-500 shrink-0" />
+            {/* Get App Button - Navbar එක දිගහැරී ඇති විට (!isExpanded) පමණක් මෙහි දිස්වේ */}
+            {!isStandalone && !isExpanded && (
+              <button
+                onClick={handleInstallClick}
+                className="hidden md:flex items-center text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 rounded-full shadow-md transition-all duration-500 shrink-0 border border-blue-400/30 px-3.5 py-1.5 gap-1.5"
+                title="Install App"
+              >
+                <Download size={16} className="shrink-0" />
+                <span className="max-w-[70px] opacity-100 whitespace-nowrap">
+                  Get App
+                </span>
+              </button>
             )}
-            <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[65px] sm:max-w-[150px] opacity-100 ml-2 text-xs sm:text-sm'}`}>
-              {user?.name}
-            </span>
-          </Link>
 
-          {/* Logout Button */}
-          <button
-            onClick={handleNavbarLogout}
-            className={`flex items-center text-sm font-medium text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-500/10 hover:bg-red-100/70 dark:hover:bg-red-500/20 rounded-full transition-all duration-500 shrink-0 border border-red-200/30 dark:border-red-500/20
-              ${isExpanded ? 'p-2' : 'px-3.5 py-1.5'}
-            `}
-          >
-            <LogOut size={16} className="shrink-0" />
-            <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'hidden sm:block max-w-[80px] opacity-100 ml-2'}`}>
-              Logout
-            </span>
-          </button>
+            {/* Notification Bell */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => {
+                  setIsNotificationOpen(!isNotificationOpen);
+                  if (!isNotificationOpen) fetchNotifications();
+                }}
+                className="p-2 rounded-full text-slate-600 hover:bg-white/50 dark:text-slate-300 dark:hover:bg-slate-800/50 transition-colors relative shrink-0"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></span>
+                )}
+              </button>
 
-          {/* Expand/Collapse Button - Mobile වලදී සැඟවී Desktop/Tablet වලදී පමණක් දිස්වේ */}
-          <button
-            onClick={toggleExpand}
-            className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/40 dark:bg-slate-800/40 text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-700/60 transition-all duration-300 shrink-0 border border-white/20 dark:border-slate-700/30"
-          >
-            {isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-          </button>
-        </div>
-      </nav>
+              {isNotificationOpen && (
+                <div className="absolute right-0 mt-3 w-[270px] sm:w-96 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-white/20 dark:border-slate-700/30 shadow-2xl rounded-2xl p-3 sm:p-4 z-50">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-200/50 dark:border-slate-800/50">
+                    <h3 className="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">Notifications</h3>
+                    <div className="flex items-center gap-2">
+                      <button onClick={markAllAsRead} className="text-[11px] sm:text-xs text-blue-600 hover:underline flex items-center gap-1 font-medium">
+                        <CheckCheck size={13} /> Mark all read
+                      </button>
+                    </div>
+                  </div>
 
-      {/* Elegant Install Guide Modal (Event එක නොලැබෙන බ්‍රවුසර සඳහා) */}
+                  <div className="max-h-72 overflow-y-auto mt-2 space-y-2 custom-scrollbar">
+                    {notifications.length === 0 ? (
+                      <p className="text-center text-xs text-slate-400 py-6">No notifications found.</p>
+                    ) : (
+                      notifications.map((notif) => (
+                        <div
+                          key={notif._id}
+                          onClick={() => {
+                            if (notif.classId) {
+                              window.location.href = `/class/class_join?classId=${notif.classId}`;
+                              setIsNotificationOpen(false);
+                            }
+                          }}
+                          className={`p-2.5 sm:p-3 rounded-xl border transition-all flex items-start justify-between gap-2 cursor-pointer ${
+                            notif.isRead
+                              ? 'bg-slate-50/50 dark:bg-slate-800/20 border-slate-200/40 dark:border-slate-800/40 hover:bg-slate-100/50'
+                              : 'bg-blue-50/50 dark:bg-blue-900/10 border-blue-200/50 dark:border-blue-800/50 hover:bg-blue-100/50'
+                          }`}
+                        >
+                          <div>
+                            <h4 className="text-[11px] sm:text-xs font-bold text-slate-800 dark:text-slate-200">{notif.title}</h4>
+                            <p className="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400 mt-0.5">{notif.message}</p>
+                            <span className="text-[9px] sm:text-[10px] text-slate-400 mt-1 block">
+                              {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => deleteNotification(notif._id, e)}
+                            className="text-slate-400 hover:text-red-500 transition-colors p-1"
+                            title="Delete notification"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Dark Mode Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="p-2 rounded-full text-slate-600 hover:bg-white/50 dark:text-slate-300 dark:hover:bg-slate-800/50 transition-colors shrink-0"
+            >
+              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+
+            {/* User Profile */}
+            <Link
+              href="/profile"
+              className={`flex items-center text-sm font-medium text-slate-700 dark:text-slate-200 bg-white/40 dark:bg-slate-800/40 hover:bg-white/70 dark:hover:bg-slate-700/60 rounded-full transition-all duration-500 cursor-pointer border border-white/20 dark:border-slate-700/30
+                ${isExpanded ? 'p-1.5' : 'px-3 py-1.5'}
+              `}
+            >
+              {profileImgUrl ? (
+                <img src={profileImgUrl} alt={user?.name} className="w-5 h-5 sm:w-6 sm:h-6 rounded-full object-cover border border-slate-300/50 dark:border-slate-600/50 shrink-0" />
+              ) : (
+                <User size={16} className="text-blue-500 shrink-0" />
+              )}
+              <span className={`transition-all duration-500 ease-in-out overflow-hidden whitespace-nowrap text-ellipsis ${isExpanded ? 'max-w-0 opacity-0 ml-0 text-[0px]' : 'max-w-[75px] sm:max-w-[150px] opacity-100 ml-2 text-xs sm:text-sm'}`}>
+                {user?.name}
+              </span>
+            </Link>
+
+            {/* Collapsed Status එකේදී පෙනෙන Logout බටනය */}
+            {isExpanded && (
+              <button
+                onClick={handleNavbarLogout}
+                className="flex items-center justify-center p-2 rounded-full text-red-600 dark:text-red-400 bg-red-50/60 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/20 transition-all border border-red-200/40 dark:border-red-500/20 shadow-sm shrink-0"
+                title="Logout"
+              >
+                <LogOut size={16} />
+              </button>
+            )}
+
+            {/* Desktop Expand Button */}
+            {isExpanded && (
+              <button
+                onClick={toggleExpand}
+                className="hidden md:flex items-center justify-center w-8 h-8 rounded-full bg-white/60 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/20 dark:border-slate-700/30 shrink-0"
+                title="Expand Navbar"
+              >
+                <ChevronRight size={18} />
+              </button>
+            )}
+          </div>
+        </nav>
+
+        {/* Desktop View එකේදී දිගහැරී ඇති විට Logout සහ Collapse බටන් වෙනම Pill එකක් ලෙස දකුණින් දිස්වීම */}
+        {!isExpanded && (
+          <div className="hidden md:flex items-center gap-2 h-14 sm:h-16 px-3 bg-white/40 dark:bg-slate-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/20 dark:border-slate-700/30 rounded-full shrink-0 pointer-events-auto transition-all duration-500 animate-in fade-in">
+            <button
+              onClick={handleNavbarLogout}
+              className="flex items-center gap-2 px-3.5 py-1.5 text-sm font-semibold text-red-600 dark:text-red-400 bg-red-50/60 dark:bg-red-500/10 hover:bg-red-100/80 dark:hover:bg-red-500/20 rounded-full transition-all border border-red-200/40 dark:border-red-500/20 shadow-sm"
+              title="Logout"
+            >
+              <LogOut size={16} className="shrink-0" />
+              <span>Logout</span>
+            </button>
+
+            <button
+              onClick={toggleExpand}
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition-all border border-white/20 dark:border-slate-700/30 shrink-0"
+              title="Collapse Navbar"
+            >
+              <ChevronLeft size={18} />
+            </button>
+          </div>
+        )}
+
+      </div>
+
+      {/* Elegant Install Guide Modal */}
       {showInstallGuide && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-200/50 dark:border-slate-800/80 relative">
