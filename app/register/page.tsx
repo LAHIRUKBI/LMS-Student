@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
+import { signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import {
   Mail,
@@ -26,40 +26,6 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isRoomLightOn, setIsRoomLightOn] = useState(false);
-
-  // iOS / Safari redirect result check on page load
-  useEffect(() => {
-    const handleRedirectData = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result && result.user) {
-          setLoading(true);
-          const user = result.user;
-          const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/google`, {
-            name: user.displayName,
-            email: user.email,
-            googleId: user.uid,
-            isRegister: true,
-          });
-
-          localStorage.setItem("token", res.data.token);
-          localStorage.setItem("user", JSON.stringify(res.data.user));
-
-          setSuccessMessage("Google registration successful!");
-          setTimeout(() => {
-            router.push("/");
-          }, 3000);
-        }
-      } catch (err: any) {
-        console.error("Redirect Result Error:", err);
-        setError(err.response?.data?.message || err.message || "Google registration failed.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    handleRedirectData();
-  }, [router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -87,19 +53,11 @@ export default function RegisterPage() {
   };
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
+    // ⚠️ iOS Safari Fix: සෘජුවම Popup ක්‍රියාවලිය ආරම්භ කිරීම
     setError("");
+    
     try {
-      // iOS / WebKit device check
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                    (navigator.userAgent.includes("Mac") && "ontouchend" in document);
-
-      if (isIOS) {
-        await signInWithRedirect(auth, googleProvider);
-        return;
-      }
-
-      // Android and Desktop
+      setLoading(true);
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
 
@@ -119,16 +77,12 @@ export default function RegisterPage() {
       }, 3000);
     } catch (err: any) {
       console.error("Google Auth Error Details:", err);
-      if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
-        try {
-          await signInWithRedirect(auth, googleProvider);
-          return;
-        } catch (redirectErr: any) {
-          setError(redirectErr.message);
-        }
+      if (err.code === "auth/popup-blocked" || err.message?.includes("popup")) {
+        setError("iOS Safari blocked the popup. Please enable 'Allow Pop-ups' in Safari settings or use Chrome.");
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || "Google Login process failed.";
+        setError(`Error: ${errorMessage}`);
       }
-      const errorMessage = err.response?.data?.message || err.message || "Google Login process failed.";
-      setError(`Error: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -178,7 +132,6 @@ export default function RegisterPage() {
         }}
       />
 
-      {/* Main Content Wrapper - Compact on Mobile */}
       <div className="relative z-10 flex w-full max-w-[390px] sm:max-w-md flex-col items-center my-auto">
         <div
           className={`w-full rounded-2xl sm:rounded-3xl border p-5 sm:p-8 transition-all duration-1000 ${theme.formBg}`}
