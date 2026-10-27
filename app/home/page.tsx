@@ -311,7 +311,7 @@ export default function StudentDashboard() {
       
       <Navbar user={user} onLogout={handleLogout} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 lg:pt-32 pb-16">
+      <main className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 pt-24 lg:pt-32 pb-16">
         
         {/* 1. Hero Section */}
         <HeroSection

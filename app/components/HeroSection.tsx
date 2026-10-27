@@ -250,7 +250,7 @@ export default function HeroSection({
           variants={container}
           initial="hidden"
           animate="show"
-          className="flex-1 space-y-6 sm:space-y-8 z-20 w-full lg:max-w-xl"
+          className="flex-1 space-y-6 sm:space-y-8 z-20 w-full lg:max-w-2xl"
         >
 
           {/* Badge & Social Proof Right Beside It */}
@@ -469,7 +469,7 @@ export default function HeroSection({
           initial={{ opacity: 0, x: 50, scale: 0.96 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           transition={{ duration: 0.9, ease: EASE, delay: 0.2 }}
-          className="flex-1 relative flex justify-center lg:justify-end items-center w-full max-w-lg lg:max-w-none pt-4 lg:pt-0"
+          className="flex-1 relative flex justify-center lg:justify-end items-center w-full pt-4 lg:pt-0"
           style={{ perspective: 1200 }}
         >
           {/* Main 3D Card Wrapper */}
