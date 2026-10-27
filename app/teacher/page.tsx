@@ -95,7 +95,7 @@ export default function StudentTeacherView() {
     const matchesSearch =
       (t.name && t.name.toLowerCase().includes(q)) ||
       (t.subject && t.subject.toLowerCase().includes(q));
-    
+
     const matchesSubject = selectedSubject === "all" || t.subject === selectedSubject;
 
     return matchesSearch && matchesSubject;
@@ -114,92 +114,56 @@ export default function StudentTeacherView() {
   const selectedTeacher = teachers.find((t) => t._id === expandedTeacherId);
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 text-slate-800 dark:text-slate-100 selection:bg-slate-700 selection:text-white relative font-sans overflow-hidden transition-colors duration-500">
-
-      {/* Ambient neutral orbs */}
-      <div className="pointer-events-none absolute top-0 right-0 w-[600px] h-[600px] bg-slate-400/10 dark:bg-slate-600/10 blur-[140px] rounded-full animate-pulse-slow" />
-      <div className="pointer-events-none absolute bottom-0 left-0 w-[600px] h-[600px] bg-slate-400/10 dark:bg-slate-600/10 blur-[140px] rounded-full animate-pulse-slow" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-slate-300/5 dark:bg-slate-700/5 blur-[160px] rounded-full" />
-
-      {/* Subtle grid overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(0,0,0,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.5) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-100 selection:bg-teal-500 selection:text-white relative font-sans transition-colors duration-500">
       <Navbar user={user} onLogout={handleLogout} />
 
-      <main className="max-w-[90%] xl:max-w-[1500px] mx-auto px-4 sm:px-6 lg:px-10 pt-32 pb-24 relative z-10">
-
-        {/* ============ HEADER ============ */}
-        <div className="relative mb-12">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-8 border-b border-slate-200 dark:border-slate-800/80">
-            <div className="space-y-4 max-w-2xl">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.1]">
-                Meet Your{" "}
-                <span className="relative inline-block">
-                  <span className="text-slate-900 dark:text-white">
-                    Teachers
-                  </span>
-                </span>
-              </h1>
-
-              <p className="text-slate-500 dark:text-slate-400 text-sm sm:text-base font-medium">
-                Discover the experienced professionals guiding your learning journey. Click any card to explore their credentials.
-              </p>
-
-              {/* Stats pills */}
-              <div className="flex flex-wrap gap-2 pt-2">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold shadow-sm">
-                  <BookOpen size={13} className="text-slate-500 dark:text-slate-400" />
-                  {teachers.length} Teachers
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs font-semibold shadow-sm">
-                  <Award size={13} className="text-slate-500 dark:text-slate-400" />
-                  Verified Profiles
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ============ SEARCH & FILTERS SECTION ============ */}
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm mb-8 space-y-4">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-            
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filter Teachers:</span>
-            </div>
-
-            {/* Search Box */}
-            <div className="relative w-full lg:w-80">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Search by name or subject..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-slate-900/50 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 placeholder-slate-400"
-              />
-            </div>
+      {/* ============ HEADER (centered) ============ */}
+      <header className="border-b border-slate-100 bg-slate-50 pb-12 pt-32 dark:border-slate-900 dark:bg-slate-900/40">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <div className="mx-auto mb-5 inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-1.5 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+            <Award size={13} className="text-teal-600 dark:text-teal-400" />
+            {teachers.length} Verified Teachers
           </div>
 
-          {/* Subject Filter Pills */}
+          <h1 className="text-4xl font-black leading-[1.05] tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
+            Meet Your Teachers
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-500 dark:text-slate-400 sm:text-base">
+            Discover the experienced professionals guiding your learning journey. Open any profile to explore their credentials.
+          </p>
+
+          {/* Search Box */}
+          <div className="relative mx-auto mt-8 max-w-xl">
+            <Search className="absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by name or subject..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-full border border-slate-200 bg-white py-4 pl-14 pr-12 text-sm font-medium text-slate-800 shadow-sm placeholder-slate-400 transition-all focus:border-teal-500 focus:outline-none focus:ring-4 focus:ring-teal-500/15 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-4 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+                aria-label="Clear search"
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+
+          {/* Subject Filter Tabs */}
           {subjects.length > 1 && (
-            <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800 overflow-x-auto scrollbar-hide">
-              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">Subjects:</span>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
               {subjects.map((sub) => (
                 <button
                   key={sub}
                   onClick={() => setSelectedSubject(sub)}
-                  className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap capitalize transition-all ${
+                  className={`rounded-full border px-4 py-1.5 text-xs font-semibold capitalize transition-all ${
                     selectedSubject === sub
-                      ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-sm"
-                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      ? "border-teal-600 bg-teal-600 text-white shadow-md shadow-teal-600/20"
+                      : "border-slate-200 bg-white text-slate-600 hover:border-teal-500 hover:text-teal-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-400 dark:hover:border-teal-500 dark:hover:text-teal-400"
                   }`}
                 >
                   {sub === "all" ? "All Subjects" : sub}
@@ -208,294 +172,286 @@ export default function StudentTeacherView() {
             </div>
           )}
         </div>
+      </header>
+
+      <main className="mx-auto max-w-[92%] px-4 pb-24 pt-10 sm:px-6 lg:px-10 xl:max-w-[1300px] relative z-10">
 
         {/* ============ CONTENT ============ */}
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
             {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
-                className="flex flex-col bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-lg p-3 animate-pulse"
+                className="flex animate-pulse items-center gap-5 rounded-2xl border border-slate-200 p-4 dark:border-slate-800"
               >
-                <div className="w-full h-[340px] bg-gradient-to-br from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-[24px]" />
-                <div className="p-4 space-y-2">
-                  <div className="h-5 w-2/3 bg-slate-200 dark:bg-slate-800 rounded-full" />
-                  <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                <div className="h-16 w-16 sm:h-20 sm:w-20 shrink-0 rounded-full bg-slate-200 dark:bg-slate-800" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-4 w-1/2 rounded-full bg-slate-200 dark:bg-slate-800" />
+                  <div className="h-3 w-1/3 rounded-full bg-slate-200 dark:bg-slate-800" />
                 </div>
+                <div className="h-11 w-11 rounded-full bg-slate-200 dark:bg-slate-800" />
               </div>
             ))}
           </div>
         ) : filteredTeachers.length === 0 ? (
-          <div className="relative bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] py-24 text-center px-4 shadow-sm overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-500/5 via-transparent to-slate-500/5" />
-            <div className="relative">
-              <div className="w-20 h-20 mx-auto mb-5 rounded-3xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                <User size={40} className="text-slate-400 dark:text-slate-500" />
-              </div>
-              <h3 className="text-2xl font-bold text-slate-700 dark:text-white mb-2">
-                No teachers found
-              </h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm max-w-md mx-auto">
-                We couldn't find any teacher matching your search criteria. Try a different name or subject.
-              </p>
-              {(search || selectedSubject !== "all") && (
-                <button
-                  onClick={() => { setSearch(""); setSelectedSubject("all"); }}
-                  className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 dark:hover:bg-white transition-all hover:scale-105 active:scale-95"
-                >
-                  <X size={14} /> Clear filters
-                </button>
-              )}
+          <div className="rounded-3xl border border-dashed border-slate-300 px-4 py-24 text-center dark:border-slate-800">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+              <User size={38} className="text-slate-400 dark:text-slate-500" />
             </div>
+            <h3 className="mb-2 text-2xl font-bold text-slate-800 dark:text-white">No teachers found</h3>
+            <p className="mx-auto max-w-md text-sm text-slate-500 dark:text-slate-400">
+              We couldn't find any teacher matching your search criteria. Try a different name or subject.
+            </p>
+            {(search || selectedSubject !== "all") && (
+              <button
+                onClick={() => { setSearch(""); setSelectedSubject("all"); }}
+                className="mt-6 inline-flex items-center gap-2 rounded-full bg-teal-600 px-5 py-2.5 text-xs font-bold text-white shadow-lg shadow-teal-600/20 transition-all hover:bg-teal-700 active:scale-95"
+              >
+                <X size={14} /> Clear filters
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
-            {filteredTeachers.map((t, index) => {
-              const allLinks = [
-                ...(t.website ? [{ platform: "Website", url: t.website }] : []),
-                ...(t.socialLinks || [])
-              ];
+          <>
+            <div className="mb-5 flex items-center justify-between">
+              <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                Showing <span className="text-slate-900 dark:text-white">{filteredTeachers.length}</span> of {teachers.length} teachers
+              </p>
+            </div>
 
-              const isTouched = activeTouchId === t._id;
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              {filteredTeachers.map((t, index) => {
+                const allLinks = [
+                  ...(t.website ? [{ platform: "Website", url: t.website }] : []),
+                  ...(t.socialLinks || [])
+                ];
 
-              return (
-                <div
-                  key={t._id}
-                  style={{ animationDelay: `${index * 60}ms` }}
-                  className="group relative flex flex-col bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-[32px] overflow-hidden shadow-lg hover:shadow-2xl hover:shadow-slate-900/10 hover:-translate-y-2 transition-all duration-500 p-3 animate-fade-in opacity-0"
-                  onTouchStart={() => setActiveTouchId(t._id)}
-                >
-                  {/* Neutral border glow on hover */}
-                  <div className="absolute inset-0 rounded-[32px] bg-slate-900 dark:bg-slate-100 opacity-0 group-hover:opacity-10 transition-opacity duration-500 -z-10 blur-sm" />
+                const isTouched = activeTouchId === t._id;
+                const qualCount = t.qualifications?.length || 0;
 
-                  {/* Photo Card */}
-                  <div className="relative w-full h-[340px] bg-slate-100 dark:bg-slate-800 rounded-[24px] overflow-hidden flex items-center justify-center">
-                    {t.profilePhoto ? (
-                      <>
+                return (
+                  <div
+                    key={t._id}
+                    style={{ animationDelay: `${index * 60}ms` }}
+                    className={`group relative flex items-center gap-3 rounded-2xl border bg-white p-3.5 transition-all duration-300 hover:border-teal-500/60 hover:shadow-lg hover:shadow-teal-900/5 dark:bg-slate-900 sm:gap-5 sm:p-5 animate-fade-in opacity-0 ${
+                      isTouched ? "border-teal-500/60" : "border-slate-200 dark:border-slate-800"
+                    }`}
+                    onTouchStart={() => setActiveTouchId(t._id)}
+                  >
+                    {/* Avatar */}
+                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full bg-slate-100 ring-4 ring-slate-50 transition-all duration-300 group-hover:ring-teal-500/20 dark:bg-slate-800 dark:ring-slate-800 sm:h-24 sm:w-24">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <User size={28} className="text-slate-300 dark:text-slate-600 sm:hidden" />
+                        <User size={36} className="hidden text-slate-300 dark:text-slate-600 sm:block" />
+                      </div>
+                      {t.profilePhoto && (
                         <img
                           src={getProfileImageUrl(t.profilePhoto) || ""}
                           alt={t.name}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                          className="relative h-full w-full object-cover"
                           onError={(e) => {
                             (e.target as HTMLElement).style.display = "none";
                           }}
                         />
-                        <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                      </>
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 dark:from-slate-800 dark:to-slate-700">
-                        <User size={80} className="text-slate-300 dark:text-slate-600" />
-                      </div>
-                    )}
-
-                    {/* Glassmorphism Social Links Bar */}
-                    {allLinks.length > 0 && (
-                      <div
-                        className={`absolute bottom-4 inset-x-4 mx-auto max-w-[90%] bg-white/20 dark:bg-black/35 backdrop-blur-md border border-white/30 dark:border-white/10 rounded-full px-4 py-2 flex items-center justify-start md:justify-center gap-2 shadow-xl z-10 transition-all duration-300 ease-out overflow-x-auto custom-scrollbar ${
-                          isTouched
-                            ? "opacity-100 translate-y-0"
-                            : "opacity-0 translate-y-3 group-hover:opacity-100 group-hover:translate-y-0"
-                        }`}
-                      >
-                        <div className="flex md:hidden items-center gap-2 shrink-0">
-                          {allLinks.slice(0, 2).map((link, idx) => (
-                            <a
-                              key={idx}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-white hover:text-slate-200 transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-white/10 dark:bg-white/5"
-                              title={link.platform}
-                            >
-                              {link.platform === "Website" ? <Globe size={14} /> : <ExternalLink size={14} />}
-                              <span className="text-[11px] font-semibold truncate max-w-[75px]">{link.platform}</span>
-                            </a>
-                          ))}
-                        </div>
-
-                        <div className="hidden md:flex items-center gap-2 shrink-0">
-                          {allLinks.slice(0, 3).map((link, idx) => (
-                            <a
-                              key={idx}
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-white hover:text-slate-200 transition-colors shrink-0 flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg bg-white/10 dark:bg-white/5"
-                              title={link.platform}
-                            >
-                              {link.platform === "Website" ? <Globe size={14} /> : <ExternalLink size={14} />}
-                              <span className="text-[11px] font-semibold truncate max-w-[75px]">{link.platform}</span>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Subject Badge */}
-                    <div className="absolute top-4 left-4 bg-slate-900/90 dark:bg-white/90 backdrop-blur-md text-white dark:text-slate-900 px-4 py-2 rounded-full text-sm font-extrabold shadow-lg shadow-black/20 flex items-center gap-2 tracking-wide">
-                      <BookOpen size={15} />
-                      {t.subject}
+                      )}
                     </div>
 
-                    <div className="absolute bottom-0 right-0 w-20 h-20 bg-white dark:bg-slate-900 rounded-tl-[36px] pointer-events-none z-10" />
+                    {/* Middle Info Column */}
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <h3 className="truncate text-base font-extrabold text-slate-900 dark:text-white sm:text-lg">{t.name}</h3>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-teal-600 dark:text-teal-400 sm:text-sm">
+                        <BookOpen size={13} className="shrink-0" />
+                        <span className="truncate">{t.subject}</span>
+                      </p>
+                      {qualCount > 0 && (
+                        <p className="mt-1 flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
+                          <GraduationCap size={12} className="shrink-0" />
+                          <span className="truncate">{qualCount} {qualCount === 1 ? "qualification" : "qualifications"}</span>
+                        </p>
+                      )}
+
+                      {/* Glassmorphism Social Links Capsule */}
+                      {allLinks.length > 0 && (
+                        <div className="mt-2 flex max-w-full items-center">
+                          <div
+                            className={`inline-flex max-w-full items-center gap-1 overflow-x-auto rounded-full border border-slate-200/90 bg-slate-100/80 px-2 py-0.5 backdrop-blur-md shadow-sm transition-all duration-300 ease-out dark:border-slate-700/80 dark:bg-slate-800/80 sm:gap-1.5 sm:px-2.5 sm:py-1 ${
+                              isTouched
+                                ? "opacity-100 translate-y-0"
+                                : "opacity-90 sm:opacity-0 sm:translate-y-1.5 sm:group-hover:opacity-100 sm:group-hover:translate-y-0"
+                            }`}
+                            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                          >
+                            {/* Mobile Links */}
+                            <div className="flex items-center gap-1 md:hidden">
+                              {allLinks.slice(0, 2).map((link, idx) => (
+                                <a
+                                  key={idx}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 transition-colors hover:text-teal-600 dark:text-slate-200 dark:hover:text-teal-400"
+                                  title={link.platform}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {link.platform === "Website" ? <Globe size={11} className="shrink-0" /> : <ExternalLink size={11} className="shrink-0" />}
+                                  <span className="max-w-[55px] truncate">{link.platform}</span>
+                                </a>
+                              ))}
+                            </div>
+
+                            {/* Desktop Links */}
+                            <div className="hidden items-center gap-1.5 md:flex">
+                              {allLinks.slice(0, 3).map((link, idx) => (
+                                <a
+                                  key={idx}
+                                  href={link.url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold text-slate-700 transition-colors hover:text-teal-600 dark:text-slate-200 dark:hover:text-teal-400"
+                                  title={link.platform}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {link.platform === "Website" ? <Globe size={12} className="shrink-0" /> : <ExternalLink size={12} className="shrink-0" />}
+                                  <span className="max-w-[70px] truncate">{link.platform}</span>
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
 
                     {/* Action Button */}
                     <button
                       onClick={() => toggleExpand(t._id)}
-                      className="absolute right-3 bottom-3 w-12 h-12 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-xl shadow-slate-900/30 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 z-20"
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-700 transition-all duration-300 hover:border-teal-600 hover:bg-teal-600 hover:text-white active:scale-95 dark:border-slate-700 dark:text-slate-200 sm:h-12 sm:w-12"
                       title="View Details"
                     >
-                      <ChevronRight
-                        size={22}
-                        className="transition-transform duration-500 group-hover:rotate-90"
-                      />
+                      <ChevronRight size={18} className="transition-transform duration-300 group-hover:translate-x-0.5 sm:size-5" />
                     </button>
                   </div>
-
-                  {/* Teacher Name Footer */}
-                  <div className="p-4 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <h3 className="font-extrabold text-xl text-slate-900 dark:text-white truncate group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors duration-300">
-                        {t.name}
-                      </h3>
-                    </div>
-                    <div className="w-2 h-2 rounded-full bg-slate-700 dark:bg-slate-300 shrink-0" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          </>
         )}
+      </main>
 
-        {/* ============ MODAL ============ */}
-        {selectedTeacher && (
+      {/* ============ FLOATING MODAL / TEACHER DETAILS ============ */}
+      {selectedTeacher && (
+        <div
+          onClick={() => setExpandedTeacherId(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 lg:p-8 bg-slate-950/70 backdrop-blur-md animate-fade-in"
+        >
           <div
-            onClick={() => setExpandedTeacherId(null)}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/70 backdrop-blur-md animate-fade-in"
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex flex-col-reverse lg:flex-row w-full max-w-5xl h-[88vh] sm:h-auto sm:max-h-[90vh] overflow-y-auto lg:overflow-hidden rounded-[28px] sm:rounded-[36px] bg-white shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-slate-800 animate-modal-in custom-scrollbar"
           >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[80vh] animate-modal-in"
+            {/* Close Button Floating */}
+            <button
+              onClick={() => setExpandedTeacherId(null)}
+              className="absolute right-4 top-4 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-md transition-all duration-300 hover:rotate-90 hover:bg-red-600 active:scale-90 lg:bg-slate-900/40 lg:text-slate-100 dark:bg-black/50"
+              aria-label="Close"
             >
-              {/* Modal Header */}
-              <div className="relative bg-slate-900 dark:bg-slate-950 text-white px-6 py-4 flex items-center justify-between border-b border-slate-800">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-300">Teacher Details</span>
-                </div>
+              <X size={18} />
+            </button>
 
-                <button
-                  onClick={() => setExpandedTeacherId(null)}
-                  className="w-8 h-8 rounded-full bg-white/10 backdrop-blur flex items-center justify-center text-slate-300 hover:text-white hover:bg-red-600 hover:rotate-90 transition-all duration-300 shrink-0"
-                >
-                  <X size={18} />
-                </button>
+            {/* LEFT SIDE: Information & Credentials */}
+            <div className="flex flex-1 flex-col lg:overflow-hidden">
+              {/* Header Title Bar */}
+              <div className="border-b border-slate-100 px-6 pb-5 pt-6 dark:border-slate-800 sm:px-8">
+                <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+                  Teacher Profile
+                </p>
+                <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+                  {selectedTeacher.name}
+                </h2>
+                <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-teal-500/10 px-3.5 py-1 text-xs font-bold text-teal-700 dark:text-teal-300">
+                  <BookOpen size={13} /> {selectedTeacher.subject}
+                </span>
               </div>
 
-              {/* Modal Body */}
-              <div className="p-5 sm:p-6 space-y-4 overflow-y-auto max-h-[55vh] custom-scrollbar bg-slate-50/50 dark:bg-slate-900">
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                    <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                      <Mail size={16} className="text-slate-700 dark:text-slate-300" />
-                    </div>
-                    <div className="min-w-0">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                        Email
-                      </span>
-                      <span className="text-slate-800 dark:text-slate-200 font-bold text-xs truncate block">
-                        {selectedTeacher.email || "Not provided"}
-                      </span>
-                    </div>
-                  </div>
-
-                  {selectedTeacher.phone && (
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        <Phone size={16} className="text-slate-700 dark:text-slate-300" />
-                      </div>
+              {/* Details Content (Mobile එකේදී සිර නොවී පහසුවෙන් කියවීමට ඉඩ සලසා ඇත) */}
+              <div className="custom-scrollbar flex-1 space-y-6 lg:overflow-y-auto px-6 py-6 sm:px-8">
+                {/* Contact Section */}
+                <div>
+                  <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-slate-400">Contact</p>
+                  <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200 dark:divide-slate-800 dark:border-slate-800">
+                    <li className="flex items-center gap-3 p-3.5 sm:p-4">
+                      <Mail size={17} className="shrink-0 text-teal-600 dark:text-teal-400" />
                       <div className="min-w-0">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Phone
-                        </span>
-                        <span className="text-slate-800 dark:text-slate-200 font-bold text-xs truncate block">
-                          {selectedTeacher.phone}
+                        <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Email</span>
+                        <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          {selectedTeacher.email || "Not provided"}
                         </span>
                       </div>
-                    </div>
-                  )}
-
-                  {selectedTeacher.address && (
-                    <div className="flex items-center gap-3 bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm sm:col-span-2">
-                      <div className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                        <MapPin size={16} className="text-slate-700 dark:text-slate-300" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                          Address
-                        </span>
-                        <span className="text-slate-800 dark:text-slate-200 font-bold text-xs block">
-                          {selectedTeacher.address}
-                        </span>
-                      </div>
-                    </div>
-                  )}
+                    </li>
+                    {selectedTeacher.phone && (
+                      <li className="flex items-center gap-3 p-3.5 sm:p-4">
+                        <Phone size={17} className="shrink-0 text-teal-600 dark:text-teal-400" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Phone</span>
+                          <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedTeacher.phone}
+                          </span>
+                        </div>
+                      </li>
+                    )}
+                    {selectedTeacher.address && (
+                      <li className="flex items-start gap-3 p-3.5 sm:p-4">
+                        <MapPin size={17} className="mt-0.5 shrink-0 text-teal-600 dark:text-teal-400" />
+                        <div className="min-w-0">
+                          <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">Address</span>
+                          <span className="block text-sm font-semibold text-slate-800 dark:text-slate-200">
+                            {selectedTeacher.address}
+                          </span>
+                        </div>
+                      </li>
+                    )}
+                  </ul>
                 </div>
 
-                {/* Qualifications */}
+                {/* Qualifications Section */}
                 <div>
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-2">
-                    <GraduationCap size={15} className="text-slate-700 dark:text-slate-300" />
+                  <p className="mb-4 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <GraduationCap size={15} className="text-teal-600 dark:text-teal-400" />
                     Qualifications & Credentials
                   </p>
                   {selectedTeacher.qualifications && selectedTeacher.qualifications.length > 0 ? (
-                    <div className="space-y-2.5">
+                    <div className="relative space-y-6 pl-6 before:absolute before:bottom-1 before:left-[7px] before:top-1.5 before:w-px before:bg-slate-200 dark:before:bg-slate-700">
                       {selectedTeacher.qualifications.map((q, idx) => (
-                        <div
-                          key={idx}
-                          className="group/q relative bg-white dark:bg-slate-950 p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm"
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 mt-0.5">
-                              <Award size={15} className="text-slate-700 dark:text-slate-300" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-extrabold text-slate-900 dark:text-white text-sm">
-                                {q.degree}
-                              </p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-0.5 flex items-center gap-1.5">
-                                <GraduationCap size={11} /> {q.institution}
-                              </p>
-                              {q.period && (
-                                <span className="inline-block text-[10px] text-slate-700 dark:text-slate-300 font-bold mt-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                                  {q.period}
-                                </span>
-                              )}
-                              {q.description && (
-                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 leading-relaxed">
-                                  {q.description}
-                                </p>
-                              )}
-                            </div>
-                          </div>
+                        <div key={idx} className="relative">
+                          <span className="absolute -left-6 top-1.5 h-[15px] w-[15px] rounded-full border-[3px] border-teal-500 bg-white dark:bg-slate-900" />
+                          {q.period && (
+                            <span className="mb-1 inline-block text-[11px] font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
+                              {q.period}
+                            </span>
+                          )}
+                          <p className="text-sm font-extrabold text-slate-900 dark:text-white">{q.degree}</p>
+                          <p className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                            <Award size={12} /> {q.institution}
+                          </p>
+                          {q.description && (
+                            <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{q.description}</p>
+                          )}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-4 bg-white dark:bg-slate-950 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
-                      <GraduationCap size={20} className="mx-auto text-slate-300 dark:text-slate-700 mb-1" />
-                      <p className="text-xs text-slate-400 italic">No qualifications listed.</p>
+                    <div className="rounded-2xl border border-dashed border-slate-300 py-6 text-center dark:border-slate-700">
+                      <GraduationCap size={22} className="mx-auto mb-1 text-slate-300 dark:text-slate-700" />
+                      <p className="text-xs italic text-slate-400">No qualifications listed.</p>
                     </div>
                   )}
                 </div>
               </div>
 
-              {/* Modal Footer */}
+              {/* Connect Footer */}
               {(selectedTeacher.website ||
                 (selectedTeacher.socialLinks && selectedTeacher.socialLinks.length > 0)) && (
-                <div className="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
+                <div className="border-t border-slate-100 bg-slate-50/50 p-4 dark:border-slate-800 dark:bg-slate-900/60 sm:px-8">
+                  <p className="mb-2.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                     <Link2 size={12} /> Connect
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -504,7 +460,7 @@ export default function StudentTeacherView() {
                         href={selectedTeacher.website}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold text-xs shadow-md hover:scale-105 active:scale-95 transition-all duration-300"
+                        className="inline-flex items-center gap-2 rounded-full bg-teal-600 px-4 py-2 text-xs font-bold text-white shadow-md shadow-teal-600/20 transition-all duration-300 hover:bg-teal-700 active:scale-95"
                       >
                         <Globe size={14} /> Website
                         <ExternalLink size={11} className="opacity-70" />
@@ -516,7 +472,7 @@ export default function StudentTeacherView() {
                         href={s.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs shadow-sm hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105 active:scale-95 transition-all duration-300"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700 transition-all duration-300 hover:border-teal-500 hover:text-teal-700 active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:text-teal-400"
                       >
                         <ExternalLink size={13} /> {s.platform}
                       </a>
@@ -525,9 +481,28 @@ export default function StudentTeacherView() {
                 </div>
               )}
             </div>
+
+            {/* RIGHT SIDE: Teacher Showcase Image (Mobile: h-52, Desktop: lg:h-auto) */}
+            <div className="relative h-52 sm:h-64 w-full shrink-0 overflow-hidden bg-slate-100 dark:bg-slate-800 lg:h-auto lg:w-[46%] xl:w-[48%]">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <User size={80} className="text-slate-300 dark:text-slate-600 sm:size-24" />
+              </div>
+              {selectedTeacher.profilePhoto && (
+                <img
+                  src={getProfileImageUrl(selectedTeacher.profilePhoto) || ""}
+                  alt={selectedTeacher.name}
+                  className="relative h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                  onError={(e) => {
+                    (e.target as HTMLElement).style.display = "none";
+                  }}
+                />
+              )}
+              {/* Subtle gradient vignette over photo */}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent lg:bg-gradient-to-l lg:from-transparent lg:to-slate-950/20" />
+            </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
 
       {/* ============ LOCAL STYLES ============ */}
       <style jsx global>{`
@@ -536,18 +511,25 @@ export default function StudentTeacherView() {
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes modalIn {
-          from { opacity: 0; transform: scale(0.95) translateY(20px); }
+          from { opacity: 0; transform: scale(0.96) translateY(16px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes drawerIn {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
         }
         @keyframes pulseSlow {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 0.8; }
         }
         .animate-fade-in {
-          animation: fadeIn 0.5s ease-out forwards;
+          animation: fadeIn 0.4s ease-out forwards;
         }
         .animate-modal-in {
-          animation: modalIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+          animation: modalIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .animate-drawer-in {
+          animation: drawerIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
         }
         .animate-pulse-slow {
           animation: pulseSlow 8s ease-in-out infinite;
