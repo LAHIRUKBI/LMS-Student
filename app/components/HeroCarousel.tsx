@@ -1,12 +1,10 @@
 // app/components/HeroCarousel.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform, MotionValue, Transition } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
 
-const DRAG_BUFFER = 0;
+const DRAG_BUFFER = 50;
 const VELOCITY_THRESHOLD = 500;
-const GAP = 16;
-// මෙතැන 'as const' එකතු කර ඇත
-const SPRING_OPTIONS = { type: 'spring', stiffness: 300, damping: 30 } as const;
+const SPRING_OPTIONS = { type: 'spring', stiffness: 260, damping: 28 } as const;
 
 // TypeScript Types
 export interface HeroImageData {
@@ -15,86 +13,53 @@ export interface HeroImageData {
   title: string;
 }
 
-interface CarouselItemProps {
-  item: HeroImageData;
-  index: number;
-  itemWidth: number;
-  trackItemOffset: number;
-  x: MotionValue<number>;
-  transition: Transition | { duration: number };
-}
-
-function CarouselItem({ item, index, itemWidth, trackItemOffset, x, transition }: CarouselItemProps) {
-  const range = [-(index + 1) * trackItemOffset, -index * trackItemOffset, -(index - 1) * trackItemOffset];
-  const outputRange = [90, 0, -90];
-  const rotateY = useTransform(x, range, outputRange, { clamp: false });
-
-  return (
-    <motion.div
-      key={`${item?.id ?? index}-${index}`}
-      className="relative shrink-0 flex items-center justify-center overflow-hidden cursor-grab active:cursor-grabbing"
-      style={{
-        width: itemWidth,
-        height: '100%',
-        rotateY: rotateY,
-      }}
-      transition={transition}
-    >
-      <img 
-        src={item.image} 
-        alt={item.title || "Hero"} 
-        className="w-full h-full object-contain pointer-events-none" 
-        style={{ 
-          maskImage: `
-            linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%),
-            linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)
-          `,
-          WebkitMaskImage: `
-            linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%),
-            linear-gradient(to right, transparent 0%, black 15%, black 85%, transparent 100%)
-          `,
-          maskComposite: 'intersect',
-          WebkitMaskComposite: 'source-in'
-        }}
-      />
-    </motion.div>
-  );
-}
-
 interface HeroCarouselProps {
   items?: HeroImageData[];
-  baseWidth?: number;
+  baseWidth?: number; // (පරණ API එක සමඟ ගැළපීම සඳහා පමණක් තබා ඇත)
   autoplay?: boolean;
   autoplayDelay?: number;
   pauseOnHover?: boolean;
   loop?: boolean;
 }
 
+/* Stacked-deck positions: rel 0 = front card, 1/2 = cards peeking behind */
+const getCardState = (rel: number, total: number) => {
+  // Card that has just been swiped away (loop: the one before the active card)
+  const isExited = rel < 0 || (total > 3 && rel === total - 1);
+
+  if (isExited) {
+    return { x: '-70%', y: '0%', scale: 0.9, rotate: -12, opacity: 0, zIndex: 40 };
+  }
+  switch (rel) {
+    case 0:
+      return { x: '0%', y: '0%', scale: 1, rotate: 0, opacity: 1, zIndex: 30 };
+    case 1:
+      return { x: '9%', y: '-3%', scale: 0.92, rotate: 4, opacity: 0.9, zIndex: 20 };
+    case 2:
+      return { x: '18%', y: '-6%', scale: 0.84, rotate: 8, opacity: 0.55, zIndex: 10 };
+    default:
+      return { x: '24%', y: '-8%', scale: 0.76, rotate: 10, opacity: 0, zIndex: 0 };
+  }
+};
+
 export default function HeroCarousel({
   items = [],
-  baseWidth = 500,
   autoplay = true,
   autoplayDelay = 3000,
   pauseOnHover = true,
   loop = true,
 }: HeroCarouselProps) {
-  const containerPadding = 16;
-  const itemWidth = baseWidth - containerPadding * 2;
-  const trackItemOffset = itemWidth + GAP;
-  
-  const itemsForRender = useMemo(() => {
-    if (!loop) return items;
-    if (items.length === 0) return [];
-    return [items[items.length - 1], ...items, items[0]];
-  }, [items, loop]);
-
-  const [position, setPosition] = useState(loop ? 1 : 0);
-  const x = useMotionValue(0);
+  const total = items.length;
+  const [active, setActive] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
-  const [isJumping, setIsJumping] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const goTo = (index: number) => {
+    if (total === 0) return;
+    setActive(loop ? ((index % total) + total) % total : Math.max(0, Math.min(index, total - 1)));
+  };
+  const goNext = () => goTo(active + 1);
+  const goPrev = () => goTo(active - 1);
 
   useEffect(() => {
     if (pauseOnHover && containerRef.current) {
@@ -111,159 +76,84 @@ export default function HeroCarousel({
   }, [pauseOnHover]);
 
   useEffect(() => {
-    if (!autoplay || itemsForRender.length <= 1) return undefined;
+    if (!autoplay || total <= 1) return undefined;
     if (pauseOnHover && isHovered) return undefined;
 
     const timer = setInterval(() => {
-      setPosition(prev => Math.min(prev + 1, itemsForRender.length - 1));
+      setActive(prev => (loop ? (prev + 1) % total : Math.min(prev + 1, total - 1)));
     }, autoplayDelay);
 
     return () => clearInterval(timer);
-  }, [autoplay, autoplayDelay, isHovered, pauseOnHover, itemsForRender.length]);
+  }, [autoplay, autoplayDelay, isHovered, pauseOnHover, total, loop]);
 
   useEffect(() => {
-    const startingPosition = loop ? 1 : 0;
-    setPosition(startingPosition);
-    x.set(-startingPosition * trackItemOffset);
-  }, [items.length, loop, trackItemOffset, x]);
-
-  // effectiveTransition එකට type එකක් ලබා දීම
-  const effectiveTransition: Transition | { duration: number } = isJumping 
-    ? { duration: 0 } 
-    : SPRING_OPTIONS;
-
-  const handleAnimationComplete = () => {
-    if (!loop || itemsForRender.length <= 1) {
-      setIsAnimating(false);
-      return;
-    }
-    const lastCloneIndex = itemsForRender.length - 1;
-
-    if (position === lastCloneIndex) {
-      setIsJumping(true);
-      const target = 1;
-      setPosition(target);
-      x.set(-target * trackItemOffset);
-      requestAnimationFrame(() => {
-        setIsJumping(false);
-        setIsAnimating(false);
-      });
-      return;
-    }
-
-    if (position === 0) {
-      setIsJumping(true);
-      const target = items.length;
-      setPosition(target);
-      x.set(-target * trackItemOffset);
-      requestAnimationFrame(() => {
-        setIsJumping(false);
-        setIsAnimating(false);
-      });
-      return;
-    }
-    setIsAnimating(false);
-  };
+    setActive(0);
+  }, [total, loop]);
 
   const handleDragEnd = (_: any, info: any) => {
     const { offset, velocity } = info;
-    const direction =
-      offset.x < -DRAG_BUFFER || velocity.x < -VELOCITY_THRESHOLD
-        ? 1
-        : offset.x > DRAG_BUFFER || velocity.x > VELOCITY_THRESHOLD
-          ? -1
-          : 0;
-
-    if (direction === 0) return;
-
-    setPosition(prev => {
-      const next = prev + direction;
-      const max = itemsForRender.length - 1;
-      return Math.max(0, Math.min(next, max));
-    });
+    if (offset.x < -DRAG_BUFFER || velocity.x < -VELOCITY_THRESHOLD) goNext();
+    else if (offset.x > DRAG_BUFFER || velocity.x > VELOCITY_THRESHOLD) goPrev();
   };
 
-  const dragProps = loop
-    ? {}
-    : {
-        dragConstraints: {
-          left: -trackItemOffset * Math.max(itemsForRender.length - 1, 0),
-          right: 0
-        }
-      };
-
-  const activeIndex =
-    items.length === 0 ? 0 : loop ? (position - 1 + items.length) % items.length : Math.min(position, items.length - 1);
-
   return (
-    <div
-      ref={containerRef}
-      className="relative overflow-hidden w-full h-full flex flex-col items-center justify-center"
-    >
-      <motion.div
-        className="flex h-full items-center w-full"
-        drag={isAnimating ? false : 'x'}
-        {...dragProps}
-        style={{
-          width: itemWidth,
-          gap: `${GAP}px`,
-          perspective: 1000,
-          perspectiveOrigin: `${position * trackItemOffset + itemWidth / 2}px 50%`,
-          x
-        }}
-        onDragEnd={handleDragEnd}
-        animate={{ x: -(position * trackItemOffset) }}
-        transition={effectiveTransition}
-        onAnimationStart={() => setIsAnimating(true)}
-        onAnimationComplete={handleAnimationComplete}
-      >
-        {itemsForRender.map((item, index) => (
-          <CarouselItem
-            key={`${item?.id ?? index}-${index}`}
-            item={item}
-            index={index}
-            itemWidth={itemWidth}
-            trackItemOffset={trackItemOffset}
-            x={x}
-            transition={effectiveTransition}
-          />
-        ))}
-      </motion.div>
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden">
+      {/* ================= Stacked card deck (fills the whole area) ================= */}
+      <div className="absolute bottom-3 left-2 right-[13%] top-3">
+        {items.map((item, index) => {
+          const rel = loop ? (index - active + total) % total : index - active;
+          const state = getCardState(rel, total);
+          const isFront = rel === 0;
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center justify-center gap-3 z-30 w-full">
-        <div className="h-6 flex items-center justify-center">
-          <motion.span
-            key={activeIndex}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.3 }}
-            className="text-sm font-bold text-slate-700 dark:text-white tracking-wide"
-          >
-            {items[activeIndex]?.title}
-          </motion.span>
-        </div>
-
-        <div className="flex items-center justify-center gap-2">
-          {items.map((_, index) => (
-            <motion.button
-              type="button"
-              key={index}
-              aria-label={`Go to slide ${index + 1}`}
-              aria-current={activeIndex === index}
-              className={`h-2.5 w-2.5 rounded-full cursor-pointer border-0 p-0 appearance-none transition-colors duration-300 ${
-                activeIndex === index
-                  ? 'bg-slate-800 dark:bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
-                  : 'bg-slate-400/50 dark:bg-white/40 hover:bg-slate-400 dark:hover:bg-white/60'
-              }`}
-              animate={{
-                scale: activeIndex === index ? 1.3 : 1,
+          return (
+            <motion.div
+              key={`${item?.id ?? index}-${index}`}
+              className="absolute inset-0 overflow-hidden rounded-[28px] bg-white shadow-[0_25px_50px_-12px_rgba(15,23,42,0.35)] ring-1 ring-slate-900/5 dark:bg-slate-800 dark:ring-white/10"
+              style={{
+                zIndex: state.zIndex,
+                cursor: isFront ? 'grab' : 'pointer',
+                pointerEvents: state.opacity === 0 ? 'none' : 'auto',
               }}
-              onClick={() => setPosition(loop ? index + 1 : index)}
-              transition={{ duration: 0.2 }}
-            />
-          ))}
-        </div>
+              initial={false}
+              animate={{
+                x: state.x,
+                y: state.y,
+                scale: state.scale,
+                rotate: state.rotate,
+                opacity: state.opacity,
+              }}
+              transition={SPRING_OPTIONS}
+              drag={isFront ? 'x' : false}
+              dragSnapToOrigin
+              dragElastic={0.6}
+              whileDrag={{ cursor: 'grabbing', scale: 1.02 }}
+              onDragEnd={isFront ? handleDragEnd : undefined}
+              onClick={!isFront ? () => goTo(index) : undefined}
+            >
+              <img
+                src={item.image}
+                alt={item.title || 'Hero'}
+                draggable={false}
+                className="h-full w-full select-none object-cover object-center pointer-events-none"
+              />
+              {/* Image title on the image itself */}
+              {item.title && (
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-950/80 via-slate-950/35 to-transparent px-5 pb-4 pt-12">
+                  <span className="block truncate text-sm font-bold tracking-wide text-white drop-shadow sm:text-base">
+                    {item.title}
+                  </span>
+                </div>
+              )}
+              {/* Dim the cards that are behind the front one */}
+              <motion.div
+                className="pointer-events-none absolute inset-0 bg-slate-900"
+                initial={false}
+                animate={{ opacity: isFront ? 0 : rel === 1 ? 0.12 : 0.28 }}
+                transition={{ duration: 0.4 }}
+              />
+            </motion.div>
+          );
+        })}
       </div>
     </div>
   );
