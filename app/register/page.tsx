@@ -56,8 +56,10 @@ export default function RegisterPage() {
     setError("");
     
     try {
+      // iOS Safari: open the popup first (still inside the tap), then update UI state
+      const popupPromise = signInWithPopup(auth, googleProvider);
       setLoading(true);
-      const result = await signInWithPopup(auth, googleProvider);
+      const result = await popupPromise;
       const user = result.user;
 
       const res = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/student/google`, {
@@ -76,8 +78,22 @@ export default function RegisterPage() {
       }, 3000);
     } catch (err: any) {
       console.error("Google Auth Error Details:", err);
-      if (err.code === "auth/popup-blocked" || err.message?.includes("popup")) {
-        setError("iOS Safari blocked the popup. Please enable 'Allow Pop-ups' in Safari settings or use Chrome.");
+      const isIOS =
+        typeof navigator !== "undefined" && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+      if (
+        err.code === "auth/popup-closed-by-user" ||
+        err.code === "auth/cancelled-popup-request"
+      ) {
+        // The person simply closed the Google window — not an error, show nothing.
+      } else if (err.code === "auth/popup-blocked") {
+        setError(
+          isIOS
+            ? "iOS Safari blocked the popup. Please enable 'Allow Pop-ups' in Safari settings or use Chrome."
+            : "Your browser blocked the Google sign-in window. Please allow pop-ups for this site and try again."
+        );
+      } else if (err.code === "auth/unauthorized-domain") {
+        setError("This website's domain is not authorized for Google sign-in. Please contact the administrator.");
       } else {
         const errorMessage = err.response?.data?.message || err.message || "Google Login process failed.";
         setError(`Error: ${errorMessage}`);
@@ -167,7 +183,7 @@ export default function RegisterPage() {
             onClick={handleGoogleLogin}
             disabled={loading || !!successMessage}
             type="button"
-            className={`group flex w-full items-center justify-center gap-2.5 rounded-xl py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 border ${theme.btnGoogleBg}`}
+            className={`group touch-manipulation flex w-full items-center justify-center gap-2.5 rounded-xl py-2.5 sm:py-3 text-xs sm:text-sm font-semibold transition-all focus:outline-none focus-visible:ring-2 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 border ${theme.btnGoogleBg}`}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="transition-transform group-hover:scale-110">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
