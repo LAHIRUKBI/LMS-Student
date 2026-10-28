@@ -12,7 +12,6 @@ import {
   User,
   Phone,
   LogIn,
-  GraduationCap,
   AlertCircle,
   Loader2,
 } from "lucide-react";
@@ -99,12 +98,15 @@ export default function RegisterPage() {
     textSecondary: isRoomLightOn ? "text-slate-500" : "text-slate-400",
     inputBg: isRoomLightOn ? "bg-slate-50" : "bg-slate-950/60",
     inputBorder: isRoomLightOn
-      ? "border-slate-200 focus:border-indigo-500"
+      ? "border-slate-200 focus:border-indigo-500 text-slate-900"
       : "border-slate-700 focus:border-white/60 text-white",
     btnGoogleBg: isRoomLightOn
       ? "bg-white border-slate-200 hover:bg-slate-50 text-slate-700"
       : "bg-slate-900 border-slate-700 hover:bg-slate-800 text-white hover:border-white/50",
   };
+
+  // UI only: sky scene fades smoothly into the form background at the bottom
+  const skyFade = "linear-gradient(to bottom, #000 0%, #000 58%, transparent 100%)";
 
   return (
     <div className={`relative flex min-h-screen w-full flex-col items-center justify-center overflow-x-hidden transition-colors duration-1000 px-3 sm:px-4 py-8 ${theme.bg}`}>
@@ -134,31 +136,24 @@ export default function RegisterPage() {
 
       <div className="relative z-10 flex w-full max-w-[390px] sm:max-w-md flex-col items-center my-auto">
         <div
-          className={`w-full rounded-2xl sm:rounded-3xl border p-5 sm:p-8 transition-all duration-1000 ${theme.formBg}`}
+          className={`w-full overflow-hidden rounded-2xl sm:rounded-3xl border p-5 sm:p-8 transition-all duration-1000 ${theme.formBg}`}
           style={{
             boxShadow: isRoomLightOn
               ? undefined
               : "0 0 50px rgba(255, 255, 255, 0.10), 0 0 100px rgba(255, 255, 255, 0.05)",
           }}
         >
-          <div className="mb-5 sm:mb-8 text-center">
-            <div className="mb-2 sm:mb-4 flex justify-center">
-              <span
-                className={`flex h-11 w-11 sm:h-14 sm:w-14 items-center justify-center rounded-xl sm:rounded-2xl shadow-lg transition-colors duration-700 ${
-                  isRoomLightOn
-                    ? "bg-gradient-to-br from-indigo-600 to-blue-600 text-white"
-                    : "bg-gradient-to-br from-white to-slate-300 text-neutral-900"
-                }`}
-              >
-                <GraduationCap className="h-6 w-6 sm:h-7 sm:w-7" />
-              </span>
-            </div>
-            <h2 className={`text-xl sm:text-2xl font-bold tracking-tight transition-colors duration-1000 ${theme.textPrimary}`}>
-              Create an Account
-            </h2>
-            <p className={`mt-1 text-xs sm:text-sm transition-colors duration-1000 ${theme.textSecondary}`}>
-              Register to the system as a student
-            </p>
+          <h1 className="sr-only">Create a student account</h1>
+
+          {/* Day / night sky — full width of the form, fading into the form background */}
+          <div
+            className="-mx-5 -mt-5 mb-1 h-44 sm:-mx-8 sm:-mt-8 sm:mb-2 sm:h-56"
+            style={{ maskImage: skyFade, WebkitMaskImage: skyFade }}
+          >
+            <TorchToggle
+              isRoomLightOn={isRoomLightOn}
+              onToggle={() => setIsRoomLightOn(!isRoomLightOn)}
+            />
           </div>
 
           {error && (
@@ -271,11 +266,6 @@ export default function RegisterPage() {
           </p>
         </div>
       </div>
-
-      <TorchToggle 
-        isRoomLightOn={isRoomLightOn} 
-        onToggle={() => setIsRoomLightOn(!isRoomLightOn)} 
-      />
 
     </div>
   );
