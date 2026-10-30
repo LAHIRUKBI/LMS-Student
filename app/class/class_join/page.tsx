@@ -21,7 +21,8 @@ import {
   AlertTriangle, 
   Link as LinkIcon, 
   VideoIcon,
-  Folder as FolderIcon
+  Folder as FolderIcon,
+  FolderOpen
 } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
@@ -459,7 +460,7 @@ function ClassJoinContent() {
                 </div>
               )}
 
-              {/* PDFs & Folders Section */}
+              {/* PDFs & Folders Section (Unified Explorer View) */}
               {(activeTab === "all" || activeTab === "pdfs") && (
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -503,21 +504,47 @@ function ClassJoinContent() {
                     </div>
                   )}
 
-                  {/* Folders Cards */}
+                  {/* Folders Cards: Mobile එකේ 2-column grid සහ Desktop එකේ flex-wrap */}
                   {currentLevelFolders.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {currentLevelFolders.map((f) => (
-                        <div 
-                          key={f._id} 
-                          onClick={() => enterFolder(f)}
-                          className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-teal-400 cursor-pointer flex items-center gap-3 transition-all shadow-sm"
-                        >
-                          <div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 shrink-0">
-                            <FolderIcon size={18} />
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3 pb-1">
+                      {currentLevelFolders.map((f) => {
+                        const itemCount = allPdfs.filter(m => m.folderId === f._id).length;
+                        const subFolderCount = folders.filter(sub => sub.parentFolderId === f._id).length;
+
+                        return (
+                          <div 
+                            key={f._id} 
+                            onClick={() => enterFolder(f)}
+                            className="group relative cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 active:scale-95 w-full sm:w-auto sm:min-w-[190px] sm:max-w-[215px]"
+                          >
+                            <div className="w-12 sm:w-16 h-2 rounded-t-lg bg-amber-400 dark:bg-amber-500 ml-2.5 sm:ml-3 shadow-sm transition-transform duration-200 group-hover:scale-x-105" />
+                            <div className="rounded-2xl rounded-tl-sm border border-amber-300/80 dark:border-amber-900/50 bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/20 p-2 sm:p-2.5 shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-500 transition-all flex flex-col justify-between">
+                              <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-sm shadow-amber-500/20 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                                  <FolderOpen size={15} className="drop-shadow-sm sm:w-4 sm:h-4" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <h3 className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" title={f.name}>
+                                    {f.name}
+                                  </h3>
+                                  <p className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                                    {itemCount} docs {subFolderCount > 0 ? `• ${subFolderCount} subs` : ''}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="mt-2 pt-1.5 border-t border-amber-200/50 dark:border-slate-800/80 flex items-center justify-between text-[8px] sm:text-[9px] font-bold">
+                                <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                  Class
+                                </span>
+                                <span className="text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                                  Open &rarr;
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <span className="text-xs font-bold truncate text-slate-800 dark:text-slate-200">{f.name}</span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
 

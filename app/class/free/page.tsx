@@ -30,8 +30,7 @@ import {
   List,
   Folder as FolderIcon,
   ArrowLeft,
-  FolderOpen,
-  ChevronRight as FolderChevron
+  FolderOpen
 } from "lucide-react"; 
 import Navbar from "@/app/components/Navbar";
 import AIChatWidget from "@/app/components/AIChatWidget";
@@ -247,13 +246,15 @@ export default function FreeMaterialsPage() {
     return Array.from(new Set(years)).sort((a, b) => b.localeCompare(a));
   }, [materials]);
 
-  // Current Level Folders
+  // Current Level Folders (Search match filters included)
   const currentLevelFolders = useMemo(() => {
     return folders.filter((f) => {
-      if (!currentFolder) return !f.parentFolderId;
-      return f.parentFolderId === currentFolder._id;
+      const isParentMatch = !currentFolder ? !f.parentFolderId : f.parentFolderId === currentFolder._id;
+      const isSearchMatch = searchTerm === "" || f.name.toLowerCase().includes(searchTerm.toLowerCase());
+      const isTypeMatch = contentTypeTab === "all" || contentTypeTab === "pdf" || contentTypeTab === "paper";
+      return isParentMatch && isSearchMatch && isTypeMatch;
     });
-  }, [folders, currentFolder]);
+  }, [folders, currentFolder, searchTerm, contentTypeTab]);
 
   // Filter Materials
   const filteredMaterials = useMemo(() => {
@@ -276,7 +277,6 @@ export default function FreeMaterialsPage() {
         matchesYear = itemYear === selectedYear;
       }
 
-      // Check folder match
       const matchesFolder = currentFolder 
         ? item.folderId === currentFolder._id 
         : (!item.folderId || item.type === "video");
@@ -389,83 +389,6 @@ export default function FreeMaterialsPage() {
                 <ArrowLeft size={13} /> Back
               </button>
             )}
-          </div>
-        )}
-
-        {/* Free Folders Display (Enhanced Aesthetic Folder Card Design) */}
-        {currentLevelFolders.length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-3.5">
-              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <FolderIcon size={14} className="text-amber-500 fill-amber-500/20" />
-                <span>Resource Folders ({currentLevelFolders.length})</span>
-              </h4>
-              <span className="text-[11px] text-slate-400 hidden sm:inline">Click any folder to explore documents inside</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {currentLevelFolders.map((f) => {
-                // Calculate direct items count inside this folder
-                const itemCount = materials.filter(m => m.folderId === f._id).length;
-                const subFolderCount = folders.filter(sub => sub.parentFolderId === f._id).length;
-
-                return (
-                  <div
-                    key={f._id}
-                    onClick={() => enterFolder(f)}
-                    className="group relative cursor-pointer select-none transition-all duration-300 hover:-translate-y-1"
-                  >
-                    {/* Realistic Folder Top Tab Shape */}
-                    <div className="w-24 h-3 rounded-t-xl bg-gradient-to-r from-amber-400 to-amber-500 dark:from-amber-600 dark:to-amber-500 ml-4 shadow-sm transition-transform duration-300 group-hover:w-28" />
-
-                    {/* Main Folder Body Card */}
-                    <div className="relative w-full max-w-sm rounded-2xl rounded-tl-sm border border-amber-200/80 dark:border-amber-900/40 bg-gradient-to-b from-amber-50/50 via-white to-amber-50/20 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/10 p-4 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all flex flex-col justify-between min-h-[110px]">
-                      
-                      {/* Top Header of Folder */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          {/* Folder Animated Icon Container */}
-                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-1">
-                            <FolderOpen size={22} className="drop-shadow-sm transition-transform duration-300 group-hover:scale-110" />
-                          </div>
-
-                          <div className="min-w-0 flex-1">
-                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" title={f.name}>
-                              {f.name}
-                            </h3>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium flex items-center gap-1.5">
-                              <span>{itemCount} {itemCount === 1 ? 'document' : 'documents'}</span>
-                              {subFolderCount > 0 && (
-                                <>
-                                  <span className="opacity-40">•</span>
-                                  <span>{subFolderCount} {subFolderCount === 1 ? 'sub-folder' : 'sub-folders'}</span>
-                                </>
-                              )}
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Open Arrow Button */}
-                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 opacity-80 group-hover:opacity-100 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm">
-                          <FolderChevron size={14} className="transition-transform duration-300 group-hover:translate-x-0.5" />
-                        </div>
-                      </div>
-
-                      {/* Bottom Details Bar of Folder */}
-                      <div className="mt-3.5 pt-2.5 border-t border-amber-100/80 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-bold text-slate-400">
-                        <span className="uppercase tracking-wider flex items-center gap-1 text-amber-600/90 dark:text-amber-400/90">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          Free Collection
-                        </span>
-                        <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                          Open Folder &rarr;
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
           </div>
         )}
 
@@ -594,7 +517,7 @@ export default function FreeMaterialsPage() {
         </div>
 
         {/* Selected Counter & Per-Page Controls */}
-        {!loading && filteredMaterials.length > 0 && (
+        {!loading && (filteredMaterials.length > 0 || currentLevelFolders.length > 0) && (
           <div className="flex items-center justify-between mb-3 px-1 text-xs text-slate-500 dark:text-slate-400">
             <button
               onClick={toggleSelectAllCurrentPage}
@@ -623,17 +546,62 @@ export default function FreeMaterialsPage() {
           </div>
         )}
 
-        {/* Content Section */}
+        {/* Unified Content Section: Folders & Documents Rendered Together */}
         {loading ? (
           <div className="flex justify-center p-12"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>
-        ) : filteredMaterials.length === 0 ? (
+        ) : (filteredMaterials.length === 0 && currentLevelFolders.length === 0) ? (
           <div className="py-24 flex flex-col items-center justify-center text-center rounded-3xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
             <FileStack size={32} className="text-emerald-500 mb-2" />
-            <h3 className="text-base font-bold mb-1 text-slate-800 dark:text-slate-200">No Materials Found</h3>
-            <p className="text-xs text-slate-400 max-w-xs mb-3">No documents available under this directory.</p>
+            <h3 className="text-base font-bold mb-1 text-slate-800 dark:text-slate-200">No Materials or Folders Found</h3>
+            <p className="text-xs text-slate-400 max-w-xs mb-3">No documents or folders available under this directory.</p>
           </div>
         ) : viewMode === "list" ? (
-          <div className="space-y-2">
+          <div className="space-y-2.5">
+            {/* Folders in List Mode: Mobile එකේ 2-column grid, Desktop එකේ flex-wrap */}
+            {currentLevelFolders.length > 0 && (
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3 pb-2">
+                {currentLevelFolders.map((f) => {
+                  const itemCount = materials.filter(m => m.folderId === f._id).length;
+                  const subFolderCount = folders.filter(sub => sub.parentFolderId === f._id).length;
+
+                  return (
+                    <div
+                      key={f._id}
+                      onClick={() => enterFolder(f)}
+                      className="group relative cursor-pointer select-none transition-all duration-200 hover:-translate-y-0.5 active:scale-95 w-full sm:w-auto sm:min-w-[190px] sm:max-w-[215px]"
+                    >
+                      <div className="w-12 sm:w-16 h-2 rounded-t-lg bg-amber-400 dark:bg-amber-500 ml-2.5 sm:ml-3 shadow-sm transition-transform duration-200 group-hover:scale-x-105" />
+                      <div className="rounded-2xl rounded-tl-sm border border-amber-300/80 dark:border-amber-900/50 bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/20 p-2 sm:p-2.5 shadow-sm hover:shadow-md hover:border-amber-400 dark:hover:border-amber-500 transition-all flex flex-col justify-between">
+                        <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                          <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-sm shadow-amber-500/20 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                            <FolderOpen size={15} className="drop-shadow-sm sm:w-4 sm:h-4" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" title={f.name}>
+                              {f.name}
+                            </h3>
+                            <p className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                              {itemCount} docs {subFolderCount > 0 ? `• ${subFolderCount} subs` : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="mt-2 pt-1.5 border-t border-amber-200/50 dark:border-slate-800/80 flex items-center justify-between text-[8px] sm:text-[9px] font-bold">
+                          <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            Free
+                          </span>
+                          <span className="text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                            Open &rarr;
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Documents List */}
             {paginatedMaterials.map((item) => {
               const detectedYear = extractYearFromTitle(item.title);
               const isSelected = selectedIds.includes(item._id);
@@ -730,7 +698,49 @@ export default function FreeMaterialsPage() {
             })}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          /* Grid View: Mobile එකේ 2-column grid, Desktop එකේ පෙර පරිදිම grid */
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4">
+            {/* Folders in Grid View */}
+            {currentLevelFolders.map((f) => {
+              const itemCount = materials.filter(m => m.folderId === f._id).length;
+              const subFolderCount = folders.filter(sub => sub.parentFolderId === f._id).length;
+
+              return (
+                <div
+                  key={f._id}
+                  onClick={() => enterFolder(f)}
+                  className="group relative cursor-pointer select-none transition-all duration-200 hover:-translate-y-1 active:scale-95"
+                >
+                  <div className="w-12 sm:w-16 h-2 rounded-t-lg bg-amber-400 dark:bg-amber-500 ml-2.5 sm:ml-3 shadow-sm transition-transform duration-200 group-hover:scale-x-105" />
+                  <div className="rounded-2xl rounded-tl-sm border border-amber-300/80 dark:border-amber-900/50 bg-gradient-to-b from-amber-50/70 via-white to-amber-50/30 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/20 p-2 sm:p-3 shadow-sm hover:shadow-lg hover:border-amber-400 dark:hover:border-amber-500 transition-all flex flex-col justify-between h-full min-h-[95px] sm:min-h-[105px]">
+                    <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-sm shadow-amber-500/20 flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105">
+                        <FolderOpen size={16} className="drop-shadow-sm sm:w-4 sm:h-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[11px] sm:text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" title={f.name}>
+                          {f.name}
+                        </h3>
+                        <p className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium truncate">
+                          {itemCount} docs {subFolderCount > 0 ? `• ${subFolderCount} subs` : ''}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-2 sm:mt-2.5 pt-1.5 sm:pt-2 border-t border-amber-200/50 dark:border-slate-800/80 flex items-center justify-between text-[8px] sm:text-[9px] font-bold">
+                      <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400 uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Free
+                      </span>
+                      <span className="text-slate-400 group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        Open &rarr;
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Document Cards in Grid View */}
             {paginatedMaterials.map((item) => {
               const detectedYear = extractYearFromTitle(item.title);
               const isSelected = selectedIds.includes(item._id);
@@ -749,7 +759,7 @@ export default function FreeMaterialsPage() {
                   }`}
                 >
                   <div>
-                    <div className="relative h-44 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
+                    <div className="relative h-32 sm:h-44 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
                       {isVideo ? (
                         ytId ? (
                           <img
@@ -759,7 +769,7 @@ export default function FreeMaterialsPage() {
                           />
                         ) : (
                           <div className="flex flex-col items-center justify-center text-indigo-500">
-                            <Film size={40} />
+                            <Film size={32} />
                           </div>
                         )
                       ) : coverSrc ? (
@@ -770,33 +780,33 @@ export default function FreeMaterialsPage() {
                         />
                       ) : (
                         <div className="flex flex-col items-center justify-center text-emerald-500">
-                          {isPaper ? <GraduationCap size={44} strokeWidth={1.5} /> : <FileText size={44} strokeWidth={1.5} />}
+                          {isPaper ? <GraduationCap size={36} strokeWidth={1.5} /> : <FileText size={36} strokeWidth={1.5} />}
                         </div>
                       )}
 
-                      <span className={`absolute top-2.5 left-2.5 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shadow ${
+                      <span className={`absolute top-2 left-2 text-white text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shadow ${
                         isVideo ? 'bg-indigo-600' : isPaper ? 'bg-amber-600' : 'bg-emerald-600'
                       }`}>
                         {isVideo ? 'Video' : isPaper ? 'Paper' : 'Note'}
                       </span>
                     </div>
 
-                    <div className="p-4">
-                      <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
+                    <div className="p-2.5 sm:p-4">
+                      <span className="text-[10px] sm:text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block mb-0.5 sm:mb-1">
                         {item.subject || "General"}
                       </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm line-clamp-2 leading-snug">
+                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm line-clamp-2 leading-snug">
                         {item.title}
                       </h3>
                     </div>
                   </div>
 
-                  <div className="p-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/40">
+                  <div className="p-2 sm:p-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 sm:gap-2 bg-slate-50/50 dark:bg-slate-950/40">
                     <button
                       onClick={() => setActiveModalItem(item)}
-                      className="flex-1 py-1.5 px-3 rounded-lg font-bold text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition-all"
+                      className="flex-1 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg font-bold text-[10px] sm:text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1 transition-all"
                     >
-                      <Eye size={13} />
+                      <Eye size={12} />
                       <span>Details</span>
                     </button>
 
@@ -805,17 +815,17 @@ export default function FreeMaterialsPage() {
                         href={item.fileUrl?.startsWith('http') ? item.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${item.fileUrl}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex-1 py-1.5 px-3 rounded-lg font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                        className="flex-1 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg font-bold text-[10px] sm:text-xs bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1 shadow-sm transition-all"
                       >
-                        <PlayCircle size={13} />
+                        <PlayCircle size={12} />
                         <span>Watch</span>
                       </a>
                     ) : (
                       <button
                         onClick={() => handleDownloadPdf(item.fileUrl, item.title)}
-                        className="flex-1 py-1.5 px-3 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                        className="flex-1 py-1 sm:py-1.5 px-2 sm:px-3 rounded-lg font-bold text-[10px] sm:text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1 shadow-sm transition-all"
                       >
-                        <Download size={13} />
+                        <Download size={12} />
                         <span>Download</span>
                       </button>
                     )}
