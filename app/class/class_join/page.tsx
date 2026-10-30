@@ -1,8 +1,7 @@
 // src/app/class/class_join/page.tsx
-
 "use client";
 
-import { useEffect, useState, Suspense } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import axios from "axios";
 import { 
@@ -21,18 +20,17 @@ import {
   Award, 
   AlertTriangle, 
   Link as LinkIcon, 
-  VideoIcon 
+  VideoIcon,
+  Folder as FolderIcon
 } from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 
-// Helper function to retrieve the YouTube Video ID
 const getYouTubeVideoId = (url: string) => {
   if (!url) return null;
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
   return match ? match[1] : null;
 };
 
-// Quiz Card Item Component to handle start action and timer activation
 function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
   const [isStarted, setIsStarted] = useState<boolean>(false);
   const [timeLeft, setTimeLeft] = useState<number>((quiz.duration || 10) * 60);
@@ -58,12 +56,7 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
   const formatTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-
   const isNearTimeout = timeLeft <= 300 && timeLeft > 0;
-
-  const handleStartQuiz = () => {
-    setIsStarted(true);
-  };
 
   return (
     <div className={`p-6 rounded-2xl border shadow-sm flex flex-col justify-between gap-4 transition-all ${
@@ -102,7 +95,7 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
 
       {!isStarted ? (
         <button 
-          onClick={handleStartQuiz}
+          onClick={() => setIsStarted(true)}
           className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
         >
           <CheckCircle size={16} /> Start Quiz Now
@@ -119,7 +112,6 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
   );
 }
 
-// Internal component containing search params and state logic
 function ClassJoinContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -128,6 +120,10 @@ function ClassJoinContent() {
   const [user, setUser] = useState<any>(null);
   const [classDetails, setClassDetails] = useState<any>(null);
   const [materials, setMaterials] = useState<any[]>([]);
+  const [folders, setFolders] = useState<any[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<any | null>(null);
+  const [folderHistory, setFolderHistory] = useState<any[]>([]);
+
   const [quizzes, setQuizzes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -166,6 +162,7 @@ function ClassJoinContent() {
       }
       setClassDetails(foundClass);
 
+      // Fetch materials
       try {
         const matRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/materials/class/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -175,6 +172,17 @@ function ClassJoinContent() {
         console.error("Error fetching materials:", err);
       }
 
+      // Fetch folders published to this class
+      try {
+        const folderRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/folders/class/${id}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setFolders(folderRes.data);
+      } catch (err) {
+        console.error("Error fetching folders:", err);
+      }
+
+      // Fetch Quizzes
       try {
         const quizRes = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/class/${id}`, {
           headers: { Authorization: `Bearer ${token}` }
@@ -200,7 +208,6 @@ function ClassJoinContent() {
     return `${process.env.NEXT_PUBLIC_API_URL}/profile_photos/${rawUrl}`;
   };
 
-  // 1. PDF Preview Function (Opening files safely)
   const handleViewPdf = (fileUrl: string) => {
     if (!fileUrl) {
       alert("The PDF link cannot be found!");
@@ -213,7 +220,6 @@ function ClassJoinContent() {
     window.open(cleanUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // 2. PDF Download Function (via Cloudinary Direct Attachment or Fetch Blob)
   const handleDownloadPdf = async (fileUrl: string, title: string) => {
     if (!fileUrl) return;
     try {
@@ -243,10 +249,34 @@ function ClassJoinContent() {
     }
   };
 
+  const enterFolder = (f: any) => {
+    setFolderHistory([...folderHistory, f]);
+    setCurrentFolder(f);
+  };
+
+  const navigateUp = () => {
+    const newHist = [...folderHistory];
+    newHist.pop();
+    setFolderHistory(newHist);
+    setCurrentFolder(newHist.length > 0 ? newHist[newHist.length - 1] : null);
+  };
+
   if (!user) return null;
 
   const filteredVideos = materials.filter(m => m.type === 'video');
-  const filteredPdfs = materials.filter(m => m.type === 'pdf' || m.type === 'paper');
+  const allPdfs = materials.filter(m => m.type === 'pdf' || m.type === 'paper');
+
+  // Filter folders at current depth
+  const currentLevelFolders = folders.filter(f => {
+    if (!currentFolder) return !f.parentFolderId;
+    return f.parentFolderId === currentFolder._id;
+  });
+
+  // Filter PDFs at current depth
+  const currentLevelPdfs = allPdfs.filter(pdf => {
+    if (currentFolder) return pdf.folderId === currentFolder._id;
+    return !pdf.folderId;
+  });
 
   const now = new Date();
   const isOnlineLinkActive = classDetails?.mode === 'Online' && 
@@ -284,7 +314,7 @@ function ClassJoinContent() {
           </div>
         ) : (
           <div className="space-y-8">
-            {/* Class Banner / Header Card */}
+            {/* Class Banner */}
             <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200/80 dark:border-slate-800 p-6 sm:p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center shadow-md">
@@ -309,7 +339,6 @@ function ClassJoinContent() {
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-4">
-                {/* Online Class Joining Banner */}
                 {classDetails.mode === 'Online' && (
                   <div className="w-full sm:w-auto">
                     {isOnlineLinkActive ? (
@@ -358,7 +387,7 @@ function ClassJoinContent() {
                 onClick={() => setActiveTab("pdfs")}
                 className={`px-5 py-2.5 rounded-xl font-bold text-xs transition-all whitespace-nowrap ${activeTab === "pdfs" ? "bg-blue-600 text-white shadow-md shadow-blue-600/20" : "bg-white dark:bg-slate-900 border text-slate-600 dark:text-slate-400"}`}
               >
-                PDFs & Papers ({filteredPdfs.length})
+                PDFs & Folders ({allPdfs.length})
               </button>
               <button 
                 onClick={() => setActiveTab("quizzes")}
@@ -370,7 +399,7 @@ function ClassJoinContent() {
 
             {/* Content Sections */}
             <div className="space-y-10">
-              {/* Videos Section */}
+              {/* Videos */}
               {(activeTab === "all" || activeTab === "videos") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -430,20 +459,76 @@ function ClassJoinContent() {
                 </div>
               )}
 
-              {/* PDFs Section */}
+              {/* PDFs & Folders Section */}
               {(activeTab === "all" || activeTab === "pdfs") && (
                 <div className="space-y-4">
-                  <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
-                    <FileText size={20} className="text-teal-500" /> Study Materials, PDFs & Past Papers
-                  </h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
+                      <FileText size={20} className="text-teal-500" /> Study Materials, Folders & Past Papers
+                    </h2>
+                  </div>
 
-                  {filteredPdfs.length === 0 ? (
+                  {/* Student Breadcrumbs for Folders */}
+                  {(folders.length > 0 || currentFolder) && (
+                    <div className="flex items-center gap-2 p-2.5 rounded-xl border text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-x-auto shadow-sm">
+                      <button 
+                        onClick={() => { setCurrentFolder(null); setFolderHistory([]); }}
+                        className={`font-bold transition-colors ${!currentFolder ? "text-blue-600" : "text-slate-400 hover:text-blue-500"}`}
+                      >
+                        All Documents
+                      </button>
+                      {folderHistory.map((folder, idx) => (
+                        <div key={folder._id} className="flex items-center gap-1.5 shrink-0">
+                          <span className="text-slate-400">/</span>
+                          <button 
+                            onClick={() => {
+                              const sliced = folderHistory.slice(0, idx + 1);
+                              setFolderHistory(sliced);
+                              setCurrentFolder(folder);
+                            }}
+                            className={`font-bold transition-colors ${idx === folderHistory.length - 1 ? "text-blue-600" : "text-slate-400 hover:text-blue-500"}`}
+                          >
+                            {folder.name}
+                          </button>
+                        </div>
+                      ))}
+                      {currentFolder && (
+                        <button 
+                          onClick={navigateUp} 
+                          className="ml-auto flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-blue-500 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <ArrowLeft size={13} /> Back
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Folders Cards */}
+                  {currentLevelFolders.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                      {currentLevelFolders.map((f) => (
+                        <div 
+                          key={f._id} 
+                          onClick={() => enterFolder(f)}
+                          className="p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-teal-400 cursor-pointer flex items-center gap-3 transition-all shadow-sm"
+                        >
+                          <div className="p-2 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 shrink-0">
+                            <FolderIcon size={18} />
+                          </div>
+                          <span className="text-xs font-bold truncate text-slate-800 dark:text-slate-200">{f.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Documents List */}
+                  {currentLevelPdfs.length === 0 && currentLevelFolders.length === 0 ? (
                     <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border text-center text-slate-400 text-xs italic">
-                      No PDFs or papers published for this class yet.
+                      No documents found in this directory.
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {filteredPdfs.map((pdf) => (
+                      {currentLevelPdfs.map((pdf) => (
                         <div key={pdf._id} className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3.5 min-w-0">
                             <div className="w-12 h-12 rounded-xl bg-teal-50 dark:bg-teal-500/10 text-teal-600 flex items-center justify-center shrink-0">
@@ -452,7 +537,7 @@ function ClassJoinContent() {
                             <div className="min-w-0">
                               <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-blue-50 text-blue-600 mb-1 inline-block">{pdf.type}</span>
                               <h3 className="font-bold text-sm text-slate-800 dark:text-white truncate">{pdf.title}</h3>
-                              <p className="text-xs text-slate-400 truncate">{pdf.subject} • Grade {pdf.grade}</p>
+                              <p className="text-xs text-slate-400 truncate">{pdf.subject} • {pdf.grade}</p>
                             </div>
                           </div>
 
@@ -480,7 +565,7 @@ function ClassJoinContent() {
                 </div>
               )}
 
-              {/* Quizzes Section */}
+              {/* Quizzes */}
               {(activeTab === "all" || activeTab === "quizzes") && (
                 <div className="space-y-4">
                   <h2 className="text-lg font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
@@ -508,7 +593,6 @@ function ClassJoinContent() {
   );
 }
 
-// Default export wrapping the content in Suspense for Netlify/Next.js static export
 export default function ClassJoinPage() {
   return (
     <Suspense 
