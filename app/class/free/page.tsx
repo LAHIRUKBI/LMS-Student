@@ -27,12 +27,15 @@ import {
   Archive,
   RotateCcw,
   LayoutGrid,
-  List
+  List,
+  Folder as FolderIcon,
+  ArrowLeft,
+  FolderOpen,
+  ChevronRight as FolderChevron
 } from "lucide-react"; 
 import Navbar from "@/app/components/Navbar";
 import AIChatWidget from "@/app/components/AIChatWidget";
 
-// 1. Cover Image Helper Function
 const getCoverImageUrl = (coverImage: any) => {
   if (!coverImage) return null;
   const rawUrl = typeof coverImage === "object" && coverImage !== null 
@@ -43,14 +46,12 @@ const getCoverImageUrl = (coverImage: any) => {
   return rawUrl.startsWith("http") ? rawUrl : `${process.env.NEXT_PUBLIC_API_URL}${rawUrl}`;
 };
 
-// 2. Helper function for YouTube Video ID
 const getYouTubeVideoId = (url: string) => {
   if (!url) return null;
   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
   return match ? match[1] : null;
 };
 
-// Helper: Extract Year from Title (e.g. "2024 - 1st Term Paper" -> "2024")
 const extractYearFromTitle = (title: string): string | null => {
   if (!title) return null;
   const match = title.match(/\b(19\d{2}|20\d{2})\b/);
@@ -61,25 +62,22 @@ export default function FreeMaterialsPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [materials, setMaterials] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [folders, setFolders] = useState<any[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<any | null>(null);
+  const [folderHistory, setFolderHistory] = useState<any[]>([]);
 
-  // View Mode: 'list' or 'grid'
+  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
-  // Search & Filtering States
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("all");
   const [contentTypeTab, setContentTypeTab] = useState<"all" | "pdf" | "paper" | "video">("all");
   const [selectedYear, setSelectedYear] = useState<string>("all");
 
-  // State for Material Detail Modal / Card Overlay
   const [activeModalItem, setActiveModalItem] = useState<any | null>(null);
-
-  // Pagination States
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  // Bulk Selection States
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const [zipStatusText, setZipStatusText] = useState("");
@@ -91,19 +89,21 @@ export default function FreeMaterialsPage() {
     } else {
       setUser({ name: "Guest Student" });
     }
-    fetchFreeMaterials();
+    fetchFreeData();
   }, []);
 
-  // Reset to page 1 when filter parameters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedSubject, contentTypeTab, selectedYear, itemsPerPage]);
+  }, [searchTerm, selectedSubject, contentTypeTab, selectedYear, itemsPerPage, currentFolder]);
 
-  // Fetch approved free materials
-  const fetchFreeMaterials = async () => {
+  const fetchFreeData = async () => {
     try {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/materials/free/all`);
-      setMaterials(res.data);
+      const [matRes, folderRes] = await Promise.all([
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/materials/free/all`),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/folders/free/all`)
+      ]);
+      setMaterials(matRes.data);
+      setFolders(folderRes.data);
     } catch (err) {
       console.error("Error fetching free materials:", err);
     } finally {
@@ -111,7 +111,6 @@ export default function FreeMaterialsPage() {
     }
   };
 
-  // PDF Preview Function
   const handleViewPdf = (fileUrl: string) => {
     if (!fileUrl) {
       alert("The PDF link cannot be found!");
@@ -124,7 +123,6 @@ export default function FreeMaterialsPage() {
     window.open(cleanUrl, '_blank', 'noopener,noreferrer');
   };
 
-  // Single PDF Download Function
   const handleDownloadPdf = async (fileUrl: string, title: string) => {
     if (!fileUrl) return;
     try {
@@ -154,7 +152,6 @@ export default function FreeMaterialsPage() {
     }
   };
 
-  // Multi-file .ZIP Archive Download Handler
   const handleBulkZipDownload = async () => {
     const downloadableItems = materials.filter(
       (m) => selectedIds.includes(m._id) && m.type !== "video" && m.fileUrl
@@ -214,6 +211,18 @@ export default function FreeMaterialsPage() {
     );
   };
 
+  const enterFolder = (f: any) => {
+    setFolderHistory([...folderHistory, f]);
+    setCurrentFolder(f);
+  };
+
+  const navigateUp = () => {
+    const newHist = [...folderHistory];
+    newHist.pop();
+    setFolderHistory(newHist);
+    setCurrentFolder(newHist.length > 0 ? newHist[newHist.length - 1] : null);
+  };
+
   const subjects = useMemo(() => {
     const subs = materials.map((m) => m.subject).filter(Boolean);
     return ["all", ...Array.from(new Set(subs))];
@@ -238,6 +247,15 @@ export default function FreeMaterialsPage() {
     return Array.from(new Set(years)).sort((a, b) => b.localeCompare(a));
   }, [materials]);
 
+  // Current Level Folders
+  const currentLevelFolders = useMemo(() => {
+    return folders.filter((f) => {
+      if (!currentFolder) return !f.parentFolderId;
+      return f.parentFolderId === currentFolder._id;
+    });
+  }, [folders, currentFolder]);
+
+  // Filter Materials
   const filteredMaterials = useMemo(() => {
     return materials.filter((item) => {
       const matchesSearch = 
@@ -258,9 +276,14 @@ export default function FreeMaterialsPage() {
         matchesYear = itemYear === selectedYear;
       }
 
-      return matchesSearch && matchesSubject && matchesType && matchesYear;
+      // Check folder match
+      const matchesFolder = currentFolder 
+        ? item.folderId === currentFolder._id 
+        : (!item.folderId || item.type === "video");
+
+      return matchesSearch && matchesSubject && matchesType && matchesYear && matchesFolder;
     });
-  }, [materials, searchTerm, selectedSubject, contentTypeTab, selectedYear]);
+  }, [materials, searchTerm, selectedSubject, contentTypeTab, selectedYear, currentFolder]);
 
   const totalPages = Math.ceil(filteredMaterials.length / itemsPerPage) || 1;
   const paginatedMaterials = useMemo(() => {
@@ -302,7 +325,7 @@ export default function FreeMaterialsPage() {
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
       <main className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 pt-24 lg:pt-32 pb-16">
-        
+
         {/* Header & Search */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
@@ -334,9 +357,120 @@ export default function FreeMaterialsPage() {
           </div>
         </div>
 
-        {/* VISIBLE FILTER BAR: Material Type Pill Tabs + Subject & Year Selectors + View Mode */}
+        {/* Breadcrumb Navigation for Free Folders */}
+        {(folders.length > 0 || currentFolder) && (
+          <div className="flex items-center gap-2 mb-4 p-2.5 rounded-xl border text-xs bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 overflow-x-auto shadow-sm">
+            <button 
+              onClick={() => { setCurrentFolder(null); setFolderHistory([]); }}
+              className={`font-bold transition-colors ${!currentFolder ? "text-emerald-600" : "text-slate-400 hover:text-emerald-500"}`}
+            >
+              All Free Documents
+            </button>
+            {folderHistory.map((folder, idx) => (
+              <div key={folder._id} className="flex items-center gap-1.5 shrink-0">
+                <span className="text-slate-400">/</span>
+                <button 
+                  onClick={() => {
+                    const sliced = folderHistory.slice(0, idx + 1);
+                    setFolderHistory(sliced);
+                    setCurrentFolder(folder);
+                  }}
+                  className={`font-bold transition-colors ${idx === folderHistory.length - 1 ? "text-emerald-600" : "text-slate-400 hover:text-emerald-500"}`}
+                >
+                  {folder.name}
+                </button>
+              </div>
+            ))}
+            {currentFolder && (
+              <button 
+                onClick={navigateUp} 
+                className="ml-auto flex items-center gap-1 text-[11px] font-bold text-slate-400 hover:text-emerald-500 px-2 py-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <ArrowLeft size={13} /> Back
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Free Folders Display (Enhanced Aesthetic Folder Card Design) */}
+        {currentLevelFolders.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-3.5">
+              <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                <FolderIcon size={14} className="text-amber-500 fill-amber-500/20" />
+                <span>Resource Folders ({currentLevelFolders.length})</span>
+              </h4>
+              <span className="text-[11px] text-slate-400 hidden sm:inline">Click any folder to explore documents inside</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {currentLevelFolders.map((f) => {
+                // Calculate direct items count inside this folder
+                const itemCount = materials.filter(m => m.folderId === f._id).length;
+                const subFolderCount = folders.filter(sub => sub.parentFolderId === f._id).length;
+
+                return (
+                  <div
+                    key={f._id}
+                    onClick={() => enterFolder(f)}
+                    className="group relative cursor-pointer select-none transition-all duration-300 hover:-translate-y-1"
+                  >
+                    {/* Realistic Folder Top Tab Shape */}
+                    <div className="w-24 h-3 rounded-t-xl bg-gradient-to-r from-amber-400 to-amber-500 dark:from-amber-600 dark:to-amber-500 ml-4 shadow-sm transition-transform duration-300 group-hover:w-28" />
+
+                    {/* Main Folder Body Card */}
+                    <div className="relative w-full max-w-sm rounded-2xl rounded-tl-sm border border-amber-200/80 dark:border-amber-900/40 bg-gradient-to-b from-amber-50/50 via-white to-amber-50/20 dark:from-slate-900 dark:via-slate-900/90 dark:to-amber-950/10 p-4 shadow-sm hover:shadow-xl hover:shadow-amber-500/10 hover:border-amber-400 dark:hover:border-amber-500/50 transition-all flex flex-col justify-between min-h-[110px]">
+                      
+                      {/* Top Header of Folder */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Folder Animated Icon Container */}
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-amber-400 to-amber-500 text-white shadow-md shadow-amber-500/20 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 group-hover:rotate-1">
+                            <FolderOpen size={22} className="drop-shadow-sm transition-transform duration-300 group-hover:scale-110" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-sm font-extrabold text-slate-900 dark:text-white truncate group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors" title={f.name}>
+                              {f.name}
+                            </h3>
+                            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium flex items-center gap-1.5">
+                              <span>{itemCount} {itemCount === 1 ? 'document' : 'documents'}</span>
+                              {subFolderCount > 0 && (
+                                <>
+                                  <span className="opacity-40">•</span>
+                                  <span>{subFolderCount} {subFolderCount === 1 ? 'sub-folder' : 'sub-folders'}</span>
+                                </>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Open Arrow Button */}
+                        <div className="w-7 h-7 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 opacity-80 group-hover:opacity-100 group-hover:bg-amber-500 group-hover:text-white transition-all shadow-sm">
+                          <FolderChevron size={14} className="transition-transform duration-300 group-hover:translate-x-0.5" />
+                        </div>
+                      </div>
+
+                      {/* Bottom Details Bar of Folder */}
+                      <div className="mt-3.5 pt-2.5 border-t border-amber-100/80 dark:border-slate-800/80 flex items-center justify-between text-[10px] font-bold text-slate-400">
+                        <span className="uppercase tracking-wider flex items-center gap-1 text-amber-600/90 dark:text-amber-400/90">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          Free Collection
+                        </span>
+                        <span className="group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                          Open Folder &rarr;
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Filter Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6 bg-white dark:bg-slate-900 p-2 sm:p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-          {/* Category Pill Tabs */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => setContentTypeTab("all")}
@@ -391,7 +525,6 @@ export default function FreeMaterialsPage() {
             </button>
           </div>
 
-          {/* Right Controls: Subject, Year, Reset & View Toggle */}
           <div className="flex items-center gap-2 flex-wrap ml-auto">
             {subjects.length > 1 && (
               <select
@@ -433,7 +566,6 @@ export default function FreeMaterialsPage() {
               </button>
             )}
 
-            {/* View Mode Toggle Button */}
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl border border-slate-200 dark:border-slate-700">
               <button
                 onClick={() => setViewMode("list")}
@@ -461,7 +593,7 @@ export default function FreeMaterialsPage() {
           </div>
         </div>
 
-        {/* List Header Actions & Per-Page Controls */}
+        {/* Selected Counter & Per-Page Controls */}
         {!loading && filteredMaterials.length > 0 && (
           <div className="flex items-center justify-between mb-3 px-1 text-xs text-slate-500 dark:text-slate-400">
             <button
@@ -491,69 +623,16 @@ export default function FreeMaterialsPage() {
           </div>
         )}
 
-        {/* Content Section: Skeletons vs Empty vs List/Grid View */}
+        {/* Content Section */}
         {loading ? (
-          viewMode === "list" ? (
-            /* Skeleton Loading for List View */
-            <div className="space-y-2">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-3 sm:px-4 sm:py-3 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse"
-                >
-                  <div className="flex items-center gap-3 w-full sm:w-2/3">
-                    <div className="w-4 h-4 rounded bg-slate-200 dark:bg-slate-800 shrink-0" />
-                    <div className="w-7 h-7 rounded-lg bg-slate-200 dark:bg-slate-800 shrink-0" />
-                    <div className="h-4 w-24 bg-slate-200 dark:bg-slate-800 rounded" />
-                    <div className="h-4 w-48 bg-slate-200 dark:bg-slate-800 rounded flex-1" />
-                  </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    <div className="h-7 w-16 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-                    <div className="h-7 w-20 bg-slate-200 dark:bg-slate-800 rounded-lg" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            /* Skeleton Loading for Grid View */
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 6 }).map((_, i) => (
-                <div 
-                  key={i} 
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-sm animate-pulse flex flex-col"
-                >
-                  <div className="w-full h-40 bg-slate-200 dark:bg-slate-800" />
-                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
-                    <div className="space-y-2">
-                      <div className="h-3 w-20 bg-slate-200 dark:bg-slate-800 rounded" />
-                      <div className="h-4 w-4/5 bg-slate-200 dark:bg-slate-800 rounded" />
-                      <div className="h-3 w-1/2 bg-slate-200 dark:bg-slate-800 rounded" />
-                    </div>
-                    <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex gap-2">
-                      <div className="h-8 flex-1 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-                      <div className="h-8 flex-1 bg-slate-200 dark:bg-slate-800 rounded-xl" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
+          <div className="flex justify-center p-12"><Loader2 className="animate-spin text-emerald-500" size={32} /></div>
         ) : filteredMaterials.length === 0 ? (
           <div className="py-24 flex flex-col items-center justify-center text-center rounded-3xl border bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="p-4 rounded-2xl mb-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-500">
-              <FileStack size={32} />
-            </div>
+            <FileStack size={32} className="text-emerald-500 mb-2" />
             <h3 className="text-base font-bold mb-1 text-slate-800 dark:text-slate-200">No Materials Found</h3>
-            <p className="text-xs text-slate-400 max-w-xs mb-3">We couldn't find anything matching your filters.</p>
-            <button
-              onClick={resetAllFilters}
-              className="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition-colors"
-            >
-              Reset Filters
-            </button>
+            <p className="text-xs text-slate-400 max-w-xs mb-3">No documents available under this directory.</p>
           </div>
         ) : viewMode === "list" ? (
-          /* RESPONSIVE COMPACT LIST VIEW */
           <div className="space-y-2">
             {paginatedMaterials.map((item) => {
               const detectedYear = extractYearFromTitle(item.title);
@@ -563,7 +642,6 @@ export default function FreeMaterialsPage() {
 
               return (
                 <div 
-                  id={`material-${item._id}`}
                   key={item._id}
                   className={`bg-white dark:bg-slate-900 rounded-xl border p-3 sm:px-4 sm:py-3 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
                     isSelected 
@@ -577,7 +655,6 @@ export default function FreeMaterialsPage() {
                         <button
                           onClick={() => toggleSelectItem(item._id)}
                           className="text-slate-400 hover:text-emerald-500 transition-colors p-0.5 shrink-0"
-                          title={isSelected ? "Deselect" : "Select for .zip archive"}
                         >
                           {isSelected ? (
                             <CheckSquare size={16} className="text-emerald-600 dark:text-emerald-400" />
@@ -607,7 +684,7 @@ export default function FreeMaterialsPage() {
                     </div>
 
                     <div className="flex-1 min-w-0 pl-9 sm:pl-0">
-                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm truncate" title={item.title}>
+                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm truncate">
                         {item.title}
                       </h3>
                     </div>
@@ -623,7 +700,6 @@ export default function FreeMaterialsPage() {
                     <button
                       onClick={() => setActiveModalItem(item)}
                       className="flex-1 sm:flex-none px-3 py-1.5 rounded-lg font-bold text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center gap-1.5 transition-all"
-                      title="View card details"
                     >
                       <Eye size={13} />
                       <span>View</span>
@@ -635,7 +711,6 @@ export default function FreeMaterialsPage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg font-bold text-xs bg-indigo-600 hover:bg-indigo-700 text-white flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                        title="Watch video lesson"
                       >
                         <PlayCircle size={13} />
                         <span>Watch</span>
@@ -644,7 +719,6 @@ export default function FreeMaterialsPage() {
                       <button
                         onClick={() => handleDownloadPdf(item.fileUrl, item.title)}
                         className="flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg font-bold text-xs bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                        title="Direct 1-click download"
                       >
                         <Download size={13} />
                         <span>Download</span>
@@ -656,7 +730,6 @@ export default function FreeMaterialsPage() {
             })}
           </div>
         ) : (
-          /* RESPONSIVE VISUAL GRID VIEW */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedMaterials.map((item) => {
               const detectedYear = extractYearFromTitle(item.title);
@@ -676,7 +749,6 @@ export default function FreeMaterialsPage() {
                   }`}
                 >
                   <div>
-                    {/* Media Thumbnail Container */}
                     <div className="relative h-44 w-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center overflow-hidden">
                       {isVideo ? (
                         ytId ? (
@@ -702,61 +774,23 @@ export default function FreeMaterialsPage() {
                         </div>
                       )}
 
-                      {/* Top Badges */}
                       <span className={`absolute top-2.5 left-2.5 text-white text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider shadow ${
                         isVideo ? 'bg-indigo-600' : isPaper ? 'bg-amber-600' : 'bg-emerald-600'
                       }`}>
                         {isVideo ? 'Video' : isPaper ? 'Paper' : 'Note'}
                       </span>
-
-                      {!isVideo && (
-                        <button
-                          onClick={() => toggleSelectItem(item._id)}
-                          className="absolute top-2.5 right-2.5 bg-slate-900/70 hover:bg-slate-900 p-1.5 rounded-lg text-white backdrop-blur-sm transition-colors"
-                          title={isSelected ? "Deselect" : "Select for .zip archive"}
-                        >
-                          {isSelected ? (
-                            <CheckSquare size={16} className="text-emerald-400" />
-                          ) : (
-                            <Square size={16} />
-                          )}
-                        </button>
-                      )}
-
-                      {/* Bottom Info Badges on Cover */}
-                      <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1.5">
-                        {detectedYear && (
-                          <span className="bg-black/75 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded font-bold shadow">
-                            Year: {detectedYear}
-                          </span>
-                        )}
-                        {item.grade && (
-                          <span className="bg-slate-900/80 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded font-bold shadow">
-                            {item.grade}
-                          </span>
-                        )}
-                      </div>
                     </div>
 
-                    {/* Text Details */}
                     <div className="p-4">
                       <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
                         {item.subject || "General"}
                       </span>
-                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm line-clamp-2 leading-snug" title={item.title}>
+                      <h3 className="font-bold text-slate-800 dark:text-slate-100 text-sm line-clamp-2 leading-snug">
                         {item.title}
                       </h3>
-                      
-                      {item.teacherId?.name && (
-                        <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                          <User size={12} className="text-slate-400" />
-                          <span>{item.teacherId.name}</span>
-                        </p>
-                      )}
                     </div>
                   </div>
 
-                  {/* Card Bottom Actions */}
                   <div className="p-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2 bg-slate-50/50 dark:bg-slate-950/40">
                     <button
                       onClick={() => setActiveModalItem(item)}
@@ -804,37 +838,14 @@ export default function FreeMaterialsPage() {
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                 disabled={currentPage === 1}
                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Previous Page"
               >
                 <ChevronLeft size={16} />
               </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(page => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
-                .map((page, idx, arr) => {
-                  const showEllipsis = idx > 0 && page - arr[idx - 1] > 1;
-                  return (
-                    <div key={page} className="flex items-center">
-                      {showEllipsis && <span className="px-1 text-slate-400">...</span>}
-                      <button
-                        onClick={() => setCurrentPage(page)}
-                        className={`min-w-[32px] h-8 rounded-lg font-bold transition-all ${
-                          currentPage === page
-                            ? "bg-emerald-600 text-white shadow-sm"
-                            : "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    </div>
-                  );
-                })}
 
               <button
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                 disabled={currentPage === totalPages}
                 className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-                title="Next Page"
               >
                 <ChevronRight size={16} />
               </button>
@@ -844,7 +855,7 @@ export default function FreeMaterialsPage() {
 
       </main>
 
-      {/* STICKY FLOATING ZIP BULK BAR */}
+      {/* Floating ZIP Bulk Bar */}
       {selectedIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-slate-900/95 dark:bg-slate-800/95 text-white backdrop-blur-md px-5 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-4 animate-in slide-in-from-bottom-5 duration-200">
           <div className="flex items-center gap-2 text-xs font-semibold">
@@ -878,14 +889,13 @@ export default function FreeMaterialsPage() {
             onClick={() => setSelectedIds([])}
             disabled={isBulkDownloading}
             className="p-1 text-slate-400 hover:text-white transition-colors"
-            title="Clear Selection"
           >
             <X size={16} />
           </button>
         </div>
       )}
 
-      {/* FULL CARD DETAILS OVERLAY / MODAL */}
+      {/* Full Details Overlay Modal */}
       {activeModalItem && (() => {
         const item = activeModalItem;
         const isVideo = item.type === "video";
@@ -896,7 +906,7 @@ export default function FreeMaterialsPage() {
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-200">
             <div 
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
@@ -923,14 +933,11 @@ export default function FreeMaterialsPage() {
                         allowFullScreen
                       ></iframe>
                     ) : (
-                      <div className="w-full h-full relative">
-                        <video 
-                          src={item.fileUrl?.startsWith('http') ? item.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${item.fileUrl}#t=0.1`} 
-                          className="w-full h-full object-cover opacity-80"
-                          preload="metadata"
-                          controls
-                        />
-                      </div>
+                      <video 
+                        src={item.fileUrl?.startsWith('http') ? item.fileUrl : `${process.env.NEXT_PUBLIC_API_URL}${item.fileUrl}#t=0.1`} 
+                        className="w-full h-full object-cover" 
+                        controls
+                      />
                     )}
                   </div>
                 ) : (
@@ -947,52 +954,21 @@ export default function FreeMaterialsPage() {
                         <span className="text-[10px] font-bold mt-1.5 uppercase tracking-wider text-slate-400">PDF Document</span>
                       </div>
                     )}
-                    
-                    <span className={`absolute top-3 left-3 text-white text-[10px] px-2 py-0.5 rounded font-bold uppercase tracking-wider shadow ${
-                      item.type === 'paper' ? 'bg-amber-600' : 'bg-emerald-600'
-                    }`}>
-                      {item.type === 'paper' ? 'Paper' : 'Note'}
-                    </span>
-
-                    {detectedYear && (
-                      <span className="absolute bottom-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded font-bold shadow">
-                        Year: {detectedYear}
-                      </span>
-                    )}
-
-                    {item.grade && (
-                      <span className="absolute top-3 right-3 bg-slate-900/80 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded font-bold shadow">
-                        {item.grade}
-                      </span>
-                    )}
                   </div>
                 )}
 
                 <div>
-                  <div className="flex items-center gap-1.5 mb-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                    <BookOpen size={14} className="shrink-0" />
-                    <span>{item.subject}</span>
-                  </div>
-
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 block mb-1">
+                    {item.subject}
+                  </span>
                   <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">
                     {item.title}
                   </h2>
-
-                  {item.description ? (
-                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                  {item.description && (
+                    <p className="mt-2 text-xs text-slate-600 dark:text-slate-300 whitespace-pre-line bg-slate-50 dark:bg-slate-950 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                       {item.description}
                     </p>
-                  ) : null}
-
-                  <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                    <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
-                      <User size={13} className="text-emerald-500" />
-                      <span>{item.teacherId?.name || "Teacher"}</span>
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar size={13} /> {new Date(item.createdAt).toLocaleDateString()}
-                    </span>
-                  </div>
+                  )}
                 </div>
               </div>
 
@@ -1029,7 +1005,6 @@ export default function FreeMaterialsPage() {
                   Close
                 </button>
               </div>
-
             </div>
           </div>
         );
