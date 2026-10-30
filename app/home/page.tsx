@@ -311,7 +311,7 @@ export default function StudentDashboard() {
       
       <Navbar user={user} onLogout={handleLogout} />
 
-      <main className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 pt-24 lg:pt-32 pb-16">
+      <main className="w-full px-0 pt-24 lg:pt-21 pb-16">
         
         {/* 1. Hero Section */}
         <HeroSection
@@ -339,6 +339,9 @@ export default function StudentDashboard() {
           heroStatsTitle={heroStatsTitle}
           heroStatsList={heroStatsList}
         />
+
+        {/* Remaining sections retain their original page gutters */}
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16">
 
         {/* 2. Second Section (Features) */}
         <FeaturesSection
@@ -385,6 +388,8 @@ export default function StudentDashboard() {
           galleryDescription={galleryDescription}
           currentGalleryItems={currentGalleryItems}
         />
+
+        </div>
 
       </main>
       <AIChatWidget />
