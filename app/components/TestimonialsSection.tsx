@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { Star, User } from "lucide-react";
 
 interface TestimonialsSectionProps {
@@ -25,16 +25,14 @@ export default function TestimonialsSection({
   const safeTestimonials = Array.isArray(testimonials) ? testimonials : [];
   const count = safeTestimonials.length;
 
-  // Keep the supplied parent index as the source of truth when it changes,
-  // while allowing a local wrap-around when a parent callback clamps at an edge.
-  const [loopIndexOverride, setLoopIndexOverride] = useState<number | null>(null);
-  const previousPropIndexRef = useRef(testimonialIndex);
-  useEffect(() => {
-    if (previousPropIndexRef.current !== testimonialIndex) {
-      previousPropIndexRef.current = testimonialIndex;
-      setLoopIndexOverride(null);
-    }
-  }, [testimonialIndex]);
+  // This carousel advances one testimonial at a time. The parent callbacks
+  // are retained for compatibility, but the carousel owns its active index:
+  // older parent pagination logic may advance by two because it displayed
+  // two testimonials per page. Letting that prop overwrite this index would
+  // skip every other testimonial in this single-item circular flow.
+  const normalizeIndex = (index: number) =>
+    count > 0 ? ((index % count) + count) % count : 0;
+  const [activeIndex, setActiveIndex] = useState(() => normalizeIndex(testimonialIndex));
 
   // Pointer dragging lets a neighbouring card glide into the featured position.
   const pointerStartRef = useRef<{
@@ -52,18 +50,19 @@ export default function TestimonialsSection({
 
   if (count === 0) return null;
 
-  const normalizeIndex = (index: number) => ((index % count) + count) % count;
-  const currentIndex = normalizeIndex(loopIndexOverride ?? testimonialIndex);
+  const currentIndex = normalizeIndex(activeIndex);
 
   const goToNextTestimonial = () => {
     if (count <= 1) return;
-    setLoopIndexOverride(normalizeIndex(currentIndex + 1));
+    setActiveIndex((index) => normalizeIndex(index + 1));
+    // Keep the existing parent callback in sync for any surrounding UI.
+    // Its index is deliberately not used to drive this one-by-one carousel.
     nextTestimonials();
   };
 
   const goToPreviousTestimonial = () => {
     if (count <= 1) return;
-    setLoopIndexOverride(normalizeIndex(currentIndex - 1));
+    setActiveIndex((index) => normalizeIndex(index - 1));
     prevTestimonials();
   };
 
@@ -251,6 +250,7 @@ export default function TestimonialsSection({
   const layeredTestimonials: Array<{
     test: any;
     position: TestimonialPosition;
+    itemIndex: number;
   }> = [];
 
   if (count > 2) {
@@ -258,14 +258,20 @@ export default function TestimonialsSection({
     layeredTestimonials.push({
       test: safeTestimonials[previousIndex],
       position: "left",
+      itemIndex: previousIndex,
     });
   }
-  layeredTestimonials.push({ test: safeTestimonials[currentIndex], position: "center" });
+  layeredTestimonials.push({
+    test: safeTestimonials[currentIndex],
+    position: "center",
+    itemIndex: currentIndex,
+  });
   if (count > 1) {
     const nextIndex = normalizeIndex(currentIndex + 1);
     layeredTestimonials.push({
       test: safeTestimonials[nextIndex],
       position: "right",
+      itemIndex: nextIndex,
     });
   }
 
@@ -320,13 +326,13 @@ export default function TestimonialsSection({
             }
           }}
         >
-          {layeredTestimonials.map(({ test, position }, index) => {
+          {layeredTestimonials.map(({ test, position, itemIndex }, index) => {
             const stars = Math.max(0, Math.min(5, Number(test.rating) || 5));
             const isCenter = position === "center";
             const authorImage = test.image ? getMediaUrl(test.image) : undefined;
             // Keep each testimonial keyed by identity, not by its visual slot.
             // This allows the same DOM card to travel from a side position into the center.
-            const cardKey = test._id || `${test.name || "testimonial"}-${test.title || ""}`;
+            const cardKey = test._id || `${test.name || "testimonial"}-${test.title || ""}-${itemIndex}`;
 
             return (
               <article
