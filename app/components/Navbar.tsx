@@ -491,7 +491,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               </button>
 
               {isNotificationOpen && (
-                <div className="absolute right-0 top-[calc(100%+14px)] z-[80] w-[min(360px,calc(100vw-24px))] rounded-[24px] border border-white/60 bg-white/90 p-3 shadow-[0_24px_70px_rgba(20,25,45,.22)] backdrop-blur-3xl dark:border-white/10 dark:bg-[#11141c]/95 sm:w-96 sm:p-4">
+                <div className="fixed right-3 top-[88px] z-[80] max-h-[calc(100dvh-104px)] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-[24px] border border-white/60 bg-white/90 p-3 shadow-[0_24px_70px_rgba(20,25,45,.22)] backdrop-blur-3xl dark:border-white/10 dark:bg-[#11141c]/95 md:absolute md:right-0 md:top-[calc(100%+14px)] md:max-h-none md:w-96 md:overflow-visible md:p-4">
                   <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 dark:border-white/10">
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">Notifications</h3>
@@ -501,7 +501,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                       <CheckCheck size={14} /> Mark all read
                     </button>
                   </div>
-                  <div className="custom-scrollbar mt-3 max-h-72 space-y-2 overflow-y-auto">
+                  <div className="custom-scrollbar mt-3 max-h-[min(18rem,calc(100dvh-190px))] space-y-2 overflow-y-auto md:max-h-72">
                     {notifications.length === 0 ? (
                       <p className="py-8 text-center text-xs text-slate-400">No notifications found.</p>
                     ) : (
@@ -542,11 +542,11 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               )}
             </div>
 
-            {/* Desktop appearance control; mobile appearance is inside the menu */}
+            {/* Appearance control: shown on mobile to the left of notifications */}
             <button
               onClick={toggleDarkMode}
               aria-label="Toggle dark mode"
-              className="hidden h-10 w-10 place-items-center rounded-full text-slate-600 transition-all hover:bg-white/65 hover:text-indigo-600 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white sm:grid"
+              className="order-first grid h-10 w-10 shrink-0 place-items-center rounded-full text-slate-600 transition-all hover:bg-white/65 hover:text-indigo-600 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white sm:order-none"
             >
               {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
             </button>
