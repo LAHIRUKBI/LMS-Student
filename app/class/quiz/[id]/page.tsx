@@ -5,7 +5,18 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import axios from "axios";
-import { Loader2, Clock, CheckCircle2, ArrowLeft, ArrowRight, AlertCircle, HelpCircle, Send, Camera, Upload, X, Image as ImageIcon } from "lucide-react";
+import {
+  Loader2,
+  Clock,
+  CheckCircle2,
+  ArrowLeft,
+  ArrowRight,
+  AlertCircle,
+  Send,
+  Camera,
+  Upload,
+  X,
+} from "lucide-react";
 import Navbar from "@/app/components/Navbar";
 import QuizSubmitSuccessPopup from "@/app/components/QuizSubmitSuccessPopup";
 
@@ -113,7 +124,7 @@ export default function TakeQuizPage() {
 
   const handleSubQuestionAnswerChange = (questionId: string, subIdx: number, text: string) => {
     const currentSubAnswers = typeof answers[questionId] === 'object' && answers[questionId] !== null && !Array.isArray(answers[questionId])
-      ? { ...answers[questionId] } 
+      ? { ...answers[questionId] }
       : {};
     currentSubAnswers[subIdx] = text;
     setAnswers({ ...answers, [questionId]: currentSubAnswers });
@@ -167,7 +178,7 @@ export default function TakeQuizPage() {
       });
 
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/quiz/${quizId}/submit`, formData, {
-        headers: { 
+        headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data"
         }
@@ -186,9 +197,10 @@ export default function TakeQuizPage() {
 
   if (!user) return null;
 
-  const minutes = Math.floor(timeLeft / 60);
+  const hours = Math.floor(timeLeft / 3600);
+  const minutes = Math.floor((timeLeft % 3600) / 60);
   const seconds = timeLeft % 60;
-  const formatTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  const formatTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   const isNearTimeout = timeLeft <= 300 && timeLeft > 0;
 
   const totalQuestions = quiz?.questions?.length || 0;
@@ -206,62 +218,83 @@ export default function TakeQuizPage() {
   const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 font-sans pb-20">
+    <div className="min-h-screen bg-[#f3f5f8] pb-24 font-sans text-[#182230] dark:bg-[#0b1118] dark:text-[#e8eef6]">
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
-      <main className="max-w-3xl mx-auto px-4 pt-28">
-        <button onClick={() => router.back()} className="flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-slate-800 dark:hover:text-white mb-6">
-          <ArrowLeft size={18} /> Back
-        </button>
-
+      <main className="mx-auto max-w-5xl px-3 pb-5 pt-20 sm:px-5 sm:pt-[5.5rem]">
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
+          <div className="grid min-h-[45vh] place-items-center">
+            <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#111a24]">
+              <Loader2 className="animate-spin text-blue-600 dark:text-blue-400" size={22} />
+              <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Preparing your quiz…</span>
+            </div>
+          </div>
         ) : alreadySubmitted ? (
-          <div className="bg-white dark:bg-slate-900 p-12 rounded-3xl border text-center space-y-4 shadow-sm">
-            <AlertCircle size={56} className="text-amber-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Already Submitted!</h2>
-            <p className="text-sm text-slate-500">You have already completed this quiz. It can only be taken once.</p>
-            <button onClick={() => router.back()} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-sm shadow-md">
-              Return to Class Room
+          <section className="mx-auto mt-10 max-w-lg rounded-2xl border border-slate-200 bg-white p-7 text-center shadow-sm dark:border-white/10 dark:bg-[#111a24] sm:p-9">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-amber-50 text-amber-600 dark:bg-amber-400/10 dark:text-amber-300">
+              <AlertCircle size={28} />
+            </div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-600 dark:text-amber-300">Attempt already recorded</p>
+            <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">Already submitted</h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500 dark:text-slate-400">You have already completed this quiz. It can only be taken once.</p>
+            <button
+              onClick={() => router.back()}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#172b45] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#24466e] dark:bg-blue-500 dark:text-white dark:hover:bg-blue-400"
+            >
+              Return to classroom <ArrowRight size={15} />
             </button>
-          </div>
+          </section>
         ) : error || !quiz ? (
-          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border text-center text-red-500 font-bold">
-            {error || "Quiz not found."}
-          </div>
+          <section className="mx-auto mt-10 max-w-lg rounded-2xl border border-rose-200 bg-white p-7 text-center shadow-sm dark:border-rose-500/20 dark:bg-[#111a24]">
+            <div className="mx-auto mb-4 grid h-14 w-14 place-items-center rounded-2xl bg-rose-50 text-rose-500 dark:bg-rose-500/10 dark:text-rose-300">
+              <AlertCircle size={27} />
+            </div>
+            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Unable to open this quiz</h2>
+            <p className="mt-2 text-sm text-rose-600 dark:text-rose-300">{error || "Quiz not found."}</p>
+            <button onClick={() => router.back()} className="mt-5 rounded-lg border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-50 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5">Go back</button>
+          </section>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-3">
+            {/* Compact exam heading */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => router.back()}
+                aria-label="Back to classroom"
+                className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:bg-[#111a24] dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:text-blue-300"
+              >
+                <ArrowLeft size={17} />
+              </button>
 
-            <div className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col sm:flex-row justify-between items-center gap-4 sticky top-20 z-20">
-              <div>
-                <h1 className="text-lg font-extrabold text-slate-900 dark:text-white">{quiz.title}</h1>
-                <p className="text-xs text-slate-500 mt-0.5">{quiz.description}</p>
+              <div className="min-w-0 flex-1">
+                <p className="text-[9px] font-extrabold uppercase tracking-[0.19em] text-blue-600 dark:text-blue-400">Quiz session</p>
+                <h1 className="truncate text-sm font-extrabold leading-5 text-slate-900 dark:text-white sm:text-base">{quiz.title}</h1>
               </div>
 
-              {!isSubmitted && (
-                <div className={`px-4 py-2 rounded-2xl border flex items-center gap-2 text-sm font-bold ${
-                  isNearTimeout ? "bg-rose-500/10 text-rose-500 border-rose-300 animate-pulse" : "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
-                }`}>
-                  <Clock size={16} /> Time Left: <span className="font-mono text-base">{formatTime}</span>
-                </div>
-              )}
             </div>
 
-            {!showSummary && (
-              <div className="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-2">
-                <div className="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-400">
-                  <span>Question {currentQuestionIndex + 1} of {totalQuestions}</span>
-                  <span className="text-blue-600 dark:text-blue-400">{answeredCount} Answered / {totalQuestions - answeredCount} Remaining</span>
-                </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <div className="bg-blue-600 h-full transition-all duration-300" style={{ width: `${progressPercentage}%` }}></div>
-                </div>
-              </div>
+            {quiz.description && (
+              <p className="hidden truncate pl-[3.25rem] text-[11px] text-slate-500 dark:text-slate-400 sm:block">{quiz.description}</p>
             )}
 
             {!showSummary ? (
-              <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_190px]">
+                <div className="order-2 min-w-0 space-y-3 lg:order-1">
+                  <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm dark:border-white/10 dark:bg-[#111a24]">
+                    <div className="mb-2 flex items-center justify-between gap-3 text-[10px]">
+                      <span className="font-bold text-slate-700 dark:text-slate-200">
+                        Question {currentQuestionIndex + 1} <span className="font-medium text-slate-400">/ {totalQuestions}</span>
+                      </span>
+                      <span className="font-semibold text-slate-500 dark:text-slate-400">
+                        {answeredCount} answered <span className="px-1 text-slate-300 dark:text-slate-600">·</span> {totalQuestions - answeredCount} remaining
+                      </span>
+                      <span className="font-extrabold tabular-nums text-blue-700 dark:text-blue-300">{Math.round(progressPercentage)}%</span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
+                      <div className="h-full rounded-full bg-blue-600 transition-all duration-300 dark:bg-blue-400" style={{ width: `${progressPercentage}%` }} />
+                    </div>
+                  </div>
 
+                  <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_-24px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-[#111a24]">
                 {(() => {
                   const q = quiz.questions[currentQuestionIndex];
                   let totalQMarks = q.marks;
@@ -272,309 +305,351 @@ export default function TakeQuizPage() {
                   const questionImageSrc = getQuestionImageUrl(q.imageUrl);
 
                   return (
-                    <div className="space-y-6" key={q._id || currentQuestionIndex}>
-                      <div className="flex justify-between items-start gap-4">
-                        <h3 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-relaxed">
-                          {currentQuestionIndex + 1}. {q.questionText}
-                        </h3>
-                        <span className="text-xs font-bold px-3 py-1 rounded-xl bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 shrink-0">
-                          {totalQMarks} Marks ({q.type.toUpperCase()})
-                        </span>
+                    <div key={q._id || currentQuestionIndex}>
+                      {/* Question prompt */}
+                      <div className="border-b border-slate-100 px-4 py-4 dark:border-white/[0.07] sm:px-6 sm:py-5">
+                        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <span className="rounded-md bg-[#172b45] px-2 py-1 font-mono text-[10px] font-extrabold text-white dark:bg-blue-500">Q{String(currentQuestionIndex + 1).padStart(2, "0")}</span>
+                            <span className="text-[9px] font-bold uppercase tracking-[0.16em] text-slate-400">{q.type === "mcq" ? "Multiple choice" : q.type === "single" ? "Single choice" : q.type === "short" ? "Short answer" : "Structured / essay"}</span>
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="rounded-md bg-blue-50 px-2 py-1 text-[10px] font-extrabold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">{totalQMarks} marks</span>
+                          </div>
+                        </div>
+                        <h2 className="whitespace-pre-wrap break-words text-base font-bold leading-7 tracking-[-0.01em] text-slate-900 dark:text-slate-50 sm:text-xl sm:leading-8">{q.questionText}</h2>
                       </div>
 
-                      {/* Question Image (Cloudinary or Local) */}
-                      {questionImageSrc && (
-                        <div className="flex justify-center bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-200 dark:border-slate-700">
-                          <img 
-                            src={questionImageSrc} 
-                            alt="Question visual" 
-                            className="max-h-64 rounded-xl object-contain shadow-sm" 
-                          />
-                        </div>
-                      )}
-
-                      {q.type === 'mcq' && (
-                        <div className="space-y-3 pt-2">
-                          <p className="text-xs font-semibold text-indigo-400">Select all correct answers:</p>
-                          {q.options.map((opt: string, optIdx: number) => {
-                            const selectedArray = Array.isArray(answers[q._id]) ? answers[q._id] : [];
-                            const isSelected = selectedArray.includes(opt);
-
-                            return (
-                              <div 
-                                key={optIdx}
-                                onClick={() => handleMCQCheckboxChange(q._id, opt)}
-                                className={`p-4 rounded-2xl border cursor-pointer text-sm font-medium transition-all flex items-center gap-3.5 ${
-                                  isSelected ? "bg-blue-600 text-white border-blue-600 shadow-md scale-[1.01]" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-300"
-                                }`}
-                              >
-                                <input 
-                                  type="checkbox" 
-                                  checked={isSelected}
-                                  onChange={() => {}} 
-                                  className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                />
-                                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 bg-white/20">
-                                  {optIdx + 1}
-                                </span>
-                                {opt}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {q.type === 'single' && (
-                        <div className="space-y-3 pt-2">
-                          <p className="text-xs font-semibold text-indigo-400">Select 1 correct answer:</p>
-                          {q.options.map((opt: string, optIdx: number) => {
-                            const isSelected = answers[q._id] === opt;
-
-                            return (
-                              <div 
-                                key={optIdx}
-                                onClick={() => handleAnswerChange(q._id, opt)}
-                                className={`p-4 rounded-2xl border cursor-pointer text-sm font-medium transition-all flex items-center gap-3.5 ${
-                                  isSelected ? "bg-blue-600 text-white border-blue-600 shadow-md scale-[1.01]" : "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-300"
-                                }`}
-                              >
-                                <input 
-                                  type="radio"
-                                  name={`single-q-${q._id}`}
-                                  checked={isSelected}
-                                  onChange={() => {}}
-                                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                                />
-                                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold border shrink-0 bg-white/20">
-                                  {optIdx + 1}
-                                </span>
-                                {opt}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {/* Short Answer */}
-                      {q.type === 'short' && (
-                        <div className="space-y-4 pt-2">
-                          <input
-                            type="text"
-                            value={answers[q._id] || ""}
-                            onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                            placeholder="Type your short answer here..."
-                            className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
-                          />
-
-                          <div className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                              <div>
-                                <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-                                  <Camera size={16} /> Upload Written Paper / Answer Sheet (Optional)
-                                </h4>
-                                <p className="text-[11px] text-slate-500">Take a photo using your camera or choose existing photos if you wrote on paper.</p>
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <label className="cursor-pointer px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                                  <Camera size={14} /> Open Camera
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    capture="environment" 
-                                    multiple 
-                                    className="hidden" 
-                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
-                                  />
-                                </label>
-
-                                <label className="cursor-pointer px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                                  <Upload size={14} /> Choose File
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    multiple 
-                                    className="hidden" 
-                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
-                                  />
-                                </label>
-                              </div>
-                            </div>
-
-                            {answerSheets[q._id] && answerSheets[q._id].length > 0 && (
-                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
-                                {answerSheets[q._id].map((file, fIdx) => (
-                                  <div key={fIdx} className="relative group rounded-xl overflow-hidden border bg-white dark:bg-slate-900 aspect-square">
-                                    <img 
-                                      src={URL.createObjectURL(file)} 
-                                      alt={`Answer sheet ${fIdx + 1}`} 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveAnswerSheet(q._id, fIdx)}
-                                      className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">
-                                      Page {fIdx + 1}
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Essay / Structured Sub-questions */}
-                      {q.type === 'essay' && (
-                        <div className="space-y-4 pt-2">
-                          {q.subQuestions && q.subQuestions.length > 0 ? (
-                            q.subQuestions.map((sq: any, sqIdx: number) => {
-                              const subAnswersObj = (typeof answers[q._id] === 'object' && answers[q._id] !== null && !Array.isArray(answers[q._id])) 
-                                ? answers[q._id] 
-                                : {};
-
-                              return (
-                                <div key={sq._id || sqIdx} className="p-4 rounded-2xl border bg-slate-50/70 dark:bg-slate-800/40 space-y-2">
-                                  <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    ({sqIdx + 1}) {sq.subQuestionText} <span className="text-blue-500 font-normal">[{sq.marks} marks]</span>
-                                  </label>
-                                  <textarea
-                                    rows={3}
-                                    value={subAnswersObj[sqIdx] || ""}
-                                    onChange={(e) => handleSubQuestionAnswerChange(q._id, sqIdx, e.target.value)}
-                                    placeholder={`Write answer for part (${sqIdx + 1})...`}
-                                    className="w-full p-3 rounded-xl border bg-white dark:bg-slate-900 text-slate-800 dark:text-white text-xs outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
-                                  />
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <textarea
-                              rows={6}
-                              value={answers[q._id] || ""}
-                              onChange={(e) => handleAnswerChange(q._id, e.target.value)}
-                              placeholder="Type your essay answer here..."
-                              className="w-full p-4 rounded-2xl border bg-slate-50 dark:bg-slate-800 text-slate-800 dark:text-white text-sm outline-none focus:ring-2 focus:ring-blue-500 border-slate-200 dark:border-slate-700"
+                      <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5">
+                        {/* Question image */}
+                        {questionImageSrc && (
+                          <div className="flex justify-center rounded-xl border border-slate-100 bg-slate-50 p-2 dark:border-white/[0.07] dark:bg-[#0c141e]">
+                            <img
+                              src={questionImageSrc}
+                              alt="Question visual"
+                              className="max-h-[210px] max-w-full rounded-lg object-contain sm:max-h-[250px]"
                             />
-                          )}
+                          </div>
+                        )}
 
-                          <div className="p-4 rounded-2xl border-2 border-dashed border-indigo-200 dark:border-indigo-900 bg-indigo-50/30 dark:bg-indigo-950/20 space-y-3">
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-2">
-                              <div>
-                                <h4 className="text-xs font-bold text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
-                                  <Camera size={16} /> Upload Answer Sheets (Optional)
-                                </h4>
-                                <p className="text-[11px] text-slate-500">Take a photo using your camera or choose existing paper photos (Multiple pages allowed).</p>
-                              </div>
+                        {/* Multiple choice */}
+                        {q.type === 'mcq' && (
+                          <div className="space-y-2.5">
+                            <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Select all correct answers</p>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {q.options.map((opt: string, optIdx: number) => {
+                                const selectedArray = Array.isArray(answers[q._id]) ? answers[q._id] : [];
+                                const isSelected = selectedArray.includes(opt);
 
-                              <div className="flex items-center gap-2">
-                                <label className="cursor-pointer px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                                  <Camera size={14} /> Open Camera
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    capture="environment" 
-                                    multiple 
-                                    className="hidden" 
-                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
-                                  />
-                                </label>
+                                return (
+                                  <div
+                                    key={optIdx}
+                                    onClick={() => handleMCQCheckboxChange(q._id, opt)}
+                                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
+                                      isSelected
+                                        ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400/60 dark:bg-blue-400/10 dark:text-blue-100"
+                                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.025] dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:bg-white/[0.05]"
+                                    }`}
+                                  >
+                                    <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${
+                                      isSelected ? "border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-[#07111f]" : "border-slate-300 text-transparent dark:border-slate-600"
+                                    }`}>
+                                      <CheckCircle2 size={12} />
+                                    </span>
+                                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg font-mono text-[10px] font-extrabold ${
+                                      isSelected ? "bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-200" : "bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400"
+                                    }`}>{String(optIdx + 1).padStart(2, "0")}</span>
+                                    <span className="min-w-0 flex-1 font-medium leading-5">{opt}</span>
+                                    <input type="checkbox" checked={isSelected} onChange={() => {}} className="sr-only" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
 
-                                <label className="cursor-pointer px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-100 text-slate-700 dark:text-slate-200 border rounded-xl text-xs font-bold shadow-sm transition flex items-center gap-1.5">
-                                  <Upload size={14} /> Choose File
-                                  <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    multiple 
-                                    className="hidden" 
-                                    onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)}
-                                  />
-                                </label>
-                              </div>
+                        {/* Single choice */}
+                        {q.type === 'single' && (
+                          <div className="space-y-2.5">
+                            <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Select one correct answer</p>
+                            <div className="grid gap-2 sm:grid-cols-2">
+                              {q.options.map((opt: string, optIdx: number) => {
+                                const isSelected = answers[q._id] === opt;
+
+                                return (
+                                  <div
+                                    key={optIdx}
+                                    onClick={() => handleAnswerChange(q._id, opt)}
+                                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
+                                      isSelected
+                                        ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400/60 dark:bg-blue-400/10 dark:text-blue-100"
+                                        : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.025] dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:bg-white/[0.05]"
+                                    }`}
+                                  >
+                                    <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${
+                                      isSelected ? "border-blue-600 bg-blue-600 dark:border-blue-400 dark:bg-blue-400" : "border-slate-300 dark:border-slate-600"
+                                    }`}>
+                                      {isSelected && <span className="h-1.5 w-1.5 rounded-full bg-white dark:bg-[#07111f]" />}
+                                    </span>
+                                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-lg font-mono text-[10px] font-extrabold ${
+                                      isSelected ? "bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-200" : "bg-slate-100 text-slate-500 dark:bg-white/[0.06] dark:text-slate-400"
+                                    }`}>{String(optIdx + 1).padStart(2, "0")}</span>
+                                    <span className="min-w-0 flex-1 font-medium leading-5">{opt}</span>
+                                    <input type="radio" name={`single-q-${q._id}`} checked={isSelected} onChange={() => {}} className="sr-only" />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Short answer */}
+                        {q.type === 'short' && (
+                          <div className="space-y-3">
+                            <div>
+                              <label className="mb-1.5 block text-[11px] font-bold text-slate-600 dark:text-slate-300">Your answer</label>
+                              <input
+                                type="text"
+                                value={answers[q._id] || ""}
+                                onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                                placeholder="Type your answer here…"
+                                className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/10 dark:border-white/10 dark:bg-[#0c141e] dark:text-white dark:placeholder:text-slate-600 dark:focus:border-blue-400/60 dark:focus:bg-[#101b29]"
+                              />
                             </div>
 
-                            {answerSheets[q._id] && answerSheets[q._id].length > 0 && (
-                              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-2">
-                                {answerSheets[q._id].map((file, fIdx) => (
-                                  <div key={fIdx} className="relative group rounded-xl overflow-hidden border bg-white dark:bg-slate-900 aspect-square">
-                                    <img 
-                                      src={URL.createObjectURL(file)} 
-                                      alt={`Answer sheet ${fIdx + 1}`} 
-                                      className="w-full h-full object-cover" 
-                                    />
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveAnswerSheet(q._id, fIdx)}
-                                      className="absolute top-1 right-1 bg-rose-600 text-white p-1 rounded-full shadow-md hover:bg-rose-700 transition"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                    <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[9px] px-1.5 py-0.5 rounded">
-                                      Page {fIdx + 1}
-                                    </span>
+                            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-3 dark:border-white/15 dark:bg-white/[0.025]">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                  <Camera size={15} className="text-blue-600 dark:text-blue-400" />
+                                  Attach written answer <span className="font-normal text-slate-400">(optional)</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#172b45] px-3 py-2 text-[10px] font-bold text-white transition hover:bg-[#24466e] dark:bg-blue-500 dark:hover:bg-blue-400">
+                                    <Camera size={13} /> Camera
+                                    <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)} />
+                                  </label>
+                                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold text-slate-600 transition hover:border-blue-300 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
+                                    <Upload size={13} /> Browse
+                                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)} />
+                                  </label>
+                                </div>
+                              </div>
+                              {answerSheets[q._id] && answerSheets[q._id].length > 0 && (
+                                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-200 pt-3 dark:border-white/10 sm:grid-cols-5">
+                                  {answerSheets[q._id].map((file, fIdx) => (
+                                    <div key={fIdx} className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0c141e]">
+                                      <img src={URL.createObjectURL(file)} alt={`Answer sheet ${fIdx + 1}`} className="h-full w-full object-cover" />
+                                      <button type="button" onClick={() => handleRemoveAnswerSheet(q._id, fIdx)} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-slate-950/75 text-white hover:bg-rose-600"><X size={12} /></button>
+                                      <span className="absolute bottom-1 left-1 rounded bg-slate-950/75 px-1.5 py-0.5 text-[8px] font-bold text-white">PAGE {fIdx + 1}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Essay and structured sub-questions */}
+                        {q.type === 'essay' && (
+                          <div className="space-y-3">
+                            {q.subQuestions && q.subQuestions.length > 0 ? (
+                              q.subQuestions.map((sq: any, sqIdx: number) => {
+                                const subAnswersObj = (typeof answers[q._id] === 'object' && answers[q._id] !== null && !Array.isArray(answers[q._id]))
+                                  ? answers[q._id]
+                                  : {};
+
+                                return (
+                                  <div key={sq._id || sqIdx} className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
+                                    <div className="flex items-start justify-between gap-3 bg-slate-50 px-3 py-2.5 dark:bg-white/[0.035]">
+                                      <label className="flex min-w-0 items-start gap-2 text-xs font-semibold leading-5 text-slate-700 dark:text-slate-200">
+                                        <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-blue-100 font-mono text-[9px] font-extrabold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">{String(sqIdx + 1).padStart(2, "0")}</span>
+                                        <span>{sq.subQuestionText}</span>
+                                      </label>
+                                      <span className="shrink-0 rounded-md bg-white px-2 py-1 text-[9px] font-bold text-blue-700 dark:bg-white/[0.06] dark:text-blue-300">{sq.marks} marks</span>
+                                    </div>
+                                    <div className="p-2.5">
+                                      <textarea
+                                        rows={3}
+                                        value={subAnswersObj[sqIdx] || ""}
+                                        onChange={(e) => handleSubQuestionAnswerChange(q._id, sqIdx, e.target.value)}
+                                        placeholder={`Write your answer for part (${sqIdx + 1})…`}
+                                        className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-xs leading-5 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 dark:border-white/10 dark:bg-[#0c141e] dark:text-white dark:placeholder:text-slate-600"
+                                      />
+                                    </div>
                                   </div>
-                                ))}
+                                );
+                              })
+                            ) : (
+                              <div>
+                                <label className="mb-1.5 block text-[11px] font-bold text-slate-600 dark:text-slate-300">Your essay answer</label>
+                                <textarea
+                                  rows={5}
+                                  value={answers[q._id] || ""}
+                                  onChange={(e) => handleAnswerChange(q._id, e.target.value)}
+                                  placeholder="Write your answer here…"
+                                  className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-500/10 dark:border-white/10 dark:bg-[#0c141e] dark:text-white dark:placeholder:text-slate-600"
+                                />
                               </div>
                             )}
+
+                            <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/80 p-3 dark:border-white/15 dark:bg-white/[0.025]">
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 text-[11px] font-semibold text-slate-600 dark:text-slate-300">
+                                  <Camera size={15} className="text-blue-600 dark:text-blue-400" />
+                                  Upload answer sheets <span className="font-normal text-slate-400">(optional)</span>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-[#172b45] px-3 py-2 text-[10px] font-bold text-white transition hover:bg-[#24466e] dark:bg-blue-500 dark:hover:bg-blue-400">
+                                    <Camera size={13} /> Camera
+                                    <input type="file" accept="image/*" capture="environment" multiple className="hidden" onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)} />
+                                  </label>
+                                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[10px] font-bold text-slate-600 transition hover:border-blue-300 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
+                                    <Upload size={13} /> Browse
+                                    <input type="file" accept="image/*" multiple className="hidden" onChange={(e) => handleAnswerSheetAdd(q._id, e.target.files)} />
+                                  </label>
+                                </div>
+                              </div>
+                              {answerSheets[q._id] && answerSheets[q._id].length > 0 && (
+                                <div className="mt-3 grid grid-cols-3 gap-2 border-t border-slate-200 pt-3 dark:border-white/10 sm:grid-cols-5">
+                                  {answerSheets[q._id].map((file, fIdx) => (
+                                    <div key={fIdx} className="relative aspect-square overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0c141e]">
+                                      <img src={URL.createObjectURL(file)} alt={`Answer sheet ${fIdx + 1}`} className="h-full w-full object-cover" />
+                                      <button type="button" onClick={() => handleRemoveAnswerSheet(q._id, fIdx)} className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-slate-950/75 text-white hover:bg-rose-600"><X size={12} /></button>
+                                      <span className="absolute bottom-1 left-1 rounded bg-slate-950/75 px-1.5 py-0.5 text-[8px] font-bold text-white">PAGE {fIdx + 1}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   );
                 })()}
-
-                <div className="flex justify-between items-center pt-6 border-t border-slate-100 dark:border-slate-800">
-                  <button
-                    onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
-                    disabled={currentQuestionIndex === 0}
-                    className="px-5 py-2.5 rounded-2xl border font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition"
-                  >
-                    Previous
-                  </button>
-
-                  {currentQuestionIndex < totalQuestions - 1 ? (
-                    <button
-                      onClick={() => setCurrentQuestionIndex((prev) => Math.min(prev + 1, totalQuestions - 1))}
-                      className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-md transition flex items-center gap-2"
-                    >
-                      Next <ArrowRight size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setShowSummary(true)}
-                      className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-xs sm:text-sm shadow-md transition flex items-center gap-2"
-                    >
-                      Review & Submit <CheckCircle2 size={16} />
-                    </button>
-                  )}
+                  </section>
                 </div>
 
+                {/* Timer and calendar-style question navigator */}
+                <aside className="order-1 space-y-2.5 lg:sticky lg:top-24 lg:order-2">
+                  {!isSubmitted && (
+                    <div className={`rounded-2xl border p-3 shadow-sm ${
+                      isNearTimeout
+                        ? "border-rose-200 bg-rose-50 dark:border-rose-400/30 dark:bg-rose-500/[0.08]"
+                        : "border-slate-200 bg-white dark:border-white/10 dark:bg-[#111a24]"
+                    }`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <div>
+                          <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">Time remaining</p>
+                          <p className="mt-0.5 text-[9px] font-medium text-slate-400">Keep an eye on your time</p>
+                        </div>
+                        <span className={`grid h-8 w-8 place-items-center rounded-lg ${
+                          isNearTimeout
+                            ? "bg-rose-100 text-rose-600 dark:bg-rose-400/15 dark:text-rose-300"
+                            : "bg-blue-50 text-blue-600 dark:bg-blue-400/10 dark:text-blue-300"
+                        }`}>
+                          <Clock size={16} className={isNearTimeout ? "animate-pulse" : ""} />
+                        </span>
+                      </div>
+                      <div className={`mt-2 font-mono text-[1.65rem] font-extrabold leading-none tracking-[0.04em] tabular-nums ${
+                        isNearTimeout ? "text-rose-600 dark:text-rose-300" : "text-slate-900 dark:text-white"
+                      }`}>
+                        {formatTime}
+                      </div>
+                      <div className="mt-1 text-[8px] font-bold uppercase tracking-[0.18em] text-slate-400">Hours : Minutes : Seconds</div>
+                    </div>
+                  )}
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-[#111a24]">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-blue-600 dark:text-blue-400">Question calendar</p>
+                        <p className="mt-0.5 text-[10px] font-semibold text-slate-600 dark:text-slate-300">Jump to a question</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-100 px-2 py-1 text-center dark:bg-white/[0.06]">
+                        <span className="block text-sm font-extrabold leading-4 tabular-nums text-slate-800 dark:text-white">{totalQuestions}</span>
+                        <span className="text-[7px] font-bold uppercase tracking-wider text-slate-400">Total</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 grid grid-cols-7 gap-1.5 lg:grid-cols-5">
+                      {quiz.questions.map((q: any, idx: number) => {
+                        const ans = answers[q._id];
+                        const sheets = answerSheets[q._id];
+                        let isAnswered = false;
+                        if ((sheets && sheets.length > 0) || (ans !== undefined && ans !== null)) {
+                          if (Array.isArray(ans)) isAnswered = ans.length > 0;
+                          else if (typeof ans === 'object') isAnswered = Object.values(ans).some((val: any) => val && val.trim() !== "");
+                          else isAnswered = String(ans).trim() !== "";
+                          if (sheets && sheets.length > 0) isAnswered = true;
+                        }
+                        const isCurrent = idx === currentQuestionIndex;
+
+                        return (
+                          <button
+                            key={q._id || idx}
+                            type="button"
+                            onClick={() => setCurrentQuestionIndex(idx)}
+                            aria-label={`Go to question ${idx + 1}${isAnswered ? ', answered' : ', not answered'}`}
+                            aria-current={isCurrent ? "step" : undefined}
+                            title={`Question ${idx + 1}${isAnswered ? " · Answered" : " · Not answered"}`}
+                            className={`relative grid aspect-square w-full place-items-center rounded-lg border text-[11px] font-extrabold tabular-nums transition focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 dark:focus:ring-offset-[#111a24] ${
+                              isCurrent
+                                ? "border-blue-600 bg-blue-600 text-white shadow-md shadow-blue-600/20 ring-2 ring-blue-200 dark:border-blue-400 dark:bg-blue-500 dark:ring-blue-400/20"
+                                : isAnswered
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-400 dark:border-emerald-500/25 dark:bg-emerald-500/[0.10] dark:text-emerald-300"
+                                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:bg-blue-50 dark:border-white/10 dark:bg-white/[0.035] dark:text-slate-400 dark:hover:border-blue-400/40 dark:hover:bg-blue-400/[0.08]"
+                            }`}
+                          >
+                            {idx + 1}
+                            {isAnswered && !isCurrent && <span className="absolute bottom-0.5 right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-100 pt-2.5 dark:border-white/[0.07]">
+                      <span className="inline-flex items-center gap-1 text-[8px] font-semibold text-slate-500 dark:text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Answered</span>
+                      <span className="inline-flex items-center gap-1 text-[8px] font-semibold text-slate-500 dark:text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600" /> Pending</span>
+                      <span className="inline-flex items-center gap-1 text-[8px] font-semibold text-slate-500 dark:text-slate-400"><span className="h-1.5 w-1.5 rounded-full bg-blue-500" /> Current</span>
+                    </div>
+                  </div>
+                </aside>
               </div>
             ) : (
-              <div className="bg-white dark:bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-                <div className="text-center space-y-2 border-b pb-4 dark:border-slate-800">
-                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Quiz Summary</h2>
-                  <p className="text-xs text-slate-500">Review your answered and unanswered questions before final submission.</p>
+              /* Review answers */
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-[#111a24]">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-4 dark:border-white/[0.07] sm:px-5">
+                  <div>
+                    <p className="text-[9px] font-extrabold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">Final check</p>
+                    <h2 className="mt-0.5 text-lg font-extrabold text-slate-900 dark:text-white">Review your answers</h2>
+                  </div>
+                  <span className="rounded-lg bg-slate-100 px-3 py-2 text-[10px] font-bold text-slate-600 dark:bg-white/[0.06] dark:text-slate-300">{answeredCount} of {totalQuestions} answered</span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-4 rounded-2xl text-center">
-                    <span className="block text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">{answeredCount}</span>
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">Answered Questions</span>
+                <div className="grid grid-cols-2 gap-2.5 p-3 sm:p-4">
+                  <div className="flex items-center gap-3 rounded-xl bg-emerald-50 px-3 py-3 dark:bg-emerald-500/[0.07]">
+                    <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400" />
+                    <div>
+                      <p className="text-lg font-extrabold leading-5 text-emerald-700 dark:text-emerald-300">{answeredCount}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-emerald-700/70 dark:text-emerald-300/70">Answered</p>
+                    </div>
                   </div>
-                  <div className="bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 p-4 rounded-2xl text-center">
-                    <span className="block text-2xl font-extrabold text-rose-600 dark:text-rose-400">{totalQuestions - answeredCount}</span>
-                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-300">Unanswered Questions</span>
+                  <div className="flex items-center gap-3 rounded-xl bg-rose-50 px-3 py-3 dark:bg-rose-500/[0.07]">
+                    <AlertCircle size={18} className="text-rose-600 dark:text-rose-400" />
+                    <div>
+                      <p className="text-lg font-extrabold leading-5 text-rose-700 dark:text-rose-300">{totalQuestions - answeredCount}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-rose-700/70 dark:text-rose-300/70">Unanswered</p>
+                    </div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">Question Palette (Click to Edit):</h4>
-                  <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                <div className="px-3 pb-4 sm:px-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-extrabold text-slate-800 dark:text-slate-200">Question list</h3>
+                    <span className="text-[10px] text-slate-400">Select any number to edit</span>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2 sm:grid-cols-8 md:grid-cols-10">
                     {quiz.questions.map((q: any, idx: number) => {
                       const ans = answers[q._id];
                       const sheets = answerSheets[q._id];
@@ -593,43 +668,77 @@ export default function TakeQuizPage() {
                             setCurrentQuestionIndex(idx);
                             setShowSummary(false);
                           }}
-                          className={`p-3 rounded-xl border text-xs font-bold transition flex flex-col items-center justify-center gap-1 ${
-                            isAnswered 
-                              ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 border-emerald-300 dark:border-emerald-800" 
-                              : "bg-rose-50 dark:bg-rose-950/50 text-rose-600 border-rose-300 dark:border-rose-800"
+                          className={`flex h-12 flex-col items-center justify-center rounded-lg border text-[10px] font-extrabold transition hover:-translate-y-0.5 ${
+                            isAnswered
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/[0.08] dark:text-emerald-300"
+                              : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-500/25 dark:bg-rose-500/[0.08] dark:text-rose-300"
                           }`}
                         >
                           <span>Q{idx + 1}</span>
-                          <span className="text-[9px]">{isAnswered ? "Done" : "Empty"}</span>
+                          <span className="text-[8px] font-semibold opacity-70">{isAnswered ? "Done" : "Empty"}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center pt-4 border-t dark:border-slate-800">
+                <div className="flex flex-col-reverse gap-2 border-t border-slate-100 bg-slate-50/70 px-3 py-3 dark:border-white/[0.07] dark:bg-white/[0.025] sm:flex-row sm:items-center sm:justify-between sm:px-4">
                   <button
                     onClick={() => setShowSummary(false)}
-                    className="px-5 py-2.5 rounded-2xl border font-bold text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300"
                   >
-                    Back to Questions
+                    <ArrowLeft size={14} /> Back to questions
                   </button>
-
                   <button
                     onClick={() => handleSubmitQuiz(false)}
-                    className="px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm shadow-lg transition flex items-center gap-2"
+                    className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
                   >
-                    <Send size={16} /> Confirm & Submit Quiz
+                    <Send size={14} /> Confirm & submit quiz
                   </button>
                 </div>
-              </div>
+              </section>
             )}
-
           </div>
         )}
       </main>
 
-      <QuizSubmitSuccessPopup 
+      {/* Fixed, compact navigation keeps the main question in focus */}
+      {!loading && !alreadySubmitted && !error && quiz && !showSummary && !isSubmitted && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_-8px_30px_-24px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0e1722]/95 sm:px-5">
+          <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
+            <button
+              onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
+              disabled={currentQuestionIndex === 0}
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-35 dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300"
+            >
+              <ArrowLeft size={14} /> <span className="hidden sm:inline">Previous</span><span className="sm:hidden">Prev</span>
+            </button>
+
+            <div className="min-w-0 text-center">
+              <p className="text-[10px] font-extrabold tabular-nums text-slate-700 dark:text-slate-200">{currentQuestionIndex + 1} <span className="font-medium text-slate-400">/ {totalQuestions}</span></p>
+              <p className="hidden text-[8px] font-bold uppercase tracking-[0.13em] text-slate-400 sm:block">Question navigation</p>
+            </div>
+
+            {currentQuestionIndex < totalQuestions - 1 ? (
+              <button
+                onClick={() => setCurrentQuestionIndex((prev) => Math.min(prev + 1, totalQuestions - 1))}
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-[#172b45] px-4 text-xs font-extrabold text-white shadow-sm transition hover:bg-[#24466e] dark:bg-blue-500 dark:hover:bg-blue-400"
+              >
+                Next <ArrowRight size={14} />
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowSummary(true)}
+                className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-extrabold text-white shadow-sm transition hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400"
+              >
+                Review <CheckCircle2 size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      <QuizSubmitSuccessPopup
         isOpen={showSuccessPopup}
         onClose={() => router.back()}
         message="Quiz submitted successfully! Your paper has been sent to the teacher for evaluation."
