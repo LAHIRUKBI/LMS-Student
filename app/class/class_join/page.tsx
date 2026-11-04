@@ -96,7 +96,10 @@ function QuizCardItem({ quiz, router }: { quiz: any; router: any }) {
 
       {!isStarted ? (
         <button 
-          onClick={() => setIsStarted(true)}
+          onClick={() => {
+            setIsStarted(true);
+            router.push(`/class/quiz/${quiz._id}`);
+          }}
           className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-xs font-bold shadow-md shadow-orange-600/20 transition-all flex items-center justify-center gap-2"
         >
           <CheckCircle size={16} /> Start Quiz Now
