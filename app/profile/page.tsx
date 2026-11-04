@@ -217,6 +217,10 @@ export default function ProfilePage() {
             .incorrect { color: #991b1b; font-weight: bold; }
             .feedback-box { margin-top: 10px; padding: 10px; border-radius: 6px; background: #eef2ff; border: 1px solid #c7d2fe; font-size: 12px; color: #312e81; }
 
+            /* Teacher-uploaded question images */
+            .question-image-container { margin: 12px 0 14px; text-align: center; page-break-inside: avoid; }
+            .question-image { display: block; max-width: 100%; max-height: 360px; width: auto; height: auto; object-fit: contain; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; }
+
             /* Written Answer Sheets ලොකුවට පැහැදිලිව පෙන්වීමේ Styles */
             .sheets-container { margin-top: 15px; padding: 12px; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0; }
             .sheets-header { font-size: 12px; font-weight: bold; color: #1e293b; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
@@ -330,6 +334,15 @@ export default function ProfilePage() {
             <span>${idx + 1}. ${q.questionText} <span class="badge">${q.type.toUpperCase()}</span></span>
             <span class="q-score">Score: ${earnedQMarks} / ${maxQMarks} Marks</span>
           </div>
+          ${q.imageUrl ? `
+          <div class="question-image-container">
+            <img
+              src="${getAnswerSheetUrl(q.imageUrl)}"
+              class="question-image"
+              alt="Question ${idx + 1} image"
+            />
+          </div>
+          ` : ''}
       `;
       if ((q.type === 'mcq' || q.type === 'single') && q.options && q.options.length > 0) {
         htmlContent += `<ul>`;
@@ -388,10 +401,37 @@ export default function ProfilePage() {
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => {
+
+    // Wait until question images and student answer-sheet images are loaded
+    // before opening the browser's PDF/print dialog.
+    const printImages = Array.from(printWindow.document.images);
+    const waitForImage = (img: HTMLImageElement) => new Promise<void>((resolve) => {
+      if (img.complete) {
+        resolve();
+        return;
+      }
+
+      let isResolved = false;
+      const finish = () => {
+        if (isResolved) return;
+        isResolved = true;
+        img.removeEventListener("load", finish);
+        img.removeEventListener("error", finish);
+        resolve();
+      };
+
+      img.addEventListener("load", finish, { once: true });
+      img.addEventListener("error", finish, { once: true });
+
+      // Do not block PDF printing forever if an external image server is slow.
+      printWindow.setTimeout(finish, 10000);
+    });
+
+    void Promise.all(printImages.map(waitForImage)).then(() => {
+      if (printWindow.closed) return;
+      printWindow.focus();
       printWindow.print();
-    }, 700);
+    });
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
