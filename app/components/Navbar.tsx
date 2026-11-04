@@ -509,7 +509,22 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                         <div
                           key={notif._id}
                           onClick={() => {
-                            if (notif.classId) {
+                            const notificationQuizId =
+                              typeof notif.quizId === "string"
+                                ? notif.quizId
+                                : notif.quizId?._id;
+
+                            if (notificationQuizId) {
+                              window.location.href = `/profile?quizId=${encodeURIComponent(notificationQuizId)}`;
+                              setIsNotificationOpen(false);
+                            } else if (notif.title?.includes("Quiz Results Published!")) {
+                              // Backward compatibility for result notifications created before quizId was stored.
+                              const quizTitleMatch = notif.message?.match(/quiz:\s*"([\s\S]*?)"\.\s*Score:/i);
+                              if (quizTitleMatch?.[1]) {
+                                window.location.href = `/profile?quizTitle=${encodeURIComponent(quizTitleMatch[1])}`;
+                                setIsNotificationOpen(false);
+                              }
+                            } else if (notif.classId) {
                               window.location.href = `/class/class_join?classId=${notif.classId}`;
                               setIsNotificationOpen(false);
                             }
@@ -575,6 +590,20 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 {user?.name || "Profile"}
               </span>
             </div>
+
+            {/* Desktop logout button: visible beside the profile image when the navbar is expanded */}
+            {!isExpanded && (
+              <button
+                type="button"
+                onClick={handleNavbarLogout}
+                aria-label="Log out"
+                title="Log out"
+                className="ml-1 hidden h-10 shrink-0 items-center gap-2 rounded-full border border-rose-200/70 bg-rose-50/75 px-3 text-rose-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 md:flex"
+              >
+                <LogOut size={17} />
+                <span className="whitespace-nowrap text-xs font-semibold">Log out</span>
+              </button>
+            )}
 
             {/* Desktop expand / collapse control */}
             <button

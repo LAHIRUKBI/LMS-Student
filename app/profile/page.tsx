@@ -30,6 +30,8 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState({ type: "", text: "" });
   const [myResults, setMyResults] = useState<any[]>([]);
+  const [targetQuizId, setTargetQuizId] = useState<string | null>(null);
+  const [targetQuizTitle, setTargetQuizTitle] = useState<string | null>(null);
   const [joinedClassesCount, setJoinedClassesCount] = useState(0);
 
   // Edit Profile Section Collapse State
@@ -159,6 +161,16 @@ export default function ProfilePage() {
     }
   };
 
+  // Read the quiz ID (or legacy quiz title) supplied by a result notification.
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const quizIdFromUrl = searchParams.get("quizId");
+    const quizTitleFromUrl = searchParams.get("quizTitle");
+
+    if (quizIdFromUrl) setTargetQuizId(quizIdFromUrl);
+    if (quizTitleFromUrl) setTargetQuizTitle(quizTitleFromUrl);
+  }, []);
+
   useEffect(() => {
     const fetchMyResults = async () => {
       try {
@@ -173,6 +185,25 @@ export default function ProfilePage() {
     };
     fetchMyResults();
   }, []);
+
+  // Scroll directly to the matching quiz result after the profile results are loaded.
+  useEffect(() => {
+    if ((!targetQuizId && !targetQuizTitle) || myResults.length === 0) return;
+
+    const matchingResult = myResults.find((result: any) => {
+      const resultQuizId = result.quizId?._id || result.quizId;
+      const idMatches = targetQuizId && String(resultQuizId) === String(targetQuizId);
+      const titleMatches = targetQuizTitle && result.quizId?.title === targetQuizTitle;
+      return Boolean(idMatches || titleMatches);
+    });
+
+    if (!matchingResult) return;
+
+    const matchingQuizId = matchingResult.quizId?._id || matchingResult.quizId;
+    document
+      .getElementById(`quiz-result-${matchingQuizId}`)
+      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [targetQuizId, targetQuizTitle, myResults]);
 
   const handleToggleEditProfile = () => {
     const newState = !isEditProfileOpen;
@@ -997,7 +1028,16 @@ export default function ProfilePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-36 overflow-y-auto pr-1 custom-scrollbar">
               {myResults.map((res) => (
-                <div key={res._id} className="p-3 rounded-2xl border border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs bg-slate-50/60 dark:bg-slate-800/40 hover:border-slate-200 dark:hover:border-slate-700 transition-all">
+                <div
+                  key={res._id}
+                  id={`quiz-result-${res.quizId?._id || res.quizId}`}
+                  className={`p-3 rounded-2xl border flex items-center justify-between text-xs bg-slate-50/60 dark:bg-slate-800/40 transition-all ${
+                    (String(res.quizId?._id || res.quizId) === String(targetQuizId) ||
+                      (Boolean(targetQuizTitle) && res.quizId?.title === targetQuizTitle))
+                      ? "border-teal-400 ring-2 ring-teal-400/60 bg-teal-50/80 dark:border-teal-400 dark:bg-teal-500/10 shadow-lg shadow-teal-500/10"
+                      : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700"
+                  }`}
+                >
                   <div className="truncate mr-2">
                     <h4 className="font-bold text-xs text-slate-800 dark:text-white truncate">{res.quizId?.title}</h4>
                     <p className="text-slate-400 text-[10px] mt-0.5">Score: <strong className="text-emerald-600 dark:text-emerald-400">{res.score} / {res.maxScore}</strong></p>
