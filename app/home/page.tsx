@@ -13,6 +13,7 @@ import FeaturesSection from "@/app/components/FeaturesSection";
 import AnnouncementsSection from "@/app/components/AnnouncementsSection";
 import TestimonialsSection from "@/app/components/TestimonialsSection";
 import GallerySection from "@/app/components/GallerySection";
+import LatestFreeMaterials from "@/app/components/LatestFreeMaterials";
 import AIChatWidget from "@/app/components/AIChatWidget";
 
 interface AdLink {
@@ -343,7 +344,10 @@ export default function StudentDashboard() {
         {/* Remaining sections retain their original page gutters */}
         <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16">
 
-        {/* 2. Second Section (Features) */}
+        {/* 2. Latest Free Learning Materials */}
+        <LatestFreeMaterials />
+
+        {/* 3. Second Section (Features) */}
         <FeaturesSection
           featureBadge={featureBadge}
           featureTitleLine1={featureTitleLine1}
@@ -352,7 +356,7 @@ export default function StudentDashboard() {
           currentFeatureItems={currentFeatureItems}
         />
 
-        {/* 3. Announcements */}
+        {/* 4. Announcements */}
         <AnnouncementsSection
           search={search}
           setSearch={setSearch}
@@ -373,7 +377,7 @@ export default function StudentDashboard() {
           getMediaUrl={getMediaUrl}
         />
 
-        {/* 4. Testimonials Section */}
+        {/* 5. Testimonials Section */}
         <TestimonialsSection
           testimonials={testimonials}
           testimonialIndex={testimonialIndex}
@@ -383,7 +387,7 @@ export default function StudentDashboard() {
           getMediaUrl={getMediaUrl}
         />
 
-        {/* 5. Gallery Section */}
+        {/* 6. Gallery Section */}
         <GallerySection
           galleryDescription={galleryDescription}
           currentGalleryItems={currentGalleryItems}

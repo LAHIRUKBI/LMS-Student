@@ -316,18 +316,18 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
   return (
     <>
-      <div className="fixed top-4 left-1/2 z-50 w-full max-w-7xl -translate-x-1/2 px-3 sm:px-5 pointer-events-none">
+      <div className="fixed top-3 left-0 z-50 w-full px-3 sm:px-5 md:px-7 lg:px-9 xl:px-10 2xl:px-12 pointer-events-none">
         {/* Soft ambient colour gives the glass a visible luminous edge */}
-        <div className="pointer-events-none absolute left-[12%] top-[-18px] h-20 w-52 rounded-full bg-cyan-400/25 blur-3xl" />
-        <div className="pointer-events-none absolute right-[13%] top-[-20px] h-24 w-56 rounded-full bg-violet-500/25 blur-3xl" />
-        <div className="flex items-center justify-between gap-2 sm:gap-3 pointer-events-none">
+        <div className="pointer-events-none absolute left-[8%] top-[-16px] h-16 w-44 rounded-full bg-cyan-400/25 blur-3xl" />
+        <div className="pointer-events-none absolute right-[8%] top-[-18px] h-20 w-48 rounded-full bg-violet-500/25 blur-3xl" />
+        <div className="flex items-center justify-between gap-2 sm:gap-3 md:gap-4 pointer-events-none">
 
           {/* LEFT: Mobile menu trigger / desktop brand */}
           <div className="relative pointer-events-auto" ref={menuRef}>
-            <div className={`flex h-[62px] items-center rounded-full border border-white/55 bg-gradient-to-br from-white/48 via-white/25 to-cyan-100/16 shadow-[0_12px_45px_rgba(55,65,120,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-3xl [backdrop-filter:saturate(180%)_blur(28px)] dark:border-white/15 dark:from-slate-800/48 dark:via-slate-900/38 dark:to-indigo-950/42 dark:shadow-[0_12px_45px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-500 ${
+            <div className={`flex h-[52px] items-center !rounded-full border border-white/55 bg-gradient-to-br from-white/48 via-white/25 to-cyan-100/16 shadow-[0_12px_45px_rgba(55,65,120,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-3xl [backdrop-filter:saturate(180%)_blur(28px)] dark:border-white/15 dark:from-slate-800/48 dark:via-slate-900/38 dark:to-indigo-950/42 dark:shadow-[0_12px_45px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.12)] transition-all duration-500 ${
               isExpanded
-                ? "h-[62px] w-[62px] min-w-[62px] justify-center p-0"
-                : "px-2.5 sm:px-3"
+                ? "h-[52px] w-[52px] min-w-[52px] justify-center p-0"
+                : "pl-2.5 pr-0 sm:pl-3"
             }`}>
               <button
                 type="button"
@@ -338,23 +338,23 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 }}
                 aria-label="Open navigation menu"
                 aria-expanded={isDropdownOpen}
-                className={`group flex h-10 items-center justify-center rounded-full text-slate-800 transition-all duration-300 hover:bg-white/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 dark:text-white dark:hover:bg-white/10 focus-visible:ring-offset-2 ${
+                className={`group flex h-9 items-center justify-center rounded-full text-slate-800 transition-all duration-300 hover:bg-white/45 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 dark:text-white dark:hover:bg-white/10 focus-visible:ring-offset-2 ${
                   isExpanded
-                    ? "absolute left-1/2 top-1/2 w-10 min-w-10 -translate-x-1/2 -translate-y-1/2 p-0"
+                    ? "absolute left-1/2 top-1/2 w-9 min-w-9 -translate-x-1/2 -translate-y-1/2 p-0"
                     : "gap-2.5 px-2.5"
                 }`}
               >
                 <span
-                  className={`relative grid h-9 w-9 min-h-9 min-w-9 shrink-0 place-items-center overflow-hidden rounded-full border text-white backdrop-blur-2xl transition-all duration-300 ${
+                  className={`relative grid h-8 w-8 min-h-8 min-w-8 shrink-0 place-items-center overflow-hidden rounded-full border text-white backdrop-blur-2xl transition-all duration-300 ${
                     isExpanded
                       ? "border-cyan-200/80 bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-700 shadow-[inset_0_1px_0_rgba(255,255,255,.55),0_5px_22px_rgba(37,99,235,.42)] ring-1 ring-cyan-100/45 dark:border-sky-300/70 dark:from-sky-500 dark:via-blue-700 dark:to-indigo-800 dark:shadow-[inset_0_1px_0_rgba(255,255,255,.28),0_5px_22px_rgba(37,99,235,.38)]"
                       : "border-white/70 bg-gradient-to-br from-indigo-500 via-violet-500 to-cyan-500 shadow-[0_5px_18px_rgba(99,102,241,0.38)] group-hover:shadow-[0_7px_24px_rgba(99,102,241,0.5)]"
                   }`}
                 >
-                  {isExpanded ? <Menu size={19} /> : <BookOpen size={19} />}
+                  {isExpanded ? <Menu size={17} /> : <BookOpen size={17} />}
                   <span className="absolute inset-0 rounded-full bg-gradient-to-br from-white/55 via-cyan-200/25 to-violet-300/35 opacity-0 blur-md transition-opacity duration-300 group-hover:opacity-100" />
                 </span>
-                <span className={`overflow-hidden whitespace-nowrap text-sm font-semibold tracking-wide text-white transition-all duration-500 ${
+                <span className={`overflow-hidden whitespace-nowrap text-[13px] font-semibold tracking-wide text-white transition-all duration-500 ${
                   isExpanded ? "max-w-0 opacity-0" : "max-w-32 opacity-100"
                 }`}>
                   NovaSkill
@@ -362,11 +362,11 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               </button>
 
               {!isExpanded && (
-                <span className="mx-2 hidden h-7 w-px bg-white/15 md:block" />
+                <span className="mx-2 hidden h-6 w-px bg-white/15 md:block" />
               )}
 
               {/* Desktop navigation: each item expands independently on hover */}
-              <div className={`hidden md:flex items-center gap-1 rounded-full border border-white/20 bg-white/15 px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.035] transition-all duration-500 ${
+              <div className={`hidden md:flex items-center gap-1 !rounded-full border border-white/20 bg-white/15 px-1.5 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.035] transition-all duration-500 ${
                 isExpanded ? "max-w-0 overflow-hidden opacity-0" : "max-w-[760px] opacity-100"
               }`}>
                 {navItems.map((item) => {
@@ -378,7 +378,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                       href={item.href}
                       aria-label={item.label}
                       aria-current={active ? "page" : undefined}
-                      className={`group/nav relative flex h-[46px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-full border transition-[width,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(.2,.8,.2,1)] hover:w-[124px] focus-visible:w-[124px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
+                      className={`group/nav relative flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border transition-[width,background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(.2,.8,.2,1)] hover:w-[112px] focus-visible:w-[112px] focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${
                         active
                           ? "border-white/75 bg-gradient-to-br from-indigo-500 via-violet-500 to-blue-500 text-white shadow-[inset_0_1px_0_rgba(255,255,255,.55),0_5px_22px_rgba(99,102,241,.38)]"
                           : "border-transparent text-slate-600 hover:border-white/70 hover:bg-white/65 hover:text-indigo-700 dark:text-slate-300 dark:hover:border-white/15 dark:hover:bg-white/10 dark:hover:text-white"
@@ -388,9 +388,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                         <span className="pointer-events-none absolute inset-[2px] rounded-full bg-gradient-to-br from-white/35 via-white/10 to-transparent opacity-100" />
                       )}
                       <span className="relative z-10 flex shrink-0 items-center justify-center">
-                        <Icon size={21} strokeWidth={active ? 2.3 : 1.9} />
+                        <Icon size={18} strokeWidth={active ? 2.3 : 1.9} />
                       </span>
-                      <span className="relative z-10 ml-0 max-w-0 overflow-hidden whitespace-nowrap text-[13px] font-semibold opacity-0 transition-all duration-300 group-hover/nav:ml-2 group-hover/nav:max-w-[78px] group-hover/nav:opacity-100 group-focus-visible/nav:ml-2 group-focus-visible/nav:max-w-[78px] group-focus-visible/nav:opacity-100">
+                      <span className="relative z-10 ml-0 max-w-0 overflow-hidden whitespace-nowrap text-[12px] font-semibold opacity-0 transition-all duration-300 group-hover/nav:ml-1.5 group-hover/nav:max-w-[70px] group-hover/nav:opacity-100 group-focus-visible/nav:ml-1.5 group-focus-visible/nav:max-w-[70px] group-focus-visible/nav:opacity-100">
                         {item.label}
                       </span>
                       {item.href === "/notice_view" && unreadNoticeCount > 0 && (
@@ -403,7 +403,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
 
               {/* Mobile dropdown: two separate frosted-glass panels */}
               {isExpanded && isDropdownOpen && (
-                <div className="absolute left-0 top-[calc(100%+10px)] z-[70] flex w-[min(282px,calc(100vw-28px))] flex-col gap-2 rounded-[24px] border border-white/85 bg-gradient-to-br from-white/68 via-white/48 to-indigo-100/38 p-2 shadow-[0_20px_58px_rgba(65,55,130,.20),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-3xl [backdrop-filter:saturate(185%)_blur(30px)] animate-in fade-in slide-in-from-top-2 duration-300 dark:border-white/15 dark:from-slate-800/68 dark:via-slate-900/58 dark:to-indigo-950/62">
+                <div className="absolute left-0 top-[calc(100%+10px)] z-[70] flex w-[min(266px,calc(100vw-28px))] flex-col gap-1.5 rounded-[22px] border border-white/85 bg-gradient-to-br from-white/68 via-white/48 to-indigo-100/38 p-2 shadow-[0_20px_58px_rgba(65,55,130,.20),inset_0_1px_0_rgba(255,255,255,.98)] backdrop-blur-3xl [backdrop-filter:saturate(185%)_blur(30px)] animate-in fade-in slide-in-from-top-2 duration-300 dark:border-white/15 dark:from-slate-800/68 dark:via-slate-900/58 dark:to-indigo-950/62">
                   <div className="rounded-[19px] border border-white/85 bg-white/30 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_6px_18px_rgba(99,102,241,.07)] backdrop-blur-2xl dark:border-white/15 dark:bg-white/[0.035] dark:shadow-[inset_0_1px_0_rgba(255,255,255,.08)]">
                     {!isStandalone && (
                       <button
@@ -413,7 +413,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                         }}
                         className="mb-1 flex w-full items-center gap-2.5 rounded-[15px] bg-gradient-to-r from-indigo-500 to-violet-500 px-3.5 py-2.5 text-left text-[13px] font-semibold text-white shadow-[0_6px_16px_rgba(99,102,241,.22)] transition-transform active:scale-[.98]"
                       >
-                        <Download size={18} />
+                        <Download size={16} />
                         <span>Get NovaSkill App</span>
                       </button>
                     )}
@@ -425,7 +425,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsDropdownOpen(false)}
-                          className={`flex min-h-[44px] items-center gap-2.5 rounded-[14px] px-3.5 py-2 text-[13px] font-medium transition-all duration-300 ${
+                          className={`flex min-h-[41px] items-center gap-2.5 rounded-[13px] px-3 py-1.5 text-[12px] font-medium transition-all duration-300 ${
                             active
                               ? "bg-gradient-to-r from-violet-300/90 via-indigo-300/85 to-sky-300/80 text-indigo-950 shadow-[inset_0_1px_0_rgba(255,255,255,.95),0_7px_22px_rgba(99,102,241,.22)] dark:from-violet-500/45 dark:via-indigo-500/40 dark:to-sky-500/35 dark:text-white"
                               : "text-slate-700 hover:bg-white/65 dark:text-slate-200 dark:hover:bg-white/[0.07]"
@@ -462,7 +462,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
           </div>
 
           {/* RIGHT: utilities and account controls */}
-          <div className="pointer-events-auto flex h-[62px] shrink-0 items-center gap-0.5 rounded-full border border-white/55 bg-gradient-to-br from-white/48 via-white/25 to-violet-100/16 px-1.5 shadow-[0_12px_45px_rgba(55,65,120,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-3xl [backdrop-filter:saturate(180%)_blur(28px)] dark:border-white/15 dark:from-slate-800/48 dark:via-slate-900/38 dark:to-indigo-950/42 dark:shadow-[0_12px_45px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.12)] sm:gap-1 sm:px-2">
+          <div className="pointer-events-auto flex h-[52px] shrink-0 items-center gap-0.5 rounded-full border border-white/55 bg-gradient-to-br from-white/48 via-white/25 to-violet-100/16 px-1.5 shadow-[0_12px_45px_rgba(55,65,120,0.16),inset_0_1px_0_rgba(255,255,255,0.95)] backdrop-blur-3xl [backdrop-filter:saturate(180%)_blur(28px)] dark:border-white/15 dark:from-slate-800/48 dark:via-slate-900/38 dark:to-indigo-950/42 dark:shadow-[0_12px_45px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.12)] sm:gap-1 sm:px-2">
             {!isStandalone && !isExpanded && (
               <button
                 onClick={handleInstallClick}
@@ -482,16 +482,16 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                   if (!isNotificationOpen) fetchNotifications();
                 }}
                 aria-label="Notifications"
-                className="relative grid h-10 w-10 place-items-center rounded-full text-slate-600 transition-all hover:bg-white/65 hover:text-indigo-600 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
+                className="relative grid h-9 w-9 place-items-center rounded-full text-slate-600 transition-all hover:bg-white/65 hover:text-indigo-600 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white"
               >
-                <Bell size={19} />
+                <Bell size={17} />
                 {unreadCount > 0 && (
                   <span className="absolute right-2 top-2 h-2 w-2 rounded-full border border-[#090b10] bg-rose-400 shadow-[0_0_9px_rgba(251,113,133,.8)]" />
                 )}
               </button>
 
               {isNotificationOpen && (
-                <div className="fixed right-3 top-[88px] z-[80] max-h-[calc(100dvh-104px)] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-[24px] border border-white/60 bg-white/90 p-3 shadow-[0_24px_70px_rgba(20,25,45,.22)] backdrop-blur-3xl dark:border-white/10 dark:bg-[#11141c]/95 md:absolute md:right-0 md:top-[calc(100%+14px)] md:max-h-none md:w-96 md:overflow-visible md:p-4">
+                <div className="fixed right-3 top-[76px] z-[80] max-h-[calc(100dvh-92px)] w-[min(360px,calc(100vw-24px))] overflow-hidden rounded-[24px] border border-white/60 bg-white/90 p-3 shadow-[0_24px_70px_rgba(20,25,45,.22)] backdrop-blur-3xl dark:border-white/10 dark:bg-[#11141c]/95 md:absolute md:right-0 md:top-[calc(100%+10px)] md:max-h-none md:w-96 md:overflow-visible md:p-4">
                   <div className="flex items-center justify-between border-b border-slate-200/70 pb-3 dark:border-white/10">
                     <div>
                       <h3 className="text-sm font-bold text-slate-900 dark:text-white">Notifications</h3>
@@ -561,16 +561,16 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             <button
               onClick={toggleDarkMode}
               aria-label="Toggle dark mode"
-              className="order-first grid h-10 w-10 shrink-0 place-items-center rounded-full text-slate-600 transition-all hover:bg-white/65 hover:text-indigo-600 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white sm:order-none"
+              className="order-first grid h-9 w-9 shrink-0 place-items-center rounded-full text-slate-600 transition-all hover:bg-white/65 hover:text-indigo-600 dark:text-white/75 dark:hover:bg-white/10 dark:hover:text-white sm:order-none"
             >
-              {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+              {isDarkMode ? <Sun size={17} /> : <Moon size={17} />}
             </button>
 
-            <div className="group/profile relative ml-0.5 flex h-11 w-11 shrink-0 items-center justify-center">
+            <div className="group/profile relative ml-0.5 flex h-10 w-10 shrink-0 items-center justify-center">
               <Link
                 href="/profile"
                 aria-label="Profile"
-                className="relative grid aspect-square h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-cyan-300 via-indigo-500 to-violet-500 p-[2px] shadow-[0_5px_18px_rgba(99,102,241,.28)] transition-transform duration-300 hover:scale-[1.06] hover:shadow-[0_8px_24px_rgba(99,102,241,.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
+                className="relative grid aspect-square h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-gradient-to-br from-cyan-300 via-indigo-500 to-violet-500 p-[2px] shadow-[0_5px_18px_rgba(99,102,241,.28)] transition-transform duration-300 hover:scale-[1.06] hover:shadow-[0_8px_24px_rgba(99,102,241,.4)] focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2"
               >
                 <span className="relative block aspect-square h-full w-full min-h-0 min-w-0 overflow-hidden rounded-full bg-white dark:bg-slate-900">
                   {profileImgUrl ? (
@@ -581,7 +581,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                     />
                   ) : (
                     <span className="grid h-full w-full place-items-center rounded-full bg-gradient-to-br from-indigo-100 to-violet-100 text-indigo-600 dark:from-indigo-500/25 dark:to-violet-500/25 dark:text-indigo-200">
-                      <User size={17} />
+                      <User size={15} />
                     </span>
                   )}
                 </span>
@@ -598,9 +598,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
                 onClick={handleNavbarLogout}
                 aria-label="Log out"
                 title="Log out"
-                className="ml-1 hidden h-10 shrink-0 items-center gap-2 rounded-full border border-rose-200/70 bg-rose-50/75 px-3 text-rose-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 md:flex"
+                className="ml-1 hidden h-9 shrink-0 items-center gap-1.5 rounded-full border border-rose-200/70 bg-rose-50/75 px-2.5 text-rose-600 shadow-sm transition-all hover:-translate-y-0.5 hover:bg-rose-100 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 dark:border-rose-400/20 dark:bg-rose-500/10 dark:text-rose-300 dark:hover:bg-rose-500/20 md:flex"
               >
-                <LogOut size={17} />
+                <LogOut size={15} />
                 <span className="whitespace-nowrap text-xs font-semibold">Log out</span>
               </button>
             )}
@@ -610,9 +610,9 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               onClick={toggleExpand}
               aria-label={isExpanded ? "Expand navigation" : "Collapse navigation"}
               title={isExpanded ? "Expand Navbar" : "Collapse Navbar"}
-              className="ml-0.5 hidden h-9 w-9 shrink-0 place-items-center rounded-full border border-white/65 bg-white/55 text-slate-600 shadow-sm transition-all hover:bg-white/90 hover:text-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white/75 dark:hover:bg-white/20 dark:hover:text-white md:grid"
+              className="ml-0.5 hidden h-8 w-8 shrink-0 place-items-center rounded-full border border-white/65 bg-white/55 text-slate-600 shadow-sm transition-all hover:bg-white/90 hover:text-indigo-600 dark:border-white/15 dark:bg-white/10 dark:text-white/75 dark:hover:bg-white/20 dark:hover:text-white md:grid"
             >
-              {isExpanded ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+              {isExpanded ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
             </button>
           </div>
         </div>
@@ -640,18 +640,18 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
             <div className="my-6 space-y-3 text-sm">
               <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
                 <div className="mb-1 flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
-                  <Monitor size={16} className="text-indigo-500" /> පරිගණකය (Edge / Chrome)
+                  <Monitor size={16} className="text-indigo-500" /> Computer (Edge / Chrome)
                 </div>
                 <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  බ්‍රවුසරයේ URL තීරුවේ (Address bar) දකුණු කෙළවරේ ඇති <strong>Install (App available)</strong> අයිකනය ඔබන්න.
+                  Click the <strong>Install (App available)</strong> icon at the right end of your browser's address bar.
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200/70 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[0.04]">
                 <div className="mb-1 flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-100">
-                  <Smartphone size={16} className="text-emerald-500" /> ජංගම දුරකථනය (Android / iOS)
+                  <Smartphone size={16} className="text-emerald-500" /> Mobile Device (Android / iOS)
                 </div>
                 <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-400">
-                  බ්‍රවුසරයේ <strong>Menu (⋮)</strong> හෝ <strong>Share</strong> බොත්තම ඔබා <strong>"Install app"</strong> හෝ <strong>"Add to Home Screen"</strong> තෝරන්න.
+                  Tap your browser's <strong>Menu (⋮)</strong> or <strong>Share</strong> button, then select <strong>"Install app"</strong> or <strong>"Add to Home Screen"</strong>.
                 </p>
               </div>
             </div>
@@ -659,7 +659,7 @@ export default function Navbar({ user, onLogout }: NavbarProps) {
               onClick={() => setShowInstallGuide(false)}
               className="w-full rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all hover:bg-indigo-700 active:scale-[.99]"
             >
-              තේරුම් ගත්තා (Got it)
+              Got it
             </button>
           </div>
         </div>
