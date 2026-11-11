@@ -215,13 +215,12 @@ export default function TakeQuizPage() {
     if (typeof ans === 'object') return Object.values(ans).some((val: any) => val && val.trim() !== "");
     return String(ans).trim() !== "";
   }).length : 0;
-  const progressPercentage = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0;
 
   return (
     <div className="min-h-screen bg-[#f3f5f8] pb-24 font-sans text-[#182230] dark:bg-[#0b1118] dark:text-[#e8eef6]">
       <Navbar user={user} onLogout={() => { localStorage.clear(); router.push("/login"); }} />
 
-      <main className="mx-auto max-w-5xl px-3 pb-5 pt-20 sm:px-5 sm:pt-[5.5rem]">
+      <main className="mx-auto max-w-5xl lg:max-w-[1600px] px-3 pb-5 pt-20 sm:px-5 sm:pt-[5.5rem]">
         {loading ? (
           <div className="grid min-h-[45vh] place-items-center">
             <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-white/10 dark:bg-[#111a24]">
@@ -272,28 +271,9 @@ export default function TakeQuizPage() {
 
             </div>
 
-            {quiz.description && (
-              <p className="hidden truncate pl-[3.25rem] text-[11px] text-slate-500 dark:text-slate-400 sm:block">{quiz.description}</p>
-            )}
-
             {!showSummary ? (
-              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_190px]">
+              <div className="grid grid-cols-1 items-start gap-3 lg:grid-cols-[minmax(0,1fr)_340px]">
                 <div className="order-2 min-w-0 space-y-3 lg:order-1">
-                  <div className="rounded-xl border border-slate-200 bg-white px-3.5 py-3 shadow-sm dark:border-white/10 dark:bg-[#111a24]">
-                    <div className="mb-2 flex items-center justify-between gap-3 text-[10px]">
-                      <span className="font-bold text-slate-700 dark:text-slate-200">
-                        Question {currentQuestionIndex + 1} <span className="font-medium text-slate-400">/ {totalQuestions}</span>
-                      </span>
-                      <span className="font-semibold text-slate-500 dark:text-slate-400">
-                        {answeredCount} answered <span className="px-1 text-slate-300 dark:text-slate-600">·</span> {totalQuestions - answeredCount} remaining
-                      </span>
-                      <span className="font-extrabold tabular-nums text-blue-700 dark:text-blue-300">{Math.round(progressPercentage)}%</span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10">
-                      <div className="h-full rounded-full bg-blue-600 transition-all duration-300 dark:bg-blue-400" style={{ width: `${progressPercentage}%` }} />
-                    </div>
-                  </div>
-
                   <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_-24px_rgba(15,23,42,0.35)] dark:border-white/10 dark:bg-[#111a24]">
                 {(() => {
                   const q = quiz.questions[currentQuestionIndex];
@@ -317,7 +297,11 @@ export default function TakeQuizPage() {
                             <span className="rounded-md bg-blue-50 px-2 py-1 text-[10px] font-extrabold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">{totalQMarks} marks</span>
                           </div>
                         </div>
-                        <h2 className="whitespace-pre-wrap break-words text-base font-bold leading-7 tracking-[-0.01em] text-slate-900 dark:text-slate-50 sm:text-xl sm:leading-8">{q.questionText}</h2>
+                        <h2
+                          className="select-none whitespace-pre-wrap break-words text-base font-bold leading-7 tracking-[-0.01em] text-slate-900 dark:text-slate-50 sm:text-xl sm:leading-8"
+                          onContextMenu={(event) => event.preventDefault()}
+                          onCopy={(event) => event.preventDefault()}
+                        >{q.questionText}</h2>
                       </div>
 
                       <div className="space-y-4 px-4 py-4 sm:px-6 sm:py-5">
@@ -327,7 +311,10 @@ export default function TakeQuizPage() {
                             <img
                               src={questionImageSrc}
                               alt="Question visual"
-                              className="max-h-[210px] max-w-full rounded-lg object-contain sm:max-h-[250px]"
+                              draggable={false}
+                              onDragStart={(event) => event.preventDefault()}
+                              onContextMenu={(event) => event.preventDefault()}
+                              className="select-none max-h-[210px] max-w-full rounded-lg object-contain sm:max-h-[250px]"
                             />
                           </div>
                         )}
@@ -336,7 +323,7 @@ export default function TakeQuizPage() {
                         {q.type === 'mcq' && (
                           <div className="space-y-2.5">
                             <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Select all correct answers</p>
-                            <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-2">
                               {q.options.map((opt: string, optIdx: number) => {
                                 const selectedArray = Array.isArray(answers[q._id]) ? answers[q._id] : [];
                                 const isSelected = selectedArray.includes(opt);
@@ -345,7 +332,9 @@ export default function TakeQuizPage() {
                                   <div
                                     key={optIdx}
                                     onClick={() => handleMCQCheckboxChange(q._id, opt)}
-                                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
+                                    onContextMenu={(event) => event.preventDefault()}
+                                    onCopy={(event) => event.preventDefault()}
+                                    className={`flex select-none min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
                                       isSelected
                                         ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400/60 dark:bg-blue-400/10 dark:text-blue-100"
                                         : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.025] dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:bg-white/[0.05]"
@@ -372,7 +361,7 @@ export default function TakeQuizPage() {
                         {q.type === 'single' && (
                           <div className="space-y-2.5">
                             <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">Select one correct answer</p>
-                            <div className="grid gap-2 sm:grid-cols-2">
+                            <div className="grid grid-cols-1 gap-2">
                               {q.options.map((opt: string, optIdx: number) => {
                                 const isSelected = answers[q._id] === opt;
 
@@ -380,7 +369,9 @@ export default function TakeQuizPage() {
                                   <div
                                     key={optIdx}
                                     onClick={() => handleAnswerChange(q._id, opt)}
-                                    className={`flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
+                                    onContextMenu={(event) => event.preventDefault()}
+                                    onCopy={(event) => event.preventDefault()}
+                                    className={`flex select-none min-h-12 cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition ${
                                       isSelected
                                         ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-400/60 dark:bg-blue-400/10 dark:text-blue-100"
                                         : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:bg-slate-50 dark:border-white/10 dark:bg-white/[0.025] dark:text-slate-300 dark:hover:border-blue-400/40 dark:hover:bg-white/[0.05]"
@@ -461,7 +452,11 @@ export default function TakeQuizPage() {
                                 return (
                                   <div key={sq._id || sqIdx} className="overflow-hidden rounded-xl border border-slate-200 dark:border-white/10">
                                     <div className="flex items-start justify-between gap-3 bg-slate-50 px-3 py-2.5 dark:bg-white/[0.035]">
-                                      <label className="flex min-w-0 items-start gap-2 text-xs font-semibold leading-5 text-slate-700 dark:text-slate-200">
+                                      <label
+                                        className="flex select-none min-w-0 items-start gap-2 text-xs font-semibold leading-5 text-slate-700 dark:text-slate-200"
+                                        onContextMenu={(event) => event.preventDefault()}
+                                        onCopy={(event) => event.preventDefault()}
+                                      >
                                         <span className="grid h-6 w-6 shrink-0 place-items-center rounded-md bg-blue-100 font-mono text-[9px] font-extrabold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">{String(sqIdx + 1).padStart(2, "0")}</span>
                                         <span>{sq.subQuestionText}</span>
                                       </label>
@@ -541,7 +536,6 @@ export default function TakeQuizPage() {
                       <div className="flex items-center justify-between gap-2">
                         <div>
                           <p className="text-[9px] font-extrabold uppercase tracking-[0.15em] text-slate-500 dark:text-slate-400">Time remaining</p>
-                          <p className="mt-0.5 text-[9px] font-medium text-slate-400">Keep an eye on your time</p>
                         </div>
                         <span className={`grid h-8 w-8 place-items-center rounded-lg ${
                           isNearTimeout
@@ -572,7 +566,7 @@ export default function TakeQuizPage() {
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-7 gap-1.5 lg:grid-cols-5">
+                    <div className="mt-3 grid grid-cols-10 gap-1">
                       {quiz.questions.map((q: any, idx: number) => {
                         const ans = answers[q._id];
                         const sheets = answerSheets[q._id];
@@ -705,7 +699,7 @@ export default function TakeQuizPage() {
       {/* Fixed, compact navigation keeps the main question in focus */}
       {!loading && !alreadySubmitted && !error && quiz && !showSummary && !isSubmitted && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/90 bg-white/95 px-3 py-2.5 shadow-[0_-8px_30px_-24px_rgba(15,23,42,0.35)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0e1722]/95 sm:px-5">
-          <div className="mx-auto flex max-w-5xl items-center justify-between gap-2">
+          <div className="mx-auto flex max-w-5xl lg:max-w-[1600px] items-center justify-between gap-2">
             <button
               onClick={() => setCurrentQuestionIndex((prev) => Math.max(prev - 1, 0))}
               disabled={currentQuestionIndex === 0}
