@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import axios from "axios";
 import Navbar from "@/app/components/Navbar";
 import FreeCardRequestModal from "@/app/page_components/free_card_request/page"; 
+import CheckPhysicalMarksModal from "@/app/components/CheckPhysicalMarksModal"; // අලුතින් එකතු කරන ලද Popup Component එක
 import { Save, User, Mail, Phone, MapPin, GraduationCap, Loader2, Building, Camera, CheckCircle2, AlertCircle, Globe, Clock, BookOpen, Users, Download, Award, Check, X, ShieldCheck, Sparkles, CreditCard, ChevronDown, ChevronUp } from "lucide-react";
 import { io } from "socket.io-client";
 
@@ -33,6 +34,9 @@ export default function ProfilePage() {
   const [targetQuizId, setTargetQuizId] = useState<string | null>(null);
   const [targetQuizTitle, setTargetQuizTitle] = useState<string | null>(null);
   const [joinedClassesCount, setJoinedClassesCount] = useState(0);
+
+  // Check Physical Marks Modal State
+  const [isCheckMarksModalOpen, setIsCheckMarksModalOpen] = useState(false);
 
   // Edit Profile Section Collapse State
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(() => {
@@ -704,6 +708,15 @@ export default function ProfilePage() {
                   </div>
                 )}
               </div>
+
+              {/* Check Paper Mark Button */}
+              <button
+                onClick={() => setIsCheckMarksModalOpen(true)}
+                className="w-full mt-2 flex items-center justify-center gap-2 py-2.5 px-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-500/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Award size={14} />
+                <span>Check Paper Mark</span>
+              </button>
             </div>
 
           </div>
@@ -1061,6 +1074,12 @@ export default function ProfilePage() {
         isOpen={isFreeCardModalOpen} 
         onClose={() => setIsFreeCardModalOpen(false)} 
         currentUser={currentUser} 
+      />
+
+      {/* Check Physical Paper Marks Modal */}
+      <CheckPhysicalMarksModal
+        isOpen={isCheckMarksModalOpen}
+        onClose={() => setIsCheckMarksModalOpen(false)}
       />
 
     </div>
