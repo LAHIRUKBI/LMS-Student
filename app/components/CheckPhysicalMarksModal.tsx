@@ -137,37 +137,72 @@ export default function CheckPhysicalMarksModal({ isOpen, onClose }: CheckPhysic
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!indexNumber.trim()) return;
+
+    const cleanIndex = indexNumber.trim();
+    if (!cleanIndex) return;
 
     setLoading(true);
     setErrorMsg("");
     setMarkData(null);
 
     try {
-      const token = localStorage.getItem("token");
-      const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      // NEXT_PUBLIC_API_URL must be your backend's ROOT URL (without /api).
+      // Use localhost only during development, never as a production fallback.
+      const apiUrl = (
+        process.env.NEXT_PUBLIC_API_URL ||
+        (process.env.NODE_ENV === "development" ? "http://localhost:5000" : "")
+      ).trim().replace(/\/+$/, "");
 
-      // Fetch all physical marks for the given index number
-      const res = await axios.get(`${API_URL}/api/physical-marks/all`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.data.success) {
-        const allMarks = res.data.data;
-        // Keep every record whose index number matches the input
-        const matched = allMarks.filter(
-          (item: any) => item.indexNumber.trim().toLowerCase() === indexNumber.trim().toLowerCase()
-        );
-
-        if (matched.length > 0) {
-          setMarkData(matched);
-        } else {
-          setErrorMsg("No physical paper marks found for this index number.");
-        }
+      if (!apiUrl) {
+        setErrorMsg("Marks server is not configured. Please contact support.");
+        return;
       }
-    } catch (err) {
+
+      // Fetch ONLY records matching this index number on the server.
+      // Requires the corresponding backend GET /api/physical-marks/check/:indexNumber route.
+      const res = await axios.get(
+        `${apiUrl}/api/physical-marks/check/${encodeURIComponent(cleanIndex)}`,
+        { timeout: 15000 }
+      );
+
+      if (res.data?.success !== true || !Array.isArray(res.data?.data)) {
+        setErrorMsg("Unexpected response from the marks server. Please try again.");
+        return;
+      }
+
+      // Defensive validation, accepting index numbers stored as strings or numbers.
+      const matched = res.data.data.filter(
+        (item: any) =>
+          String(item?.indexNumber ?? "").trim().toLowerCase() ===
+          cleanIndex.toLowerCase()
+      );
+
+      if (matched.length > 0) {
+        setMarkData(matched);
+      } else {
+        setErrorMsg("No physical paper marks found for this index number.");
+      }
+    } catch (err: unknown) {
       console.error("Error fetching physical marks:", err);
-      setErrorMsg("Failed to retrieve marks. Please try again.");
+
+      if (axios.isAxiosError(err)) {
+        const status = err.response?.status;
+        if (status === 404) {
+          setErrorMsg("No marks found, or the marks lookup API route is unavailable (404).");
+        } else if (status === 401 || status === 403) {
+          setErrorMsg("Access denied to the marks lookup service. Please contact support.");
+        } else if (status === 429) {
+          setErrorMsg("Too many searches. Please try again later.");
+        } else if (err.code === "ECONNABORTED") {
+          setErrorMsg("The marks server took too long to respond. Please try again.");
+        } else if (!err.response) {
+          setErrorMsg("Cannot connect to the marks server. Check the API URL, network, CORS and HTTPS settings.");
+        } else {
+          setErrorMsg(`Failed to retrieve marks (HTTP ${status}). Please try again.`);
+        }
+      } else {
+        setErrorMsg("Could not process the marks response. Please try again.");
+      }
     } finally {
       setLoading(false);
     }
